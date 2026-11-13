@@ -40,14 +40,14 @@ CATALOG: tuple[Item, ...] = (
     Item("Data Cartridge", "the data cartridge", "part",
          "Chunky plastic storage cartridge with a label and gold contacts."),
     # Личные вещи экипажа
-    Item("Coffee Mug", "the coffee mug", "personal",
-         "Enamel mug with the ship's emblem and a chipped rim."),
+    Item("Voice Recorder", "the voice recorder", "personal",
+         "Pocket crew voice recorder with a small speaker grille and a record button."),
     Item("Rubber Duck", "the rubber duck", "personal",
          "Yellow rubber duck, slightly scorched."),
     Item("Family Photo", "the family photo", "personal",
          "Small framed photo behind cracked glass."),
-    Item("Cassette Tape", "the cassette tape", "personal",
-         "Retro audio cassette with a handwritten label."),
+    Item("Dog Tag", "the dog tag", "personal",
+         "Crew member's stamped metal dog tag on a ball chain."),
     Item("Snow Globe", "the snow globe", "personal",
          "Glass snow globe with a tiny Earth city inside."),
     Item("Ration Tin", "the ration tin", "personal",
@@ -61,7 +61,7 @@ N_NOTEBOOK_FIRST = 0  # первая запись блокнота: провод
 N_LOOP_EXIT = 1       # какой предмет выводит из текущей петли
 N_NEXT_KEY = 2        # где появляется следующий ключ
 N_USELESS = 3         # какой предмет бесполезен
-N_DANGER = 4          # какой предмет ведёт в опасные комнаты
+N_DANGER = 4          # какое сочетание двух предметов привело в опасную комнату
 N_ENGINE_SET = 5      # какой набор нужен для двигательного отсека
 N_FINALE = 6          # записка в двигательном отсеке: «вспомни, как попал в рубку» (решение автора 13.11)
 
@@ -92,9 +92,9 @@ TEMPLATES: dict[int, tuple[str, ...]] = {
         "Don't waste a slot on {item}.",
     ),
     N_DANGER: (
-        "Never carry {item} through a door. Never.",
-        "{Item} opens the wrong rooms. I learned that the hard way.",
-        "Whatever you do, leave {item} behind. The rooms it brings will hurt you.",
+        "I carried {item} and {item2} through a door. The room behind it nearly killed me.",
+        "{Item} with {item2}, and nothing else that matters. That door hurts.",
+        "Tried {item} together with {item2}. Bad room. Don't.",
     ),
     N_ENGINE_SET: (
         "The engine room answers to three things: {item}, {item2} and {item3}. "
@@ -122,6 +122,8 @@ def render(kind: int, tpl: int, items: tuple[int, ...]) -> str:
         f["item"], f["Item"] = nouns[0], cap(nouns[0])
     if kind == N_NEXT_KEY:
         f["prereq"] = " and ".join(nouns[1:])
+    if kind == N_DANGER:
+        f["item2"] = nouns[1]
     if kind == N_ENGINE_SET:
         f["item2"], f["item3"] = nouns[1], nouns[2]
         f["leader"], f["Leader"] = nouns[3], cap(nouns[3])

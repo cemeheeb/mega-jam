@@ -13,7 +13,7 @@
 
 import argparse
 import statistics
-from collections import Counter, deque
+from collections import defaultdict, Counter, deque
 from dataclasses import dataclass, field
 
 import generator as G
@@ -22,36 +22,41 @@ from rng import Rng
 
 
 class Room:
-    __slots__ = ("id", "key", "copy", "cls", "level", "look", "anomaly", "anomaly_active", "items", "notes",
+    """Комната за конкретной дверью. Вещи и записки у неё общие со всеми комнатами того же набора:
+    что бы ни лежало в комнате набора, оно лежит там, через какую дверь в неё ни войди.
+    Свои у комнаты только двери и состояние аномалии."""
+    __slots__ = ("id", "key", "cls", "level", "look", "anomaly", "anomaly_active", "items", "notes",
                  "doors", "parent")
 
-    def __init__(self, rid, rc: G.RoomContent, parent):
+    def __init__(self, rid, rc: G.RoomContent, items: list, parent):
         self.id = rid
         self.key = rc.key
-        self.copy = rc.copy
-        self.cls = G.room_class(rc.key) if rc.copy > 0 else G.CLS_START
+        self.cls = G.room_class(rc.key) if rid > 0 else G.CLS_START
         self.level = G.chain_level(rc.key)
         self.look = (rc.room_type, rc.switches)
         self.anomaly = rc.anomaly
-        # Состояние аномалии хранится в комнате: устранённая в этой копии больше не бьёт.
-        # Новая копия (через нераскрытую дверь) всегда начинает с исходного состояния.
+        # Новая комната за нераскрытой дверью всегда начинает с исходного состояния аномалии;
+        # устранённая в этой комнате больше не бьёт.
         self.anomaly_active = rc.anomaly != G.NO_ANOMALY
-        self.items = list(rc.items)
+        self.items = items                      # общий список набора
         self.notes = rc.notes
-        self.doors: list = [None] * rc.doors   # id комнаты за дверью или None, если не раскрыта
+        # id комнаты за дверью или None, если не раскрыта. Дверей четыре, одна из них входная.
+        self.doors: list = [None] * (G.DOORS_PER_ROOM if parent < 0 else G.DOORS_PER_ROOM - 1)
         self.parent = parent                    # входная дверь ведёт сюда (-1 у стартовой рубки)
 
 
 class World:
     def __init__(self, layout: G.RunLayout):
         self.layout = layout
-        self.rooms: list[Room] = [Room(0, layout.start_room(), -1)]
-        self.copy_count = [0] * 128
+        start = layout.start_room()
+        self.items_of: dict[int, list] = {start.key: list(start.items)}   # вещи набора, общие для его комнат
+        self.rooms: list[Room] = [Room(0, start, self.items_of[start.key], -1)]
 
     def reveal(self, rid: int, door: int, key: int) -> int:
-        self.copy_count[key] += 1
-        rc = self.layout.room_copy(key, self.copy_count[key])
-        room = Room(len(self.rooms), rc, rid)
+        rc = self.layout.room(key)
+        if key not in self.items_of:
+            self.items_of[key] = list(rc.items)
+        room = Room(len(self.rooms), rc, self.items_of[key], rid)
         self.rooms.append(room)
         self.rooms[rid].doors[door] = room.id
         return room.id
@@ -232,11 +237,11 @@ class NotesPlayer(Sim):
 
     def read_notes(self, room: Room) -> None:
         for i, n in enumerate(room.notes):
-            if (room.id, i) in self.read:
+            if (room.key, i) in self.read:
                 continue
             if self.miss > 0 and self.rng.chance(self.miss):
                 continue  # не заметил; при следующем визите попробует снова
-            self.read.add((room.id, i))
+            self.read.add((room.key, i))
             self.learn(n)
 
     def wanted(self) -> list[int]:
@@ -417,6 +422,8 @@ def summarize(results: list[Result], health: int) -> dict:
         "timeout": st["timeout"] / n,
         "hits_mean": statistics.fmean(r.hits for r in results),
         "anomaly_entries_mean": statistics.fmean(r.anomaly_entries for r in results),
+        # входов в уже пройденные комнаты: каждый раскрытый проём — один вход, плюс стартовая рубка
+        "revisits_mean": statistics.fmean(r.entries - r.doors - 1 for r in results),
         "doors_mean_all": statistics.fmean(r.doors for r in results),
         "guess_rooms_mean": statistics.fmean(r.guess_rooms for r in results),
         "max_level": dict(sorted(Counter(r.max_level for r in results).items())),
@@ -440,7 +447,8 @@ def print_summary(title: str, s: dict, health: int) -> None:
     print(f"\n== {title} ==")
     print(f"  забегов {s['runs']}: победа {pct(s['win'])}, смерть {pct(s['dead'])}, завис {pct(s['timeout'])}")
     print(f"  урон в среднем {s['hits_mean']:.2f} из {health}; распределение попаданий {s['hits_hist']}")
-    print(f"  комнат-догадок за забег в среднем {s['guess_rooms_mean']:.2f}")
+    print(f"  комнат-догадок за забег в среднем {s['guess_rooms_mean']:.2f}; "
+          f"возвратов в пройденные комнаты {s['revisits_mean']:.2f}")
     print(f"  дальний уровень цепочки (0 рубка-петля .. 4 двигатель): {s['max_level']}")
     if "win_doors_mean" in s:
         print(f"  до победы раскрыто дверей: среднее {s['win_doors_mean']:.1f}, медиана {s['win_doors_median']}, "
@@ -468,12 +476,10 @@ def main() -> None:
     ap = argparse.ArgumentParser(description="Прогон симуляторов по многим зёрнам")
     ap.add_argument("--seeds", type=int, default=5000)
     ap.add_argument("--first", type=int, default=1)
-    ap.add_argument("--start-5-8", action="store_true", help="числа из раздела 5.8 вместо подобранных")
     ap.add_argument("--miss", type=float, default=0.3, help="доля незамеченных записок для проверки устойчивости")
     args = ap.parse_args()
 
-    from config import START_5_8
-    cfg = START_5_8 if args.start_5_8 else DEFAULT
+    cfg = DEFAULT
     seeds = range(args.first, args.first + args.seeds)
     print(f"Конфигурация: {cfg}")
 

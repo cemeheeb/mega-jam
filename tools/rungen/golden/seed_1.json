@@ -2,16 +2,12 @@
  "config": {
   "items_in_run": 16,
   "health": 4,
-  "p_meaningful": 0.18,
-  "p_guess": 0.85,
-  "p_target": 0.2,
-  "target_guarantee_by": 5,
-  "filler_min": 2,
-  "filler_max": 3,
-  "dummy_weight": 1,
-  "false_weight": 1,
-  "doors_min": 2,
-  "doors_max": 3,
+  "p_guess": 1.0,
+  "filler_min": 3,
+  "filler_max": 4,
+  "extras": 8,
+  "dummy_weight": 2,
+  "extra_weight": 5,
   "p_extra_note": 0.5,
   "p_guess_note": 0.3,
   "p_hit": 1.0,
@@ -25,16 +21,16 @@
    "K1": "Flashlight",
    "K2": "Gyroscope",
    "K3": "Duct Tape",
-   "X": "Rubber Duck",
-   "Y": "Coffee Mug"
+   "E1": "Rubber Duck",
+   "E2": "Voice Recorder",
+   "E3": "Coolant Valve",
+   "E4": "Ration Tin",
+   "E5": "Data Cartridge",
+   "E6": "Dog Tag",
+   "E7": "Circuit Board",
+   "E8": "Pressure Gauge"
   },
   "dummies": [
-   "Coolant Valve",
-   "Ration Tin",
-   "Data Cartridge",
-   "Cassette Tape",
-   "Circuit Board",
-   "Pressure Gauge",
    "Fuse",
    "Family Photo",
    "Power Cell",
@@ -56,9 +52,9 @@
    "empty pocket": "Living",
    "L": "Living",
    "L,K1": "Lab",
-   "K1": "Lab",
-   "L,K1,K2": "LifeSupport",
-   "K1,K2": "LifeSupport",
+   "K1": "Cargo",
+   "L,K1,K2": "Medbay",
+   "K1,K2": "Computer",
    "K1,K2,K3": "Engine"
   },
   "notebook_first": "Everything you add, the singularity will erase. Only this remains.\nCarry the snow globe. It breaks the first loop."
@@ -69,11 +65,11 @@
   "Gyroscope",
   "Duct Tape",
   "Rubber Duck",
-  "Coffee Mug",
+  "Voice Recorder",
   "Coolant Valve",
   "Ration Tin",
   "Data Cartridge",
-  "Cassette Tape",
+  "Dog Tag",
   "Circuit Board",
   "Pressure Gauge",
   "Fuse",
@@ -88,7 +84,13 @@
    1,
    4,
    5,
-   3
+   3,
+   2,
+   1,
+   3,
+   5,
+   3,
+   5
   ],
   "Lab": [
    2,
@@ -96,7 +98,13 @@
    0,
    4,
    5,
-   1
+   1,
+   2,
+   3,
+   0,
+   3,
+   2,
+   2
   ],
   "LifeSupport": [
    2,
@@ -104,22 +112,103 @@
    1,
    4,
    0,
+   3,
+   1,
+   1,
+   5,
+   2,
+   1,
+   0
+  ],
+  "Medbay": [
+   5,
+   0,
+   2,
+   3,
+   4,
+   1,
+   0,
+   3,
+   0,
+   0,
+   0,
+   2
+  ],
+  "Cargo": [
+   0,
+   4,
+   5,
+   2,
+   3,
+   1,
+   4,
+   1,
+   1,
+   1,
+   5,
+   3
+  ],
+  "Mess": [
+   3,
+   1,
+   5,
+   0,
+   2,
+   4,
+   3,
+   5,
+   0,
+   2,
+   3,
+   4
+  ],
+  "Computer": [
+   4,
+   5,
+   3,
+   0,
+   2,
+   1,
+   0,
+   4,
+   5,
+   5,
+   2,
    3
   ]
  },
  "start_room": {
-  "key": 64,
-  "copy": 0,
+  "key": 4096,
   "type": "Bridge",
   "switches": 24,
   "anomaly": "none",
-  "doors": 3,
   "items": [
    "Notebook",
+   "Snow Globe",
    "Pressure Gauge",
-   "Fuse"
+   "Fuse",
+   "Rubber Duck",
+   "Family Photo"
   ],
-  "notes": []
+  "notes": [
+   {
+    "kind": "next_key",
+    "items": [
+     "Flashlight",
+     "Snow Globe"
+    ],
+    "tpl": 0,
+    "text": "The flashlight only shows up for someone carrying the snow globe."
+   },
+   {
+    "kind": "useless",
+    "items": [
+     "Fuse"
+    ],
+    "tpl": 1,
+    "text": "Carried the fuse through a dozen doors. Nothing changed. Drop it."
+   }
+  ]
  },
  "looks": [
   {
@@ -129,18 +218,16 @@
    "level": 0,
    "type": "Living",
    "switches": 0,
-   "anomaly_chance": 0.18,
-   "guarantee_copy": 1
+   "anomaly": "none"
   },
   {
-   "key": 64,
+   "key": 4096,
    "signature": "{} (notebook only)",
    "class": "chain",
    "level": 0,
    "type": "Bridge",
    "switches": 24,
-   "anomaly_chance": 0.18,
-   "guarantee_copy": 5
+   "anomaly": "none"
   },
   {
    "key": 1,
@@ -149,18 +236,16 @@
    "level": 1,
    "type": "Living",
    "switches": 1,
-   "anomaly_chance": 0.18,
-   "guarantee_copy": 1
+   "anomaly": "none"
   },
   {
    "key": 2,
    "signature": "{K1}",
    "class": "chain",
    "level": 2,
-   "type": "Lab",
-   "switches": 8,
-   "anomaly_chance": 0.18,
-   "guarantee_copy": 5
+   "type": "Cargo",
+   "switches": 16,
+   "anomaly": "none"
   },
   {
    "key": 3,
@@ -169,108 +254,97 @@
    "level": 2,
    "type": "Lab",
    "switches": 12,
-   "anomaly_chance": 0.18,
-   "guarantee_copy": 1
+   "anomaly": "none"
   },
   {
    "key": 4,
    "signature": "{K2}",
    "class": "guess",
    "level": -1,
-   "type": "LifeSupport",
-   "switches": 2,
-   "anomaly_chance": 0.85,
-   "guarantee_copy": 2
+   "type": "Lab",
+   "switches": 1,
+   "anomaly": "GravityFailure"
   },
   {
    "key": 5,
    "signature": "{L, K2}",
    "class": "guess",
    "level": -1,
-   "type": "LifeSupport",
-   "switches": 6,
-   "anomaly_chance": 0.85,
-   "guarantee_copy": 5
+   "type": "Cargo",
+   "switches": 33,
+   "anomaly": "Radiation"
   },
   {
    "key": 6,
    "signature": "{K1, K2}",
    "class": "chain",
    "level": 3,
-   "type": "LifeSupport",
-   "switches": 34,
-   "anomaly_chance": 0.18,
-   "guarantee_copy": 3
+   "type": "Computer",
+   "switches": 40,
+   "anomaly": "none"
   },
   {
    "key": 7,
    "signature": "{L, K1, K2}",
    "class": "chain",
    "level": 3,
-   "type": "LifeSupport",
-   "switches": 38,
-   "anomaly_chance": 0.18,
-   "guarantee_copy": 3
+   "type": "Medbay",
+   "switches": 37,
+   "anomaly": "none"
   },
   {
    "key": 8,
    "signature": "{K3}",
    "class": "guess",
    "level": -1,
-   "type": "LifeSupport",
-   "switches": 16,
-   "anomaly_chance": 0.85,
-   "guarantee_copy": 5
+   "type": "Mess",
+   "switches": 1,
+   "anomaly": "Radiation"
   },
   {
    "key": 9,
    "signature": "{L, K3}",
    "class": "guess",
    "level": -1,
-   "type": "LifeSupport",
-   "switches": 20,
-   "anomaly_chance": 0.85,
-   "guarantee_copy": 4
+   "type": "Mess",
+   "switches": 9,
+   "anomaly": "Radiation"
   },
   {
    "key": 10,
    "signature": "{K1, K3}",
    "class": "guess",
    "level": -1,
-   "type": "Lab",
-   "switches": 24,
-   "anomaly_chance": 0.85,
-   "guarantee_copy": 4
+   "type": "Medbay",
+   "switches": 9,
+   "anomaly": "FrozenMoment"
   },
   {
    "key": 11,
    "signature": "{L, K1, K3}",
    "class": "guess",
    "level": -1,
-   "type": "LifeSupport",
-   "switches": 52,
-   "anomaly_chance": 0.85,
-   "guarantee_copy": 2
+   "type": "Living",
+   "switches": 21,
+   "anomaly": "GravityFailure"
   },
   {
    "key": 12,
    "signature": "{K2, K3}",
    "class": "guess",
    "level": -1,
-   "type": "LifeSupport",
-   "switches": 18,
-   "anomaly_chance": 0.85,
-   "guarantee_copy": 4
+   "type": "Lab",
+   "switches": 17,
+   "anomaly": "SlowTime"
   },
   {
    "key": 13,
    "signature": "{L, K2, K3}",
    "class": "guess",
    "level": -1,
-   "type": "LifeSupport",
-   "switches": 22,
-   "anomaly_chance": 0.85,
-   "guarantee_copy": 1
+   "type": "Lab",
+   "switches": 21,
+   "anomaly": "GravityFailure"
   },
   {
    "key": 14,
@@ -279,1190 +353,7303 @@
    "level": 4,
    "type": "Engine",
    "switches": 51,
-   "anomaly_chance": 0.0,
-   "guarantee_copy": 3
+   "anomaly": "none"
   },
   {
    "key": 15,
    "signature": "{L, K1, K2, K3}",
    "class": "guess",
    "level": -1,
-   "type": "Living",
-   "switches": 23,
-   "anomaly_chance": 0.85,
-   "guarantee_copy": 3
+   "type": "Lab",
+   "switches": 29,
+   "anomaly": "GravityFailure"
   },
   {
    "key": 16,
-   "signature": "{X}",
+   "signature": "{E1}",
    "class": "guess",
    "level": -1,
-   "type": "Lab",
-   "switches": 32,
-   "anomaly_chance": 0.85,
-   "guarantee_copy": 3
+   "type": "Medbay",
+   "switches": 16,
+   "anomaly": "Radiation"
   },
   {
    "key": 17,
-   "signature": "{L, X}",
+   "signature": "{L, E1}",
    "class": "guess",
    "level": -1,
    "type": "Living",
    "switches": 33,
-   "anomaly_chance": 0.85,
-   "guarantee_copy": 2
+   "anomaly": "SlowTime"
   },
   {
    "key": 18,
-   "signature": "{K1, X}",
-   "class": "guess",
-   "level": -1,
-   "type": "LifeSupport",
-   "switches": 33,
-   "anomaly_chance": 0.85,
-   "guarantee_copy": 3
-  },
-  {
-   "key": 19,
-   "signature": "{L, K1, X}",
-   "class": "guess",
-   "level": -1,
-   "type": "LifeSupport",
-   "switches": 37,
-   "anomaly_chance": 0.85,
-   "guarantee_copy": 2
-  },
-  {
-   "key": 20,
-   "signature": "{K2, X}",
+   "signature": "{K1, E1}",
    "class": "guess",
    "level": -1,
    "type": "Living",
-   "switches": 34,
-   "anomaly_chance": 0.85,
-   "guarantee_copy": 1
+   "switches": 36,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 19,
+   "signature": "{L, K1, E1}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 25,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 20,
+   "signature": "{K2, E1}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 36,
+   "anomaly": "SlowTime"
   },
   {
    "key": 21,
-   "signature": "{L, K2, X}",
+   "signature": "{L, K2, E1}",
    "class": "guess",
    "level": -1,
-   "type": "LifeSupport",
-   "switches": 7,
-   "anomaly_chance": 0.85,
-   "guarantee_copy": 5
+   "type": "Living",
+   "switches": 35,
+   "anomaly": "Radiation"
   },
   {
    "key": 22,
-   "signature": "{K1, K2, X}",
+   "signature": "{K1, K2, E1}",
    "class": "guess",
    "level": -1,
-   "type": "Lab",
-   "switches": 41,
-   "anomaly_chance": 0.85,
-   "guarantee_copy": 5
+   "type": "Computer",
+   "switches": 44,
+   "anomaly": "GravityFailure"
   },
   {
    "key": 23,
-   "signature": "{L, K1, K2, X}",
+   "signature": "{L, K1, K2, E1}",
    "class": "guess",
    "level": -1,
    "type": "LifeSupport",
    "switches": 39,
-   "anomaly_chance": 0.85,
-   "guarantee_copy": 3
+   "anomaly": "SlowTime"
   },
   {
    "key": 24,
-   "signature": "{K3, X}",
+   "signature": "{K3, E1}",
    "class": "guess",
    "level": -1,
-   "type": "LifeSupport",
-   "switches": 17,
-   "anomaly_chance": 0.85,
-   "guarantee_copy": 4
+   "type": "Lab",
+   "switches": 48,
+   "anomaly": "FrozenMoment"
   },
   {
    "key": 25,
-   "signature": "{L, K3, X}",
+   "signature": "{L, K3, E1}",
    "class": "guess",
    "level": -1,
-   "type": "Lab",
-   "switches": 52,
-   "anomaly_chance": 0.85,
-   "guarantee_copy": 5
+   "type": "Cargo",
+   "switches": 13,
+   "anomaly": "GravityFailure"
   },
   {
    "key": 26,
-   "signature": "{K1, K3, X}",
+   "signature": "{K1, K3, E1}",
    "class": "guess",
    "level": -1,
-   "type": "Living",
-   "switches": 52,
-   "anomaly_chance": 0.85,
-   "guarantee_copy": 4
+   "type": "Mess",
+   "switches": 7,
+   "anomaly": "SlowTime"
   },
   {
    "key": 27,
-   "signature": "{L, K1, K3, X}",
+   "signature": "{L, K1, K3, E1}",
    "class": "guess",
    "level": -1,
-   "type": "Lab",
-   "switches": 60,
-   "anomaly_chance": 0.85,
-   "guarantee_copy": 3
+   "type": "Medbay",
+   "switches": 57,
+   "anomaly": "FrozenMoment"
   },
   {
    "key": 28,
-   "signature": "{K2, K3, X}",
+   "signature": "{K2, K3, E1}",
    "class": "guess",
    "level": -1,
-   "type": "Living",
-   "switches": 50,
-   "anomaly_chance": 0.85,
-   "guarantee_copy": 5
+   "type": "Medbay",
+   "switches": 28,
+   "anomaly": "SlowTime"
   },
   {
    "key": 29,
-   "signature": "{L, K2, K3, X}",
+   "signature": "{L, K2, K3, E1}",
    "class": "guess",
    "level": -1,
-   "type": "LifeSupport",
-   "switches": 23,
-   "anomaly_chance": 0.85,
-   "guarantee_copy": 5
+   "type": "Computer",
+   "switches": 29,
+   "anomaly": "SlowTime"
   },
   {
    "key": 30,
-   "signature": "{K1, K2, K3, X}",
-   "class": "guess",
-   "level": -1,
-   "type": "Lab",
-   "switches": 57,
-   "anomaly_chance": 0.85,
-   "guarantee_copy": 3
-  },
-  {
-   "key": 32,
-   "signature": "{Y}",
+   "signature": "{K1, K2, K3, E1}",
    "class": "guess",
    "level": -1,
    "type": "Living",
-   "switches": 8,
-   "anomaly_chance": 0.85,
-   "guarantee_copy": 1
+   "switches": 54,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 32,
+   "signature": "{E2}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 2,
+   "anomaly": "FrozenMoment"
   },
   {
    "key": 33,
-   "signature": "{L, Y}",
+   "signature": "{L, E2}",
    "class": "guess",
    "level": -1,
-   "type": "LifeSupport",
-   "switches": 12,
-   "anomaly_chance": 0.85,
-   "guarantee_copy": 2
+   "type": "Mess",
+   "switches": 24,
+   "anomaly": "Radiation"
   },
   {
    "key": 34,
-   "signature": "{K1, Y}",
+   "signature": "{K1, E2}",
    "class": "guess",
    "level": -1,
-   "type": "LifeSupport",
-   "switches": 40,
-   "anomaly_chance": 0.85,
-   "guarantee_copy": 5
+   "type": "Living",
+   "switches": 12,
+   "anomaly": "Radiation"
   },
   {
    "key": 35,
-   "signature": "{L, K1, Y}",
-   "class": "guess",
-   "level": -1,
-   "type": "Lab",
-   "switches": 14,
-   "anomaly_chance": 0.85,
-   "guarantee_copy": 2
-  },
-  {
-   "key": 36,
-   "signature": "{K2, Y}",
-   "class": "guess",
-   "level": -1,
-   "type": "Lab",
-   "switches": 3,
-   "anomaly_chance": 0.85,
-   "guarantee_copy": 3
-  },
-  {
-   "key": 37,
-   "signature": "{L, K2, Y}",
+   "signature": "{L, K1, E2}",
    "class": "guess",
    "level": -1,
    "type": "LifeSupport",
-   "switches": 14,
-   "anomaly_chance": 0.85,
-   "guarantee_copy": 4
+   "switches": 44,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 36,
+   "signature": "{K2, E2}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 10,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 37,
+   "signature": "{L, K2, E2}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 7,
+   "anomaly": "Radiation"
   },
   {
    "key": 38,
-   "signature": "{K1, K2, Y}",
+   "signature": "{K1, K2, E2}",
    "class": "guess",
    "level": -1,
    "type": "LifeSupport",
    "switches": 42,
-   "anomaly_chance": 0.85,
-   "guarantee_copy": 4
+   "anomaly": "FrozenMoment"
   },
   {
    "key": 39,
-   "signature": "{L, K1, K2, Y}",
+   "signature": "{L, K1, K2, E2}",
    "class": "guess",
    "level": -1,
-   "type": "Lab",
-   "switches": 15,
-   "anomaly_chance": 0.85,
-   "guarantee_copy": 1
+   "type": "Cargo",
+   "switches": 51,
+   "anomaly": "GravityFailure"
   },
   {
    "key": 40,
-   "signature": "{K3, Y}",
+   "signature": "{K3, E2}",
    "class": "guess",
    "level": -1,
-   "type": "Living",
-   "switches": 24,
-   "anomaly_chance": 0.85,
-   "guarantee_copy": 1
+   "type": "Mess",
+   "switches": 17,
+   "anomaly": "Radiation"
   },
   {
    "key": 41,
-   "signature": "{L, K3, Y}",
+   "signature": "{L, K3, E2}",
    "class": "guess",
    "level": -1,
-   "type": "Lab",
-   "switches": 22,
-   "anomaly_chance": 0.85,
-   "guarantee_copy": 3
+   "type": "Computer",
+   "switches": 19,
+   "anomaly": "Radiation"
   },
   {
    "key": 42,
-   "signature": "{K1, K3, Y}",
+   "signature": "{K1, K3, E2}",
    "class": "guess",
    "level": -1,
-   "type": "Living",
-   "switches": 28,
-   "anomaly_chance": 0.85,
-   "guarantee_copy": 1
+   "type": "Cargo",
+   "switches": 22,
+   "anomaly": "FrozenMoment"
   },
   {
    "key": 43,
-   "signature": "{L, K1, K3, Y}",
+   "signature": "{L, K1, K3, E2}",
    "class": "guess",
    "level": -1,
-   "type": "Lab",
-   "switches": 30,
-   "anomaly_chance": 0.85,
-   "guarantee_copy": 2
+   "type": "Computer",
+   "switches": 51,
+   "anomaly": "SlowTime"
   },
   {
    "key": 44,
-   "signature": "{K2, K3, Y}",
+   "signature": "{K2, K3, E2}",
    "class": "guess",
    "level": -1,
    "type": "Lab",
    "switches": 19,
-   "anomaly_chance": 0.85,
-   "guarantee_copy": 1
+   "anomaly": "GravityFailure"
   },
   {
    "key": 45,
-   "signature": "{L, K2, K3, Y}",
+   "signature": "{L, K2, K3, E2}",
    "class": "guess",
    "level": -1,
-   "type": "LifeSupport",
-   "switches": 30,
-   "anomaly_chance": 0.85,
-   "guarantee_copy": 5
+   "type": "Medbay",
+   "switches": 46,
+   "anomaly": "FrozenMoment"
   },
   {
    "key": 46,
-   "signature": "{K1, K2, K3, Y}",
-   "class": "guess",
-   "level": -1,
-   "type": "Lab",
-   "switches": 27,
-   "anomaly_chance": 0.85,
-   "guarantee_copy": 4
-  },
-  {
-   "key": 48,
-   "signature": "{X, Y}",
-   "class": "guess",
-   "level": -1,
-   "type": "LifeSupport",
-   "switches": 9,
-   "anomaly_chance": 0.85,
-   "guarantee_copy": 2
-  },
-  {
-   "key": 49,
-   "signature": "{L, X, Y}",
-   "class": "guess",
-   "level": -1,
-   "type": "Lab",
-   "switches": 38,
-   "anomaly_chance": 0.85,
-   "guarantee_copy": 3
-  },
-  {
-   "key": 50,
-   "signature": "{K1, X, Y}",
-   "class": "guess",
-   "level": -1,
-   "type": "LifeSupport",
-   "switches": 41,
-   "anomaly_chance": 0.85,
-   "guarantee_copy": 5
-  },
-  {
-   "key": 51,
-   "signature": "{L, K1, X, Y}",
-   "class": "guess",
-   "level": -1,
-   "type": "Lab",
-   "switches": 46,
-   "anomaly_chance": 0.85,
-   "guarantee_copy": 3
-  },
-  {
-   "key": 52,
-   "signature": "{K2, X, Y}",
+   "signature": "{K1, K2, K3, E2}",
    "class": "guess",
    "level": -1,
    "type": "Living",
-   "switches": 42,
-   "anomaly_chance": 0.85,
-   "guarantee_copy": 1
+   "switches": 30,
+   "anomaly": "SlowTime"
   },
   {
-   "key": 53,
-   "signature": "{L, K2, X, Y}",
+   "key": 48,
+   "signature": "{E1, E2}",
    "class": "guess",
    "level": -1,
-   "type": "Lab",
-   "switches": 39,
-   "anomaly_chance": 0.85,
-   "guarantee_copy": 4
+   "type": "Medbay",
+   "switches": 18,
+   "anomaly": "GravityFailure"
   },
   {
-   "key": 54,
-   "signature": "{K1, K2, X, Y}",
+   "key": 49,
+   "signature": "{L, E1, E2}",
    "class": "guess",
    "level": -1,
    "type": "LifeSupport",
-   "switches": 43,
-   "anomaly_chance": 0.85,
-   "guarantee_copy": 5
+   "switches": 13,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 50,
+   "signature": "{K1, E1, E2}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 44,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 51,
+   "signature": "{L, K1, E1, E2}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 27,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 52,
+   "signature": "{K2, E1, E2}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 11,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 53,
+   "signature": "{L, K2, E1, E2}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 60,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 54,
+   "signature": "{K1, K2, E1, E2}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 58,
+   "anomaly": "Radiation"
   },
   {
    "key": 56,
-   "signature": "{K3, X, Y}",
+   "signature": "{K3, E1, E2}",
    "class": "guess",
    "level": -1,
    "type": "Lab",
    "switches": 50,
-   "anomaly_chance": 0.85,
-   "guarantee_copy": 5
+   "anomaly": "Radiation"
   },
   {
    "key": 57,
-   "signature": "{L, K3, X, Y}",
+   "signature": "{L, K3, E1, E2}",
    "class": "guess",
    "level": -1,
    "type": "Living",
    "switches": 57,
-   "anomaly_chance": 0.85,
-   "guarantee_copy": 4
+   "anomaly": "GravityFailure"
   },
   {
    "key": 58,
-   "signature": "{K1, K3, X, Y}",
+   "signature": "{K1, K3, E1, E2}",
    "class": "guess",
    "level": -1,
-   "type": "LifeSupport",
-   "switches": 57,
-   "anomaly_chance": 0.85,
-   "guarantee_copy": 1
+   "type": "Mess",
+   "switches": 23,
+   "anomaly": "GravityFailure"
   },
   {
    "key": 60,
-   "signature": "{K2, K3, X, Y}",
+   "signature": "{K2, K3, E1, E2}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 46,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 64,
+   "signature": "{E3}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 4,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 65,
+   "signature": "{L, E3}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 6,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 66,
+   "signature": "{K1, E3}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 12,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 67,
+   "signature": "{L, K1, E3}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 49,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 68,
+   "signature": "{K2, E3}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 5,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 69,
+   "signature": "{L, K2, E3}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 49,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 70,
+   "signature": "{K1, K2, E3}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 42,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 71,
+   "signature": "{L, K1, K2, E3}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 42,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 72,
+   "signature": "{K3, E3}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 20,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 73,
+   "signature": "{L, K3, E3}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 21,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 74,
+   "signature": "{K1, K3, E3}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 33,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 75,
+   "signature": "{L, K1, K3, E3}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 11,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 76,
+   "signature": "{K2, K3, E3}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 13,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 77,
+   "signature": "{L, K2, K3, E3}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 25,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 78,
+   "signature": "{K1, K2, K3, E3}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 41,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 80,
+   "signature": "{E1, E3}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 12,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 81,
+   "signature": "{L, E1, E3}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 12,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 82,
+   "signature": "{K1, E1, E3}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 35,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 83,
+   "signature": "{L, K1, E1, E3}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 39,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 84,
+   "signature": "{K2, E1, E3}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 37,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 85,
+   "signature": "{L, K2, E1, E3}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 57,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 86,
+   "signature": "{K1, K2, E1, E3}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 35,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 88,
+   "signature": "{K3, E1, E3}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 19,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 89,
+   "signature": "{L, K3, E1, E3}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 57,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 90,
+   "signature": "{K1, K3, E1, E3}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 60,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 92,
+   "signature": "{K2, K3, E1, E3}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 29,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 96,
+   "signature": "{E2, E3}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 6,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 97,
+   "signature": "{L, E2, E3}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 24,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 98,
+   "signature": "{K1, E2, E3}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 35,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 99,
+   "signature": "{L, K1, E2, E3}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 19,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 100,
+   "signature": "{K2, E2, E3}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 7,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 101,
+   "signature": "{L, K2, E2, E3}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 51,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 102,
+   "signature": "{K1, K2, E2, E3}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 42,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 104,
+   "signature": "{K3, E2, E3}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 22,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 105,
+   "signature": "{L, K3, E2, E3}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 29,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 106,
+   "signature": "{K1, K3, E2, E3}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 35,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 108,
+   "signature": "{K2, K3, E2, E3}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 15,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 112,
+   "signature": "{E1, E2, E3}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 26,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 113,
+   "signature": "{L, E1, E2, E3}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 27,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 114,
+   "signature": "{K1, E1, E2, E3}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 30,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 116,
+   "signature": "{K2, E1, E2, E3}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 58,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 120,
+   "signature": "{K3, E1, E2, E3}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 7,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 128,
+   "signature": "{E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 16,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 129,
+   "signature": "{L, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 40,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 130,
+   "signature": "{K1, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 34,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 131,
+   "signature": "{L, K1, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 41,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 132,
+   "signature": "{K2, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 2,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 133,
+   "signature": "{L, K2, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 3,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 134,
+   "signature": "{K1, K2, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 50,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 135,
+   "signature": "{L, K1, K2, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 56,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 136,
+   "signature": "{K3, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 8,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 137,
+   "signature": "{L, K3, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 40,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 138,
+   "signature": "{K1, K3, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 24,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 139,
+   "signature": "{L, K1, K3, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 23,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 140,
+   "signature": "{K2, K3, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 33,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 141,
+   "signature": "{L, K2, K3, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 39,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 142,
+   "signature": "{K1, K2, K3, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 50,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 144,
+   "signature": "{E1, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 20,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 145,
+   "signature": "{L, E1, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 44,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 146,
+   "signature": "{K1, E1, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 35,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 147,
+   "signature": "{L, K1, E1, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 27,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 148,
+   "signature": "{K2, E1, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 36,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 149,
+   "signature": "{L, K2, E1, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 60,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 150,
+   "signature": "{K1, K2, E1, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 38,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 152,
+   "signature": "{K3, E1, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 21,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 153,
+   "signature": "{L, K3, E1, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 60,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 154,
+   "signature": "{K1, K3, E1, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 53,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 156,
+   "signature": "{K2, K3, E1, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 37,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 160,
+   "signature": "{E2, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 2,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 161,
+   "signature": "{L, E2, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 11,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 162,
+   "signature": "{K1, E2, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 14,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 163,
+   "signature": "{L, K1, E2, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 50,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 164,
+   "signature": "{K2, E2, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 10,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 165,
+   "signature": "{L, K2, E2, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 26,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 166,
+   "signature": "{K1, K2, E2, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 50,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 168,
+   "signature": "{K3, E2, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 6,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 169,
+   "signature": "{L, K3, E2, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 57,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 170,
+   "signature": "{K1, K3, E2, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 51,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 172,
+   "signature": "{K2, K3, E2, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 26,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 176,
+   "signature": "{E1, E2, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 10,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 177,
+   "signature": "{L, E1, E2, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 60,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 178,
+   "signature": "{K1, E1, E2, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 46,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 180,
+   "signature": "{K2, E1, E2, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 42,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 184,
+   "signature": "{K3, E1, E2, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 53,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 192,
+   "signature": "{E3, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 9,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 193,
+   "signature": "{L, E3, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 41,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 194,
+   "signature": "{K1, E3, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 49,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 195,
+   "signature": "{L, K1, E3, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 41,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 196,
+   "signature": "{K2, E3, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 25,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 197,
+   "signature": "{L, K2, E3, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 6,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 198,
+   "signature": "{K1, K2, E3, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 13,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 200,
+   "signature": "{K3, E3, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 22,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 201,
+   "signature": "{L, K3, E3, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 41,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 202,
+   "signature": "{K1, K3, E3, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 22,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 204,
+   "signature": "{K2, K3, E3, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 18,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 208,
+   "signature": "{E1, E3, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 38,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 209,
+   "signature": "{L, E1, E3, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 21,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 210,
+   "signature": "{K1, E1, E3, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 38,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 212,
+   "signature": "{K2, E1, E3, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 44,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 216,
+   "signature": "{K3, E1, E3, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 45,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 224,
+   "signature": "{E2, E3, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 14,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 225,
+   "signature": "{L, E2, E3, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 15,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 226,
+   "signature": "{K1, E2, E3, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 18,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 228,
+   "signature": "{K2, E2, E3, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 27,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 232,
+   "signature": "{K3, E2, E3, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 22,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 240,
+   "signature": "{E1, E2, E3, E4}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 46,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 256,
+   "signature": "{E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 2,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 257,
+   "signature": "{L, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 33,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 258,
+   "signature": "{K1, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 1,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 259,
+   "signature": "{L, K1, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 13,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 260,
+   "signature": "{K2, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 33,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 261,
+   "signature": "{L, K2, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 37,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 262,
+   "signature": "{K1, K2, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 14,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 263,
+   "signature": "{L, K1, K2, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 13,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 264,
+   "signature": "{K3, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 9,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 265,
+   "signature": "{L, K3, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 7,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 266,
+   "signature": "{K1, K3, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 25,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 267,
+   "signature": "{L, K1, K3, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 41,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 268,
+   "signature": "{K2, K3, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 13,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 269,
+   "signature": "{L, K2, K3, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 41,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 270,
+   "signature": "{K1, K2, K3, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 54,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 272,
+   "signature": "{E1, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 33,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 273,
+   "signature": "{L, E1, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 13,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 274,
+   "signature": "{K1, E1, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 44,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 275,
+   "signature": "{L, K1, E1, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 49,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 276,
+   "signature": "{K2, E1, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 42,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 277,
+   "signature": "{L, K2, E1, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 60,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 278,
+   "signature": "{K1, K2, E1, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 39,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 280,
+   "signature": "{K3, E1, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 49,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 281,
+   "signature": "{L, K3, E1, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 13,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 282,
+   "signature": "{K1, K3, E1, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 60,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 284,
+   "signature": "{K2, K3, E1, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 29,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 288,
+   "signature": "{E2, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 3,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 289,
+   "signature": "{L, E2, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 3,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 290,
+   "signature": "{K1, E2, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 34,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 291,
+   "signature": "{L, K1, E2, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 44,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 292,
+   "signature": "{K2, E2, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 10,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 293,
+   "signature": "{L, K2, E2, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 35,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 294,
+   "signature": "{K1, K2, E2, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 11,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 296,
+   "signature": "{K3, E2, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 11,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 297,
+   "signature": "{L, K3, E2, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 23,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 298,
+   "signature": "{K1, K3, E2, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 28,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 300,
+   "signature": "{K2, K3, E2, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 19,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 304,
+   "signature": "{E1, E2, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 41,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 305,
+   "signature": "{L, E1, E2, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 41,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 306,
+   "signature": "{K1, E1, E2, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 19,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 308,
+   "signature": "{K2, E1, E2, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 42,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 312,
+   "signature": "{K3, E1, E2, E5}",
    "class": "guess",
    "level": -1,
    "type": "Lab",
    "switches": 51,
-   "anomaly_chance": 0.85,
-   "guarantee_copy": 1
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 320,
+   "signature": "{E3, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 1,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 321,
+   "signature": "{L, E3, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 49,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 322,
+   "signature": "{K1, E3, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 11,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 323,
+   "signature": "{L, K1, E3, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 33,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 324,
+   "signature": "{K2, E3, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 14,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 325,
+   "signature": "{L, K2, E3, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 57,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 326,
+   "signature": "{K1, K2, E3, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 43,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 328,
+   "signature": "{K3, E3, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 50,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 329,
+   "signature": "{L, K3, E3, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 49,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 330,
+   "signature": "{K1, K3, E3, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 33,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 332,
+   "signature": "{K2, K3, E3, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 30,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 336,
+   "signature": "{E1, E3, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 44,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 337,
+   "signature": "{L, E1, E3, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 13,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 338,
+   "signature": "{K1, E1, E3, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 45,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 340,
+   "signature": "{K2, E1, E3, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 45,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 344,
+   "signature": "{K3, E1, E3, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 13,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 352,
+   "signature": "{E2, E3, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 3,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 353,
+   "signature": "{L, E2, E3, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 13,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 354,
+   "signature": "{K1, E2, E3, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 3,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 356,
+   "signature": "{K2, E2, E3, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 57,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 360,
+   "signature": "{K3, E2, E3, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 23,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 368,
+   "signature": "{E1, E2, E3, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 26,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 384,
+   "signature": "{E4, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 10,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 385,
+   "signature": "{L, E4, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 41,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 386,
+   "signature": "{K1, E4, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 9,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 387,
+   "signature": "{L, K1, E4, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 15,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 388,
+   "signature": "{K2, E4, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 34,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 389,
+   "signature": "{L, K2, E4, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 35,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 390,
+   "signature": "{K1, K2, E4, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 34,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 392,
+   "signature": "{K3, E4, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 33,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 393,
+   "signature": "{L, K3, E4, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 29,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 394,
+   "signature": "{K1, K3, E4, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 25,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 396,
+   "signature": "{K2, K3, E4, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 33,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 400,
+   "signature": "{E1, E4, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 52,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 401,
+   "signature": "{L, E1, E4, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 57,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 402,
+   "signature": "{K1, E1, E4, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 26,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 404,
+   "signature": "{K2, E1, E4, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 35,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 408,
+   "signature": "{K3, E1, E4, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 51,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 416,
+   "signature": "{E2, E4, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 11,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 417,
+   "signature": "{L, E2, E4, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 50,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 418,
+   "signature": "{K1, E2, E4, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 50,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 420,
+   "signature": "{K2, E2, E4, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 49,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 424,
+   "signature": "{K3, E2, E4, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 58,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 432,
+   "signature": "{E1, E2, E4, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 53,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 448,
+   "signature": "{E3, E4, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 13,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 449,
+   "signature": "{L, E3, E4, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 15,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 450,
+   "signature": "{K1, E3, E4, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 9,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 452,
+   "signature": "{K2, E3, E4, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 57,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 456,
+   "signature": "{K3, E3, E4, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 49,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 464,
+   "signature": "{E1, E3, E4, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 26,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 480,
+   "signature": "{E2, E3, E4, E5}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 57,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 512,
+   "signature": "{E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 4,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 513,
+   "signature": "{L, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 33,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 514,
+   "signature": "{K1, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 6,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 515,
+   "signature": "{L, K1, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 36,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 516,
+   "signature": "{K2, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 5,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 517,
+   "signature": "{L, K2, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 56,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 518,
+   "signature": "{K1, K2, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 38,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 519,
+   "signature": "{L, K1, K2, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 46,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 520,
+   "signature": "{K3, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 48,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 521,
+   "signature": "{L, K3, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 28,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 522,
+   "signature": "{K1, K3, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 9,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 523,
+   "signature": "{L, K1, K3, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 41,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 524,
+   "signature": "{K2, K3, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 50,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 525,
+   "signature": "{L, K2, K3, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 22,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 526,
+   "signature": "{K1, K2, K3, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 25,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 528,
+   "signature": "{E1, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 10,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 529,
+   "signature": "{L, E1, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 33,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 530,
+   "signature": "{K1, E1, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 36,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 531,
+   "signature": "{L, K1, E1, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 49,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 532,
+   "signature": "{K2, E1, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 44,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 533,
+   "signature": "{L, K2, E1, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 7,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 534,
+   "signature": "{K1, K2, E1, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 21,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 536,
+   "signature": "{K3, E1, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 48,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 537,
+   "signature": "{L, K3, E1, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 49,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 538,
+   "signature": "{K1, K3, E1, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 53,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 540,
+   "signature": "{K2, K3, E1, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 37,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 544,
+   "signature": "{E2, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 2,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 545,
+   "signature": "{L, E2, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 12,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 546,
+   "signature": "{K1, E2, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 34,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 547,
+   "signature": "{L, K1, E2, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 19,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 548,
+   "signature": "{K2, E2, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 42,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 549,
+   "signature": "{L, K2, E2, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 43,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 550,
+   "signature": "{K1, K2, E2, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 7,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 552,
+   "signature": "{K3, E2, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 26,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 553,
+   "signature": "{L, K3, E2, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 30,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 554,
+   "signature": "{K1, K3, E2, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 22,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 556,
+   "signature": "{K2, K3, E2, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 30,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 560,
+   "signature": "{E1, E2, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 38,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 561,
+   "signature": "{L, E1, E2, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 28,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 562,
+   "signature": "{K1, E1, E2, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 26,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 564,
+   "signature": "{K2, E1, E2, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 42,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 568,
+   "signature": "{K3, E1, E2, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 56,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 576,
+   "signature": "{E3, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 36,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 577,
+   "signature": "{L, E3, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 33,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 578,
+   "signature": "{K1, E3, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 1,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 579,
+   "signature": "{L, K1, E3, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 33,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 580,
+   "signature": "{K2, E3, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 44,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 581,
+   "signature": "{L, K2, E3, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 57,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 582,
+   "signature": "{K1, K2, E3, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 38,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 584,
+   "signature": "{K3, E3, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 9,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 585,
+   "signature": "{L, K3, E3, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 41,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 586,
+   "signature": "{K1, K3, E3, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 9,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 588,
+   "signature": "{K2, K3, E3, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 54,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 592,
+   "signature": "{E1, E3, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 36,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 593,
+   "signature": "{L, E1, E3, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 7,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 594,
+   "signature": "{K1, E1, E3, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 36,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 596,
+   "signature": "{K2, E1, E3, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 38,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 600,
+   "signature": "{K3, E1, E3, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 23,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 608,
+   "signature": "{E2, E3, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 44,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 609,
+   "signature": "{L, E2, E3, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 51,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 610,
+   "signature": "{K1, E2, E3, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 30,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 612,
+   "signature": "{K2, E2, E3, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 50,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 616,
+   "signature": "{K3, E2, E3, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 35,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 624,
+   "signature": "{E1, E2, E3, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 26,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 640,
+   "signature": "{E4, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 9,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 641,
+   "signature": "{L, E4, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 44,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 642,
+   "signature": "{K1, E4, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 48,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 643,
+   "signature": "{L, K1, E4, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 46,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 644,
+   "signature": "{K2, E4, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 34,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 645,
+   "signature": "{L, K2, E4, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 13,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 646,
+   "signature": "{K1, K2, E4, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 13,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 648,
+   "signature": "{K3, E4, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 6,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 649,
+   "signature": "{L, K3, E4, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 41,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 650,
+   "signature": "{K1, K3, E4, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 22,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 652,
+   "signature": "{K2, K3, E4, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 57,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 656,
+   "signature": "{E1, E4, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 34,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 657,
+   "signature": "{L, E1, E4, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 11,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 658,
+   "signature": "{K1, E1, E4, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 26,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 660,
+   "signature": "{K2, E1, E4, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 29,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 664,
+   "signature": "{K3, E1, E4, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 53,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 672,
+   "signature": "{E2, E4, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 2,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 673,
+   "signature": "{L, E2, E4, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 3,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 674,
+   "signature": "{K1, E2, E4, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 50,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 676,
+   "signature": "{K2, E2, E4, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 34,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 680,
+   "signature": "{K3, E2, E4, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 11,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 688,
+   "signature": "{E1, E2, E4, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 27,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 704,
+   "signature": "{E3, E4, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 44,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 705,
+   "signature": "{L, E3, E4, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 12,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 706,
+   "signature": "{K1, E3, E4, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 49,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 708,
+   "signature": "{K2, E3, E4, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 13,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 712,
+   "signature": "{K3, E3, E4, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 45,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 720,
+   "signature": "{E1, E3, E4, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 38,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 736,
+   "signature": "{E2, E3, E4, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 11,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 768,
+   "signature": "{E5, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 5,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 769,
+   "signature": "{L, E5, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 48,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 770,
+   "signature": "{K1, E5, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 18,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 771,
+   "signature": "{L, K1, E5, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 36,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 772,
+   "signature": "{K2, E5, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 40,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 773,
+   "signature": "{L, K2, E5, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 56,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 774,
+   "signature": "{K1, K2, E5, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 50,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 776,
+   "signature": "{K3, E5, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 5,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 777,
+   "signature": "{L, K3, E5, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 49,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 778,
+   "signature": "{K1, K3, E5, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 22,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 780,
+   "signature": "{K2, K3, E5, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 25,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 784,
+   "signature": "{E1, E5, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 41,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 785,
+   "signature": "{L, E1, E5, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 37,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 786,
+   "signature": "{K1, E1, E5, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 44,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 788,
+   "signature": "{K2, E1, E5, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 41,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 792,
+   "signature": "{K3, E1, E5, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 57,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 800,
+   "signature": "{E2, E5, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 21,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 801,
+   "signature": "{L, E2, E5, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 50,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 802,
+   "signature": "{K1, E2, E5, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 11,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 804,
+   "signature": "{K2, E2, E5, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 42,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 808,
+   "signature": "{K3, E2, E5, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 27,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 816,
+   "signature": "{E1, E2, E5, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 45,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 832,
+   "signature": "{E3, E5, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 13,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 833,
+   "signature": "{L, E3, E5, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 33,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 834,
+   "signature": "{K1, E3, E5, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 1,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 836,
+   "signature": "{K2, E3, E5, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 13,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 840,
+   "signature": "{K3, E3, E5, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 54,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 848,
+   "signature": "{E1, E3, E5, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 17,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 864,
+   "signature": "{E2, E3, E5, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 3,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 896,
+   "signature": "{E4, E5, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 9,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 897,
+   "signature": "{L, E4, E5, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 48,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 898,
+   "signature": "{K1, E4, E5, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 38,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 900,
+   "signature": "{K2, E4, E5, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 42,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 904,
+   "signature": "{K3, E4, E5, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 49,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 912,
+   "signature": "{E1, E4, E5, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 37,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 928,
+   "signature": "{E2, E4, E5, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 50,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 960,
+   "signature": "{E3, E4, E5, E6}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 45,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 1024,
+   "signature": "{E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 1,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 1025,
+   "signature": "{L, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 20,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 1026,
+   "signature": "{K1, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 1,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 1027,
+   "signature": "{L, K1, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 13,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 1028,
+   "signature": "{K2, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 32,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 1029,
+   "signature": "{L, K2, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 40,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 1030,
+   "signature": "{K1, K2, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 48,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 1031,
+   "signature": "{L, K1, K2, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 60,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 1032,
+   "signature": "{K3, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 24,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 1033,
+   "signature": "{L, K3, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 21,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 1034,
+   "signature": "{K1, K3, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 11,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 1035,
+   "signature": "{L, K1, K3, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 29,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 1036,
+   "signature": "{K2, K3, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 26,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 1037,
+   "signature": "{L, K2, K3, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 22,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 1038,
+   "signature": "{K1, K2, K3, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 45,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 1040,
+   "signature": "{E1, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 36,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 1041,
+   "signature": "{L, E1, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 20,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 1042,
+   "signature": "{K1, E1, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 56,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 1043,
+   "signature": "{L, K1, E1, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 57,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 1044,
+   "signature": "{K2, E1, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 12,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 1045,
+   "signature": "{L, K2, E1, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 7,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 1046,
+   "signature": "{K1, K2, E1, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 56,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 1048,
+   "signature": "{K3, E1, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 25,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 1049,
+   "signature": "{L, K3, E1, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 45,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 1050,
+   "signature": "{K1, K3, E1, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 60,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 1052,
+   "signature": "{K2, K3, E1, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 19,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 1056,
+   "signature": "{E2, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 3,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 1057,
+   "signature": "{L, E2, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 6,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 1058,
+   "signature": "{K1, E2, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 26,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 1059,
+   "signature": "{L, K1, E2, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 46,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 1060,
+   "signature": "{K2, E2, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 7,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 1061,
+   "signature": "{L, K2, E2, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 7,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 1062,
+   "signature": "{K1, K2, E2, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 58,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 1064,
+   "signature": "{K3, E2, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 25,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 1065,
+   "signature": "{L, K3, E2, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 43,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 1066,
+   "signature": "{K1, K3, E2, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 39,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 1068,
+   "signature": "{K2, K3, E2, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 26,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 1072,
+   "signature": "{E1, E2, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 28,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 1073,
+   "signature": "{L, E1, E2, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 43,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 1074,
+   "signature": "{K1, E1, E2, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 44,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 1076,
+   "signature": "{K2, E1, E2, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 60,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 1080,
+   "signature": "{K3, E1, E2, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 27,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 1088,
+   "signature": "{E3, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 8,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 1089,
+   "signature": "{L, E3, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 6,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 1090,
+   "signature": "{K1, E3, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 12,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 1091,
+   "signature": "{L, K1, E3, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 10,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 1092,
+   "signature": "{K2, E3, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 14,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 1093,
+   "signature": "{L, K2, E3, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 29,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 1094,
+   "signature": "{K1, K2, E3, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 13,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 1096,
+   "signature": "{K3, E3, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 18,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 1097,
+   "signature": "{L, K3, E3, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 22,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 1098,
+   "signature": "{K1, K3, E3, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 50,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 1100,
+   "signature": "{K2, K3, E3, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 52,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 1104,
+   "signature": "{E1, E3, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 44,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 1105,
+   "signature": "{L, E1, E3, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 7,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 1106,
+   "signature": "{K1, E1, E3, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 17,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 1108,
+   "signature": "{K2, E1, E3, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 44,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 1112,
+   "signature": "{K3, E1, E3, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 5,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 1120,
+   "signature": "{E2, E3, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 10,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 1121,
+   "signature": "{L, E2, E3, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 6,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 1122,
+   "signature": "{K1, E2, E3, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 12,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 1124,
+   "signature": "{K2, E2, E3, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 50,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 1128,
+   "signature": "{K3, E2, E3, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 11,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 1136,
+   "signature": "{E1, E2, E3, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 19,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 1152,
+   "signature": "{E4, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 34,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 1153,
+   "signature": "{L, E4, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 11,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 1154,
+   "signature": "{K1, E4, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 42,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 1155,
+   "signature": "{L, K1, E4, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 42,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 1156,
+   "signature": "{K2, E4, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 28,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 1157,
+   "signature": "{L, K2, E4, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 6,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 1158,
+   "signature": "{K1, K2, E4, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 14,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 1160,
+   "signature": "{K3, E4, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 41,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 1161,
+   "signature": "{L, K3, E4, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 27,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 1162,
+   "signature": "{K1, K3, E4, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 43,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 1164,
+   "signature": "{K2, K3, E4, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 38,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 1168,
+   "signature": "{E1, E4, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 42,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 1169,
+   "signature": "{L, E1, E4, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 44,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 1170,
+   "signature": "{K1, E1, E4, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 35,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 1172,
+   "signature": "{K2, E1, E4, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 42,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 1176,
+   "signature": "{K3, E1, E4, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 60,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 1184,
+   "signature": "{E2, E4, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 56,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 1185,
+   "signature": "{L, E2, E4, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 35,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 1186,
+   "signature": "{K1, E2, E4, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 14,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 1188,
+   "signature": "{K2, E2, E4, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 15,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 1192,
+   "signature": "{K3, E2, E4, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 57,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 1200,
+   "signature": "{E1, E2, E4, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 42,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 1216,
+   "signature": "{E3, E4, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 21,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 1217,
+   "signature": "{L, E3, E4, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 15,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 1218,
+   "signature": "{K1, E3, E4, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 50,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 1220,
+   "signature": "{K2, E3, E4, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 14,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 1224,
+   "signature": "{K3, E3, E4, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 54,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 1232,
+   "signature": "{E1, E3, E4, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 44,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 1248,
+   "signature": "{E2, E3, E4, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 23,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 1280,
+   "signature": "{E5, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 34,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 1281,
+   "signature": "{L, E5, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 38,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 1282,
+   "signature": "{K1, E5, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 12,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 1283,
+   "signature": "{L, K1, E5, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 11,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 1284,
+   "signature": "{K2, E5, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 5,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 1285,
+   "signature": "{L, K2, E5, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 41,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 1286,
+   "signature": "{K1, K2, E5, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 43,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 1288,
+   "signature": "{K3, E5, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 21,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 1289,
+   "signature": "{L, K3, E5, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 54,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 1290,
+   "signature": "{K1, K3, E5, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 37,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 1292,
+   "signature": "{K2, K3, E5, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 13,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 1296,
+   "signature": "{E1, E5, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 13,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 1297,
+   "signature": "{L, E1, E5, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 41,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 1298,
+   "signature": "{K1, E1, E5, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 36,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 1300,
+   "signature": "{K2, E1, E5, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 21,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 1304,
+   "signature": "{K3, E1, E5, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 13,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 1312,
+   "signature": "{E2, E5, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 42,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 1313,
+   "signature": "{L, E2, E5, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 54,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 1314,
+   "signature": "{K1, E2, E5, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 15,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 1316,
+   "signature": "{K2, E2, E5, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 34,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 1320,
+   "signature": "{K3, E2, E5, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 58,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 1328,
+   "signature": "{E1, E2, E5, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 43,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 1344,
+   "signature": "{E3, E5, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 50,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 1345,
+   "signature": "{L, E3, E5, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 5,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 1346,
+   "signature": "{K1, E3, E5, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 13,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 1348,
+   "signature": "{K2, E3, E5, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 5,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 1352,
+   "signature": "{K3, E3, E5, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 9,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 1360,
+   "signature": "{E1, E3, E5, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 35,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 1376,
+   "signature": "{E2, E3, E5, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 39,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 1408,
+   "signature": "{E4, E5, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 34,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 1409,
+   "signature": "{L, E4, E5, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 41,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 1410,
+   "signature": "{K1, E4, E5, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 9,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 1412,
+   "signature": "{K2, E4, E5, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 10,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 1416,
+   "signature": "{K3, E4, E5, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 26,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 1424,
+   "signature": "{E1, E4, E5, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 45,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 1440,
+   "signature": "{E2, E4, E5, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 57,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 1472,
+   "signature": "{E3, E4, E5, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 9,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 1536,
+   "signature": "{E6, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 12,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 1537,
+   "signature": "{L, E6, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 35,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 1538,
+   "signature": "{K1, E6, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 1,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 1539,
+   "signature": "{L, K1, E6, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 51,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 1540,
+   "signature": "{K2, E6, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 6,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 1541,
+   "signature": "{L, K2, E6, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 37,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 1542,
+   "signature": "{K1, K2, E6, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 5,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 1544,
+   "signature": "{K3, E6, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 37,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 1545,
+   "signature": "{L, K3, E6, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 41,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 1546,
+   "signature": "{K1, K3, E6, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 15,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 1548,
+   "signature": "{K2, K3, E6, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 13,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 1552,
+   "signature": "{E1, E6, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 12,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 1553,
+   "signature": "{L, E1, E6, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 43,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 1554,
+   "signature": "{K1, E1, E6, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 36,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 1556,
+   "signature": "{K2, E1, E6, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 42,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 1560,
+   "signature": "{K3, E1, E6, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 25,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 1568,
+   "signature": "{E2, E6, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 3,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 1569,
+   "signature": "{L, E2, E6, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 41,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 1570,
+   "signature": "{K1, E2, E6, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 46,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 1572,
+   "signature": "{K2, E2, E6, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 46,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 1576,
+   "signature": "{K3, E2, E6, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 38,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 1584,
+   "signature": "{E1, E2, E6, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 40,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 1600,
+   "signature": "{E3, E6, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 1,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 1601,
+   "signature": "{L, E3, E6, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 12,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 1602,
+   "signature": "{K1, E3, E6, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 50,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 1604,
+   "signature": "{K2, E3, E6, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 13,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 1608,
+   "signature": "{K3, E3, E6, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 22,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 1616,
+   "signature": "{E1, E3, E6, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 44,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 1632,
+   "signature": "{E2, E3, E6, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 14,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 1664,
+   "signature": "{E4, E6, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 42,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 1665,
+   "signature": "{L, E4, E6, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 43,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 1666,
+   "signature": "{K1, E4, E6, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 50,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 1668,
+   "signature": "{K2, E4, E6, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 13,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 1672,
+   "signature": "{K3, E4, E6, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 22,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 1680,
+   "signature": "{E1, E4, E6, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 25,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 1696,
+   "signature": "{E2, E4, E6, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 60,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 1728,
+   "signature": "{E3, E4, E6, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 53,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 1792,
+   "signature": "{E5, E6, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 13,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 1793,
+   "signature": "{L, E5, E6, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 35,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 1794,
+   "signature": "{K1, E5, E6, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 50,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 1796,
+   "signature": "{K2, E5, E6, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 42,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 1800,
+   "signature": "{K3, E5, E6, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 38,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 1808,
+   "signature": "{E1, E5, E6, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 42,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 1824,
+   "signature": "{E2, E5, E6, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 34,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 1856,
+   "signature": "{E3, E5, E6, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 37,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 1920,
+   "signature": "{E4, E5, E6, E7}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 9,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 2048,
+   "signature": "{E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 32,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 2049,
+   "signature": "{L, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 9,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 2050,
+   "signature": "{K1, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 40,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 2051,
+   "signature": "{L, K1, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 37,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 2052,
+   "signature": "{K2, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 48,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 2053,
+   "signature": "{L, K2, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 24,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 2054,
+   "signature": "{K1, K2, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 40,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 2055,
+   "signature": "{L, K1, K2, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 39,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 2056,
+   "signature": "{K3, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 17,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 2057,
+   "signature": "{L, K3, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 44,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 2058,
+   "signature": "{K1, K3, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 41,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 2059,
+   "signature": "{L, K1, K3, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 53,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 2060,
+   "signature": "{K2, K3, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 44,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 2061,
+   "signature": "{L, K2, K3, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 45,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 2062,
+   "signature": "{K1, K2, K3, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 60,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 2064,
+   "signature": "{E1, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 1,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 2065,
+   "signature": "{L, E1, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 33,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 2066,
+   "signature": "{K1, E1, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 21,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 2067,
+   "signature": "{L, K1, E1, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 25,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 2068,
+   "signature": "{K2, E1, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 52,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 2069,
+   "signature": "{L, K2, E1, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 28,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 2070,
+   "signature": "{K1, K2, E1, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 38,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 2072,
+   "signature": "{K3, E1, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 52,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 2073,
+   "signature": "{L, K3, E1, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 13,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 2074,
+   "signature": "{K1, K3, E1, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 45,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 2076,
+   "signature": "{K2, K3, E1, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 19,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 2080,
+   "signature": "{E2, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 9,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 2081,
+   "signature": "{L, E2, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 38,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 2082,
+   "signature": "{K1, E2, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 18,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 2083,
+   "signature": "{L, K1, E2, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 45,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 2084,
+   "signature": "{K2, E2, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 11,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 2085,
+   "signature": "{L, K2, E2, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 38,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 2086,
+   "signature": "{K1, K2, E2, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 50,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 2088,
+   "signature": "{K3, E2, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 25,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 2089,
+   "signature": "{L, K3, E2, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 15,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 2090,
+   "signature": "{K1, K3, E2, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 60,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 2092,
+   "signature": "{K2, K3, E2, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 27,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 2096,
+   "signature": "{E1, E2, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 9,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 2097,
+   "signature": "{L, E1, E2, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 13,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 2098,
+   "signature": "{K1, E1, E2, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 26,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 2100,
+   "signature": "{K2, E1, E2, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 39,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 2104,
+   "signature": "{K3, E1, E2, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 14,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 2112,
+   "signature": "{E3, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 5,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 2113,
+   "signature": "{L, E3, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 37,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 2114,
+   "signature": "{K1, E3, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 26,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 2115,
+   "signature": "{L, K1, E3, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 57,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 2116,
+   "signature": "{K2, E3, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 3,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 2117,
+   "signature": "{L, K2, E3, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 7,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 2118,
+   "signature": "{K1, K2, E3, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 13,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 2120,
+   "signature": "{K3, E3, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 28,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 2121,
+   "signature": "{L, K3, E3, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 20,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 2122,
+   "signature": "{K1, K3, E3, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 41,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 2124,
+   "signature": "{K2, K3, E3, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 60,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 2128,
+   "signature": "{E1, E3, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 28,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 2129,
+   "signature": "{L, E1, E3, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 29,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 2130,
+   "signature": "{K1, E1, E3, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 24,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 2132,
+   "signature": "{K2, E1, E3, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 37,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 2136,
+   "signature": "{K3, E1, E3, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 28,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 2144,
+   "signature": "{E2, E3, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 26,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 2145,
+   "signature": "{L, E2, E3, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 45,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 2146,
+   "signature": "{K1, E2, E3, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 26,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 2148,
+   "signature": "{K2, E2, E3, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 58,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 2152,
+   "signature": "{K3, E2, E3, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 30,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 2160,
+   "signature": "{E1, E2, E3, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 44,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 2176,
+   "signature": "{E4, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 12,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 2177,
+   "signature": "{L, E4, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 11,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 2178,
+   "signature": "{K1, E4, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 38,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 2179,
+   "signature": "{L, K1, E4, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 56,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 2180,
+   "signature": "{K2, E4, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 48,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 2181,
+   "signature": "{L, K2, E4, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 43,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 2182,
+   "signature": "{K1, K2, E4, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 58,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 2184,
+   "signature": "{K3, E4, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 49,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 2185,
+   "signature": "{L, K3, E4, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 44,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 2186,
+   "signature": "{K1, K3, E4, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 28,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 2188,
+   "signature": "{K2, K3, E4, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 29,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 2192,
+   "signature": "{E1, E4, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 34,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 2193,
+   "signature": "{L, E1, E4, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 28,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 2194,
+   "signature": "{K1, E1, E4, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 29,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 2196,
+   "signature": "{K2, E1, E4, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 52,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 2200,
+   "signature": "{K3, E1, E4, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 60,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 2208,
+   "signature": "{E2, E4, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 14,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 2209,
+   "signature": "{L, E2, E4, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 14,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 2210,
+   "signature": "{K1, E2, E4, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 14,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 2212,
+   "signature": "{K2, E2, E4, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 42,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 2216,
+   "signature": "{K3, E2, E4, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 49,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 2224,
+   "signature": "{E1, E2, E4, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 42,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 2240,
+   "signature": "{E3, E4, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 12,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 2241,
+   "signature": "{L, E3, E4, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 7,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 2242,
+   "signature": "{K1, E3, E4, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 38,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 2244,
+   "signature": "{K2, E3, E4, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 13,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 2248,
+   "signature": "{K3, E3, E4, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 54,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 2256,
+   "signature": "{E1, E3, E4, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 26,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 2272,
+   "signature": "{E2, E3, E4, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 14,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 2304,
+   "signature": "{E5, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 40,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 2305,
+   "signature": "{L, E5, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 37,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 2306,
+   "signature": "{K1, E5, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 26,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 2307,
+   "signature": "{L, K1, E5, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 45,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 2308,
+   "signature": "{K2, E5, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 49,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 2309,
+   "signature": "{L, K2, E5, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 43,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 2310,
+   "signature": "{K1, K2, E5, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 5,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 2312,
+   "signature": "{K3, E5, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 41,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 2313,
+   "signature": "{L, K3, E5, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 57,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 2314,
+   "signature": "{K1, K3, E5, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 30,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 2316,
+   "signature": "{K2, K3, E5, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 13,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 2320,
+   "signature": "{E1, E5, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 21,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 2321,
+   "signature": "{L, E1, E5, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 11,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 2322,
+   "signature": "{K1, E1, E5, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 21,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 2324,
+   "signature": "{K2, E1, E5, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 35,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 2328,
+   "signature": "{K3, E1, E5, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 49,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 2336,
+   "signature": "{E2, E5, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 7,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 2337,
+   "signature": "{L, E2, E5, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 7,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 2338,
+   "signature": "{K1, E2, E5, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 41,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 2340,
+   "signature": "{K2, E2, E5, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 42,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 2344,
+   "signature": "{K3, E2, E5, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 15,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 2352,
+   "signature": "{E1, E2, E5, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 21,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 2368,
+   "signature": "{E3, E5, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 44,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 2369,
+   "signature": "{L, E3, E5, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 57,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 2370,
+   "signature": "{K1, E3, E5, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 44,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 2372,
+   "signature": "{K2, E3, E5, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 35,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 2376,
+   "signature": "{K3, E3, E5, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 25,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 2384,
+   "signature": "{E1, E3, E5, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 29,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 2400,
+   "signature": "{E2, E3, E5, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 43,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 2432,
+   "signature": "{E4, E5, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 42,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 2433,
+   "signature": "{L, E4, E5, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 43,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 2434,
+   "signature": "{K1, E4, E5, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 13,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 2436,
+   "signature": "{K2, E4, E5, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 42,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 2440,
+   "signature": "{K3, E4, E5, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 14,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 2448,
+   "signature": "{E1, E4, E5, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 35,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 2464,
+   "signature": "{E2, E4, E5, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 15,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 2496,
+   "signature": "{E3, E4, E5, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 57,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 2560,
+   "signature": "{E6, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 20,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 2561,
+   "signature": "{L, E6, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 5,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 2562,
+   "signature": "{K1, E6, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 37,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 2563,
+   "signature": "{L, K1, E6, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 37,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 2564,
+   "signature": "{K2, E6, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 34,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 2565,
+   "signature": "{L, K2, E6, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 56,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 2566,
+   "signature": "{K1, K2, E6, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 5,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 2568,
+   "signature": "{K3, E6, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 14,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 2569,
+   "signature": "{L, K3, E6, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 21,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 2570,
+   "signature": "{K1, K3, E6, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 23,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 2572,
+   "signature": "{K2, K3, E6, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 23,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 2576,
+   "signature": "{E1, E6, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 32,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 2577,
+   "signature": "{L, E1, E6, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 53,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 2578,
+   "signature": "{K1, E1, E6, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 37,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 2580,
+   "signature": "{K2, E1, E6, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 42,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 2584,
+   "signature": "{K3, E1, E6, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 21,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 2592,
+   "signature": "{E2, E6, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 40,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 2593,
+   "signature": "{L, E2, E6, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 39,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 2594,
+   "signature": "{K1, E2, E6, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 44,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 2596,
+   "signature": "{K2, E2, E6, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 42,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 2600,
+   "signature": "{K3, E2, E6, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 43,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 2608,
+   "signature": "{E1, E2, E6, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 10,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 2624,
+   "signature": "{E3, E6, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 5,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 2625,
+   "signature": "{L, E3, E6, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 7,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 2626,
+   "signature": "{K1, E3, E6, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 5,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 2628,
+   "signature": "{K2, E3, E6, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 7,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 2632,
+   "signature": "{K3, E3, E6, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 23,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 2640,
+   "signature": "{E1, E3, E6, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 45,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 2656,
+   "signature": "{E2, E3, E6, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 14,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 2688,
+   "signature": "{E4, E6, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 13,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 2689,
+   "signature": "{L, E4, E6, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 35,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 2690,
+   "signature": "{K1, E4, E6, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 26,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 2692,
+   "signature": "{K2, E4, E6, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 42,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 2696,
+   "signature": "{K3, E4, E6, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 13,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 2704,
+   "signature": "{E1, E4, E6, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 44,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 2720,
+   "signature": "{E2, E4, E6, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 42,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 2752,
+   "signature": "{E3, E4, E6, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 57,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 2816,
+   "signature": "{E5, E6, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 13,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 2817,
+   "signature": "{L, E5, E6, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 13,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 2818,
+   "signature": "{K1, E5, E6, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 13,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 2820,
+   "signature": "{K2, E5, E6, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 40,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 2824,
+   "signature": "{K3, E5, E6, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 21,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 2832,
+   "signature": "{E1, E5, E6, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 21,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 2848,
+   "signature": "{E2, E5, E6, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 15,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 2880,
+   "signature": "{E3, E5, E6, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 26,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 2944,
+   "signature": "{E4, E5, E6, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 10,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 3072,
+   "signature": "{E7, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 40,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 3073,
+   "signature": "{L, E7, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 37,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 3074,
+   "signature": "{K1, E7, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 12,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 3075,
+   "signature": "{L, K1, E7, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 12,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 3076,
+   "signature": "{K2, E7, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 3,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 3077,
+   "signature": "{L, K2, E7, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 56,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 3078,
+   "signature": "{K1, K2, E7, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 44,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 3080,
+   "signature": "{K3, E7, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 13,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 3081,
+   "signature": "{L, K3, E7, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 20,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 3082,
+   "signature": "{K1, K3, E7, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 28,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 3084,
+   "signature": "{K2, K3, E7, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 58,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 3088,
+   "signature": "{E1, E7, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 28,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 3089,
+   "signature": "{L, E1, E7, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 7,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 3090,
+   "signature": "{K1, E1, E7, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 21,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 3092,
+   "signature": "{K2, E1, E7, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 3,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 3096,
+   "signature": "{K3, E1, E7, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 29,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 3104,
+   "signature": "{E2, E7, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 11,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 3105,
+   "signature": "{L, E2, E7, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 41,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 3106,
+   "signature": "{K1, E2, E7, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 14,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 3108,
+   "signature": "{K2, E2, E7, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 56,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 3112,
+   "signature": "{K3, E2, E7, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 27,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 3120,
+   "signature": "{E1, E2, E7, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 40,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 3136,
+   "signature": "{E3, E7, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 56,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 3137,
+   "signature": "{L, E3, E7, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 7,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 3138,
+   "signature": "{K1, E3, E7, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 35,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 3140,
+   "signature": "{K2, E3, E7, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 13,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 3144,
+   "signature": "{K3, E3, E7, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 13,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 3152,
+   "signature": "{E1, E3, E7, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 44,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 3168,
+   "signature": "{E2, E3, E7, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 58,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 3200,
+   "signature": "{E4, E7, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 28,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 3201,
+   "signature": "{L, E4, E7, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 28,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 3202,
+   "signature": "{K1, E4, E7, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 35,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 3204,
+   "signature": "{K2, E4, E7, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 56,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 3208,
+   "signature": "{K3, E4, E7, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 46,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 3216,
+   "signature": "{E1, E4, E7, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 42,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 3232,
+   "signature": "{E2, E4, E7, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 14,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 3264,
+   "signature": "{E3, E4, E7, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 58,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 3328,
+   "signature": "{E5, E7, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 44,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 3329,
+   "signature": "{L, E5, E7, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 25,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 3330,
+   "signature": "{K1, E5, E7, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 5,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 3332,
+   "signature": "{K2, E5, E7, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 44,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 3336,
+   "signature": "{K3, E5, E7, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 56,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 3344,
+   "signature": "{E1, E5, E7, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 29,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 3360,
+   "signature": "{E2, E5, E7, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 7,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 3392,
+   "signature": "{E3, E5, E7, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 25,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 3456,
+   "signature": "{E4, E5, E7, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 35,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 3584,
+   "signature": "{E6, E7, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 40,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 3585,
+   "signature": "{L, E6, E7, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 28,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 3586,
+   "signature": "{K1, E6, E7, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Medbay",
+   "switches": 5,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 3588,
+   "signature": "{K2, E6, E7, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 42,
+   "anomaly": "Radiation"
+  },
+  {
+   "key": 3592,
+   "signature": "{K3, E6, E7, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Computer",
+   "switches": 45,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 3600,
+   "signature": "{E1, E6, E7, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 7,
+   "anomaly": "FrozenMoment"
+  },
+  {
+   "key": 3616,
+   "signature": "{E2, E6, E7, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 14,
+   "anomaly": "GravityFailure"
+  },
+  {
+   "key": 3648,
+   "signature": "{E3, E6, E7, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Mess",
+   "switches": 28,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 3712,
+   "signature": "{E4, E6, E7, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "Cargo",
+   "switches": 42,
+   "anomaly": "SlowTime"
+  },
+  {
+   "key": 3840,
+   "signature": "{E5, E6, E7, E8}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 39,
+   "anomaly": "GravityFailure"
   }
  ],
  "rooms": {
-  "{} (empty pocket)": [
-   {
-    "key": 0,
-    "copy": 1,
-    "type": "Living",
-    "switches": 0,
-    "anomaly": "none",
-    "doors": 3,
-    "items": [
-     "Snow Globe",
-     "Circuit Board",
-     "Coolant Valve"
-    ],
-    "notes": [
-     {
-      "kind": "next_key",
-      "items": [
-       "Flashlight",
-       "Snow Globe"
-      ],
-      "tpl": 0,
-      "text": "The flashlight only shows up for someone carrying the snow globe."
-     }
-    ]
-   },
-   {
-    "key": 0,
-    "copy": 2,
-    "type": "Living",
-    "switches": 0,
-    "anomaly": "Radiation",
-    "doors": 2,
-    "items": [
-     "Fuse",
-     "Rubber Duck",
-     "Family Photo"
-    ],
-    "notes": [
-     {
-      "kind": "useless",
-      "items": [
-       "Power Cell"
-      ],
-      "tpl": 2,
-      "text": "Don't waste a slot on the power cell."
-     }
-    ]
-   }
-  ],
-  "{} (notebook only)": [
-   {
-    "key": 64,
-    "copy": 1,
-    "type": "Bridge",
-    "switches": 24,
-    "anomaly": "Radiation",
-    "doors": 3,
-    "items": [
-     "Coolant Valve",
-     "Data Cartridge",
-     "Rubber Duck"
-    ],
-    "notes": [
-     {
-      "kind": "next_key",
-      "items": [
-       "Flashlight",
-       "Snow Globe"
-      ],
-      "tpl": 0,
-      "text": "The flashlight only shows up for someone carrying the snow globe."
-     },
-     {
-      "kind": "danger",
-      "items": [
-       "Coffee Mug"
-      ],
-      "tpl": 2,
-      "text": "Whatever you do, leave the coffee mug behind. The rooms it brings will hurt you."
-     }
-    ]
-   },
-   {
-    "key": 64,
-    "copy": 2,
-    "type": "Bridge",
-    "switches": 24,
-    "anomaly": "none",
-    "doors": 2,
-    "items": [
-     "Coolant Valve",
-     "Rubber Duck"
-    ],
-    "notes": []
-   },
-   {
-    "key": 64,
-    "copy": 3,
-    "type": "Bridge",
-    "switches": 24,
-    "anomaly": "none",
-    "doors": 2,
-    "items": [
-     "Fuse",
-     "Pressure Gauge"
-    ],
-    "notes": [
-     {
-      "kind": "loop_exit",
-      "items": [
-       "Snow Globe"
-      ],
-      "tpl": 0,
-      "text": "Same rooms, over and over. The snow globe is what breaks this loop."
-     }
-    ]
-   },
-   {
-    "key": 64,
-    "copy": 4,
-    "type": "Bridge",
-    "switches": 24,
-    "anomaly": "Radiation",
-    "doors": 3,
-    "items": [
-     "Family Photo",
-     "Coffee Mug",
-     "Coolant Valve"
-    ],
-    "notes": []
-   }
-  ],
-  "{L}": [
-   {
-    "key": 1,
-    "copy": 1,
-    "type": "Living",
-    "switches": 1,
-    "anomaly": "SlowTime",
-    "doors": 2,
-    "items": [
-     "Flashlight",
-     "Data Cartridge",
-     "Coffee Mug"
-    ],
-    "notes": [
-     {
-      "kind": "next_key",
-      "items": [
-       "Gyroscope",
-       "Flashlight"
-      ],
-      "tpl": 2,
-      "text": "Looked everywhere for the gyroscope. It was never there until I picked up the flashlight."
-     },
-     {
-      "kind": "loop_exit",
-      "items": [
-       "Flashlight"
-      ],
-      "tpl": 2,
-      "text": "This loop only lets go of those who carry the flashlight."
-     }
-    ]
-   },
-   {
-    "key": 1,
-    "copy": 2,
-    "type": "Living",
-    "switches": 1,
-    "anomaly": "none",
-    "doors": 3,
-    "items": [
-     "Circuit Board",
-     "Sealant Can"
-    ],
-    "notes": []
-   },
-   {
-    "key": 1,
-    "copy": 3,
-    "type": "Living",
-    "switches": 1,
-    "anomaly": "none",
-    "doors": 2,
-    "items": [
-     "Data Cartridge",
-     "Ration Tin"
-    ],
-    "notes": [
-     {
-      "kind": "loop_exit",
-      "items": [
-       "Flashlight"
-      ],
-      "tpl": 2,
-      "text": "This loop only lets go of those who carry the flashlight."
-     }
-    ]
-   },
-   {
-    "key": 1,
-    "copy": 4,
-    "type": "Living",
-    "switches": 1,
-    "anomaly": "none",
-    "doors": 2,
-    "items": [
-     "Ration Tin",
-     "Power Cell"
-    ],
-    "notes": [
-     {
-      "kind": "useless",
-      "items": [
-       "Sealant Can"
-      ],
-      "tpl": 1,
-      "text": "Carried the sealant can through a dozen doors. Nothing changed. Drop it."
-     }
-    ]
-   }
-  ],
-  "{K1}": [
-   {
-    "key": 2,
-    "copy": 1,
-    "type": "Lab",
-    "switches": 8,
-    "anomaly": "none",
-    "doors": 3,
-    "items": [
-     "Coffee Mug",
-     "Family Photo"
-    ],
-    "notes": [
-     {
-      "kind": "next_key",
-      "items": [
-       "Duct Tape",
-       "Flashlight",
-       "Gyroscope"
-      ],
-      "tpl": 1,
-      "text": "You won't find the duct tape unless you carry the flashlight and the gyroscope. Don't ask me how I know."
-     }
-    ]
-   },
-   {
-    "key": 2,
-    "copy": 2,
-    "type": "Lab",
-    "switches": 8,
-    "anomaly": "none",
-    "doors": 2,
-    "items": [
-     "Cassette Tape",
-     "Pressure Gauge"
-    ],
-    "notes": []
-   },
-   {
-    "key": 2,
-    "copy": 3,
-    "type": "Lab",
-    "switches": 8,
-    "anomaly": "none",
-    "doors": 3,
-    "items": [
-     "Pressure Gauge",
-     "Cassette Tape"
-    ],
-    "notes": [
-     {
-      "kind": "next_key",
-      "items": [
-       "Duct Tape",
-       "Flashlight",
-       "Gyroscope"
-      ],
-      "tpl": 0,
-      "text": "The duct tape only shows up for someone carrying the flashlight and the gyroscope."
-     }
-    ]
-   },
-   {
-    "key": 2,
-    "copy": 4,
-    "type": "Lab",
-    "switches": 8,
-    "anomaly": "SlowTime",
-    "doors": 2,
-    "items": [
-     "Sealant Can",
-     "Fuse"
-    ],
-    "notes": []
-   }
-  ],
-  "{L, K1}": [
-   {
-    "key": 3,
-    "copy": 1,
-    "type": "Lab",
-    "switches": 12,
-    "anomaly": "none",
-    "doors": 3,
-    "items": [
-     "Gyroscope",
-     "Cassette Tape",
-     "Fuse",
-     "Sealant Can"
-    ],
-    "notes": [
-     {
-      "kind": "next_key",
-      "items": [
-       "Duct Tape",
-       "Flashlight",
-       "Gyroscope"
-      ],
-      "tpl": 2,
-      "text": "Looked everywhere for the duct tape. It was never there until I picked up the flashlight and the gyroscope."
-     },
-     {
-      "kind": "loop_exit",
-      "items": [
-       "Gyroscope"
-      ],
-      "tpl": 1,
-      "text": "I walked these rooms for hours before I got it. Carry the gyroscope and the doors let you go."
-     }
-    ]
-   },
-   {
-    "key": 3,
-    "copy": 2,
-    "type": "Lab",
-    "switches": 12,
-    "anomaly": "SlowTime",
-    "doors": 3,
-    "items": [
-     "Data Cartridge",
-     "Pressure Gauge"
-    ],
-    "notes": []
-   },
-   {
-    "key": 3,
-    "copy": 3,
-    "type": "Lab",
-    "switches": 12,
-    "anomaly": "none",
-    "doors": 2,
-    "items": [
-     "Family Photo",
-     "Circuit Board",
-     "Power Cell"
-    ],
-    "notes": [
-     {
-      "kind": "useless",
-      "items": [
-       "Coolant Valve"
-      ],
-      "tpl": 1,
-      "text": "Carried the coolant valve through a dozen doors. Nothing changed. Drop it."
-     }
-    ]
-   },
-   {
-    "key": 3,
-    "copy": 4,
-    "type": "Lab",
-    "switches": 12,
-    "anomaly": "none",
-    "doors": 3,
-    "items": [
-     "Gyroscope",
-     "Data Cartridge",
-     "Ration Tin",
-     "Sealant Can"
-    ],
-    "notes": []
-   }
-  ],
-  "{K1, K2}": [
-   {
-    "key": 6,
-    "copy": 1,
-    "type": "LifeSupport",
-    "switches": 34,
-    "anomaly": "none",
-    "doors": 3,
-    "items": [
-     "Sealant Can",
-     "Cassette Tape"
-    ],
-    "notes": [
-     {
-      "kind": "engine_set",
-      "items": [
-       "Flashlight",
-       "Gyroscope",
-       "Duct Tape",
-       "Snow Globe"
-      ],
-      "tpl": 1,
-      "text": "Engines. The flashlight, the gyroscope, the duct tape. Nothing else but this notebook. Drop the snow globe when the time comes."
-     }
-    ]
-   },
-   {
-    "key": 6,
-    "copy": 2,
-    "type": "LifeSupport",
-    "switches": 34,
-    "anomaly": "none",
-    "doors": 2,
-    "items": [
-     "Duct Tape",
-     "Coffee Mug",
-     "Ration Tin",
-     "Circuit Board"
-    ],
-    "notes": [
-     {
-      "kind": "useless",
-      "items": [
-       "Fuse"
-      ],
-      "tpl": 1,
-      "text": "Carried the fuse through a dozen doors. Nothing changed. Drop it."
-     }
-    ]
-   },
-   {
-    "key": 6,
-    "copy": 3,
-    "type": "LifeSupport",
-    "switches": 34,
-    "anomaly": "none",
-    "doors": 2,
-    "items": [
-     "Duct Tape",
-     "Fuse",
-     "Data Cartridge",
-     "Sealant Can"
-    ],
-    "notes": [
-     {
-      "kind": "engine_set",
-      "items": [
-       "Flashlight",
-       "Gyroscope",
-       "Duct Tape",
-       "Snow Globe"
-      ],
-      "tpl": 0,
-      "text": "The engine room answers to three things: the flashlight, the gyroscope and the duct tape. Keep the notebook. The snow globe has done its job. Let it go."
-     }
-    ]
-   },
-   {
-    "key": 6,
-    "copy": 4,
-    "type": "LifeSupport",
-    "switches": 34,
-    "anomaly": "none",
-    "doors": 3,
-    "items": [
-     "Ration Tin",
-     "Pressure Gauge",
-     "Fuse"
-    ],
-    "notes": [
-     {
-      "kind": "danger",
-      "items": [
-       "Coffee Mug"
-      ],
-      "tpl": 1,
-      "text": "The coffee mug opens the wrong rooms. I learned that the hard way."
-     }
-    ]
-   }
-  ],
-  "{L, K1, K2}": [
-   {
-    "key": 7,
-    "copy": 1,
-    "type": "LifeSupport",
-    "switches": 38,
-    "anomaly": "none",
-    "doors": 3,
-    "items": [
-     "Power Cell",
-     "Pressure Gauge"
-    ],
-    "notes": [
-     {
-      "kind": "engine_set",
-      "items": [
-       "Flashlight",
-       "Gyroscope",
-       "Duct Tape",
-       "Snow Globe"
-      ],
-      "tpl": 1,
-      "text": "Engines. The flashlight, the gyroscope, the duct tape. Nothing else but this notebook. Drop the snow globe when the time comes."
-     }
-    ]
-   },
-   {
-    "key": 7,
-    "copy": 2,
-    "type": "LifeSupport",
-    "switches": 38,
-    "anomaly": "none",
-    "doors": 3,
-    "items": [
-     "Pressure Gauge",
-     "Ration Tin"
-    ],
-    "notes": [
-     {
-      "kind": "useless",
-      "items": [
-       "Cassette Tape"
-      ],
-      "tpl": 2,
-      "text": "Don't waste a slot on the cassette tape."
-     }
-    ]
-   },
-   {
-    "key": 7,
-    "copy": 3,
-    "type": "LifeSupport",
-    "switches": 38,
-    "anomaly": "none",
-    "doors": 2,
-    "items": [
-     "Duct Tape",
-     "Coolant Valve",
-     "Data Cartridge"
-    ],
-    "notes": []
-   },
-   {
-    "key": 7,
-    "copy": 4,
-    "type": "LifeSupport",
-    "switches": 38,
-    "anomaly": "none",
-    "doors": 2,
-    "items": [
-     "Fuse",
-     "Coolant Valve"
-    ],
-    "notes": []
-   }
-  ],
-  "{K1, K2, K3}": [
-   {
-    "key": 14,
-    "copy": 1,
-    "type": "Engine",
-    "switches": 51,
-    "anomaly": "none",
-    "doors": 2,
-    "items": [],
-    "notes": [
-     {
-      "kind": "finale",
-      "items": [],
-      "tpl": 2,
-      "text": "It's fixed. Remember how you got to the bridge, and do it once more."
-     }
-    ]
-   },
-   {
-    "key": 14,
-    "copy": 2,
-    "type": "Engine",
-    "switches": 51,
-    "anomaly": "none",
-    "doors": 2,
-    "items": [],
-    "notes": [
-     {
-      "kind": "finale",
-      "items": [],
-      "tpl": 1,
-      "text": "The engines are humming. Now remember how you got to the bridge."
-     }
-    ]
-   },
-   {
-    "key": 14,
-    "copy": 3,
-    "type": "Engine",
-    "switches": 51,
-    "anomaly": "none",
-    "doors": 2,
-    "items": [],
-    "notes": [
-     {
-      "kind": "finale",
-      "items": [],
-      "tpl": 2,
-      "text": "It's fixed. Remember how you got to the bridge, and do it once more."
-     }
-    ]
-   },
-   {
-    "key": 14,
-    "copy": 4,
-    "type": "Engine",
-    "switches": 51,
-    "anomaly": "none",
-    "doors": 2,
-    "items": [],
-    "notes": [
-     {
-      "kind": "finale",
-      "items": [],
-      "tpl": 1,
-      "text": "The engines are humming. Now remember how you got to the bridge."
-     }
-    ]
-   }
-  ],
-  "{X}": [
-   {
-    "key": 16,
-    "copy": 1,
-    "type": "Lab",
-    "switches": 32,
-    "anomaly": "GravityFailure",
-    "doors": 3,
-    "items": [
-     "Sealant Can",
-     "Rubber Duck",
-     "Family Photo"
-    ],
-    "notes": []
-   },
-   {
-    "key": 16,
-    "copy": 2,
-    "type": "Lab",
-    "switches": 32,
-    "anomaly": "GravityFailure",
-    "doors": 2,
-    "items": [
-     "Fuse",
-     "Pressure Gauge"
-    ],
-    "notes": []
-   }
-  ],
-  "{L, Y}": [
-   {
-    "key": 33,
-    "copy": 1,
-    "type": "LifeSupport",
-    "switches": 12,
-    "anomaly": "FrozenMoment",
-    "doors": 3,
-    "items": [
-     "Coffee Mug",
-     "Coolant Valve",
-     "Ration Tin"
-    ],
-    "notes": []
-   },
-   {
-    "key": 33,
-    "copy": 2,
-    "type": "LifeSupport",
-    "switches": 12,
-    "anomaly": "Radiation",
-    "doors": 2,
-    "items": [
-     "Fuse",
-     "Coolant Valve",
-     "Power Cell"
-    ],
-    "notes": []
-   }
-  ],
-  "{L, K2}": [
-   {
-    "key": 5,
-    "copy": 1,
-    "type": "LifeSupport",
-    "switches": 6,
-    "anomaly": "Radiation",
-    "doors": 2,
-    "items": [
-     "Power Cell",
-     "Sealant Can",
-     "Coolant Valve"
-    ],
-    "notes": []
-   },
-   {
-    "key": 5,
-    "copy": 2,
-    "type": "LifeSupport",
-    "switches": 6,
-    "anomaly": "GravityFailure",
-    "doors": 2,
-    "items": [
-     "Circuit Board",
-     "Data Cartridge",
-     "Family Photo"
-    ],
-    "notes": [
-     {
-      "kind": "danger",
-      "items": [
-       "Coffee Mug"
-      ],
-      "tpl": 1,
-      "text": "The coffee mug opens the wrong rooms. I learned that the hard way."
-     }
-    ]
-   }
-  ],
-  "{L, K1, K2, K3}": [
-   {
-    "key": 15,
-    "copy": 1,
-    "type": "Living",
-    "switches": 23,
-    "anomaly": "Radiation",
-    "doors": 2,
-    "items": [
-     "Coffee Mug",
-     "Family Photo"
-    ],
-    "notes": []
-   },
-   {
-    "key": 15,
-    "copy": 2,
-    "type": "Living",
-    "switches": 23,
-    "anomaly": "Radiation",
-    "doors": 2,
-    "items": [
-     "Data Cartridge",
-     "Coffee Mug",
-     "Family Photo"
-    ],
-    "notes": []
-   }
-  ]
+  "{} (empty pocket)": {
+   "key": 0,
+   "type": "Living",
+   "switches": 0,
+   "anomaly": "none",
+   "items": [
+    "Family Photo",
+    "Pressure Gauge",
+    "Ration Tin",
+    "Dog Tag"
+   ],
+   "notes": [
+    {
+     "kind": "next_key",
+     "items": [
+      "Flashlight",
+      "Snow Globe"
+     ],
+     "tpl": 0,
+     "text": "The flashlight only shows up for someone carrying the snow globe."
+    }
+   ]
+  },
+  "{} (notebook only)": {
+   "key": 4096,
+   "type": "Bridge",
+   "switches": 24,
+   "anomaly": "none",
+   "items": [
+    "Snow Globe",
+    "Pressure Gauge",
+    "Fuse",
+    "Rubber Duck",
+    "Family Photo"
+   ],
+   "notes": [
+    {
+     "kind": "next_key",
+     "items": [
+      "Flashlight",
+      "Snow Globe"
+     ],
+     "tpl": 0,
+     "text": "The flashlight only shows up for someone carrying the snow globe."
+    },
+    {
+     "kind": "useless",
+     "items": [
+      "Fuse"
+     ],
+     "tpl": 1,
+     "text": "Carried the fuse through a dozen doors. Nothing changed. Drop it."
+    }
+   ]
+  },
+  "{L}": {
+   "key": 1,
+   "type": "Living",
+   "switches": 1,
+   "anomaly": "none",
+   "items": [
+    "Flashlight",
+    "Voice Recorder",
+    "Pressure Gauge",
+    "Ration Tin"
+   ],
+   "notes": [
+    {
+     "kind": "next_key",
+     "items": [
+      "Gyroscope",
+      "Flashlight"
+     ],
+     "tpl": 0,
+     "text": "The gyroscope only shows up for someone carrying the flashlight."
+    },
+    {
+     "kind": "useless",
+     "items": [
+      "Family Photo"
+     ],
+     "tpl": 1,
+     "text": "Carried the family photo through a dozen doors. Nothing changed. Drop it."
+    }
+   ]
+  },
+  "{K1}": {
+   "key": 2,
+   "type": "Cargo",
+   "switches": 16,
+   "anomaly": "none",
+   "items": [
+    "Gyroscope",
+    "Ration Tin",
+    "Sealant Can",
+    "Voice Recorder",
+    "Family Photo"
+   ],
+   "notes": [
+    {
+     "kind": "next_key",
+     "items": [
+      "Duct Tape",
+      "Flashlight",
+      "Gyroscope"
+     ],
+     "tpl": 0,
+     "text": "The duct tape only shows up for someone carrying the flashlight and the gyroscope."
+    }
+   ]
+  },
+  "{L, K1}": {
+   "key": 3,
+   "type": "Lab",
+   "switches": 12,
+   "anomaly": "none",
+   "items": [
+    "Gyroscope",
+    "Dog Tag",
+    "Pressure Gauge",
+    "Family Photo"
+   ],
+   "notes": [
+    {
+     "kind": "next_key",
+     "items": [
+      "Duct Tape",
+      "Flashlight",
+      "Gyroscope"
+     ],
+     "tpl": 1,
+     "text": "You won't find the duct tape unless you carry the flashlight and the gyroscope. Don't ask me how I know."
+    }
+   ]
+  },
+  "{K1, K2}": {
+   "key": 6,
+   "type": "Computer",
+   "switches": 40,
+   "anomaly": "none",
+   "items": [
+    "Duct Tape",
+    "Fuse",
+    "Dog Tag",
+    "Circuit Board"
+   ],
+   "notes": [
+    {
+     "kind": "engine_set",
+     "items": [
+      "Flashlight",
+      "Gyroscope",
+      "Duct Tape",
+      "Snow Globe"
+     ],
+     "tpl": 0,
+     "text": "The engine room answers to three things: the flashlight, the gyroscope and the duct tape. Keep the notebook. The snow globe has done its job. Let it go."
+    }
+   ]
+  },
+  "{L, K1, K2}": {
+   "key": 7,
+   "type": "Medbay",
+   "switches": 37,
+   "anomaly": "none",
+   "items": [
+    "Duct Tape",
+    "Voice Recorder",
+    "Coolant Valve",
+    "Rubber Duck"
+   ],
+   "notes": [
+    {
+     "kind": "engine_set",
+     "items": [
+      "Flashlight",
+      "Gyroscope",
+      "Duct Tape",
+      "Snow Globe"
+     ],
+     "tpl": 1,
+     "text": "Engines. The flashlight, the gyroscope, the duct tape. Nothing else but this notebook. Drop the snow globe when the time comes."
+    }
+   ]
+  },
+  "{K1, K2, K3}": {
+   "key": 14,
+   "type": "Engine",
+   "switches": 51,
+   "anomaly": "none",
+   "items": [],
+   "notes": [
+    {
+     "kind": "finale",
+     "items": [],
+     "tpl": 2,
+     "text": "It's fixed. Remember how you got to the bridge, and do it once more."
+    }
+   ]
+  },
+  "{E1}": {
+   "key": 16,
+   "type": "Medbay",
+   "switches": 16,
+   "anomaly": "Radiation",
+   "items": [
+    "Ration Tin",
+    "Data Cartridge",
+    "Coolant Valve",
+    "Pressure Gauge"
+   ],
+   "notes": [
+    {
+     "kind": "danger",
+     "items": [
+      "Rubber Duck",
+      "Dog Tag"
+     ],
+     "tpl": 0,
+     "text": "I carried the rubber duck and the dog tag through a door. The room behind it nearly killed me."
+    }
+   ]
+  },
+  "{L, E2}": {
+   "key": 33,
+   "type": "Mess",
+   "switches": 24,
+   "anomaly": "Radiation",
+   "items": [
+    "Pressure Gauge",
+    "Voice Recorder",
+    "Fuse"
+   ],
+   "notes": [
+    {
+     "kind": "danger",
+     "items": [
+      "Coolant Valve",
+      "Circuit Board"
+     ],
+     "tpl": 2,
+     "text": "Tried the coolant valve together with the circuit board. Bad room. Don't."
+    }
+   ]
+  },
+  "{L, K2}": {
+   "key": 5,
+   "type": "Cargo",
+   "switches": 33,
+   "anomaly": "Radiation",
+   "items": [
+    "Voice Recorder",
+    "Ration Tin",
+    "Circuit Board",
+    "Dog Tag"
+   ],
+   "notes": []
+  },
+  "{L, K1, K2, K3}": {
+   "key": 15,
+   "type": "Lab",
+   "switches": 29,
+   "anomaly": "GravityFailure",
+   "items": [
+    "Data Cartridge",
+    "Circuit Board",
+    "Fuse",
+    "Rubber Duck"
+   ],
+   "notes": []
+  },
+  "{E1, E2}": {
+   "key": 48,
+   "type": "Medbay",
+   "switches": 18,
+   "anomaly": "GravityFailure",
+   "items": [
+    "Voice Recorder",
+    "Family Photo",
+    "Pressure Gauge"
+   ],
+   "notes": []
+  }
  }
 }

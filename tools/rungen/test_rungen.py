@@ -9,7 +9,7 @@ import content as C
 import dump
 import generator as G
 import sim
-from config import DEFAULT, START_5_8
+from config import DEFAULT
 from rng import Rng, hash32, mix32
 
 
@@ -41,7 +41,7 @@ class LayoutTest(unittest.TestCase):
             self.assertEqual(a, b)
 
     def test_validator_many_seeds(self):
-        cfgs = [DEFAULT, START_5_8, replace(DEFAULT, items_in_run=10)]  # 10 — из списка «что режем»
+        cfgs = [DEFAULT, replace(DEFAULT, p_guess=0.85), replace(DEFAULT, items_in_run=10, extras=2)]  # последний — из списка «что режем»
         for cfg in cfgs:
             for s in range(1, 301):
                 self.assertEqual(G.validate_layout(G.RunLayout(s, cfg)), [], f"seed {s} cfg {cfg}")
@@ -52,7 +52,7 @@ class LayoutTest(unittest.TestCase):
         self.assertEqual(lay.look(0), (G.LIVING, 0))            # пустой карман — жилая
         self.assertEqual(lay.look(G.FINAL_MASK)[0], G.ENGINE)
         self.assertEqual(lay.start_room().room_type, G.BRIDGE)
-        for k in G.all_keys():
+        for k in lay.all_keys():
             if k not in (G.ANCHOR, G.FINAL_MASK):
                 self.assertIn(lay.look(k)[0], G.ORDINARY_TYPES)
 
@@ -76,21 +76,20 @@ class LayoutTest(unittest.TestCase):
         self.assertEqual(lay.pocket_key(k + [k[0]]), G.FINAL_MASK)  # без учёта повторов
 
     def test_roles_cover_catalog(self):
-        seen = {r: set() for r in range(7)}
+        seen = {r: set() for r in list(range(G.NUM_CHAIN + DEFAULT.extras)) + [G.DUMMY]}
         for s in range(1, 401):
             lay = G.RunLayout(s)
             for it in lay.run_items:
                 seen[lay.role_of(it)].add(it)
         for r, items in seen.items():
-            self.assertEqual(len(items), len(C.CATALOG), f"role {G.ROLE_NAMES[r]}")
+            self.assertEqual(len(items), len(C.CATALOG), f"role {G.role_name(r)}")
 
     def test_notes_render(self):
         for s in range(1, 101):
             lay = G.RunLayout(s)
             texts = [lay.first_note.text()]
-            for k in G.all_keys():
-                for c in (1, 2, 3):
-                    texts += [n.text() for n in lay.room_copy(k, c).notes]
+            for k in lay.all_keys():
+                texts += [n.text() for n in lay.room(k).notes]
             for t in texts:
                 self.assertNotIn("{", t)
                 self.assertTrue(t.isascii(), t)
@@ -98,31 +97,32 @@ class LayoutTest(unittest.TestCase):
     def test_validator_catches_broken_layouts(self):
         """Валидатор должен ловить порчу, иначе его «0 ошибок» ничего не значит."""
         lay = G.RunLayout(11)
-        orig = lay.room_copy
+        orig = lay.room
 
-        def k2_too_early(key, copy):  # K2 в комнате без K1
-            rc = orig(key, copy)
-            if key == G.RM_L and copy == 2:
-                return replace(rc, items=rc.items + (lay.role_item[G.K2],))
-            return rc
-        lay.room_copy = k2_too_early
-        self.assertTrue(any("without prerequisites" in e for e in G.validate_layout(lay)))
+        def k2_too_early(key):  # K2 в комнате набора {L}, где должен лежать только K1
+            rc = orig(key)
+            return replace(rc, items=rc.items + (lay.role_item[G.K2],)) if key == G.RM_L else rc
+        lay.room = k2_too_early
+        self.assertTrue(any("lies in a wrong room" in e for e in G.validate_layout(lay)))
 
-        def lying_note(key, copy):  # пустышку назвали опасной
-            rc = orig(key, copy)
-            if key == G.ANCHOR and copy == 3:
-                return replace(rc, notes=rc.notes + (G.Note(G.N_DANGER, (lay.dummies[0],), 0),))
-            return rc
-        lay.room_copy = lying_note
+        def lying_note(key):  # пустышку назвали половиной опасной пары
+            rc = orig(key)
+            note = G.Note(G.N_DANGER, (lay.dummies[0], lay.role_item[G.L]), 0)
+            return replace(rc, notes=rc.notes + (note,)) if key == G.ANCHOR else rc
+        lay.room = lying_note
         self.assertTrue(any("false note" in e for e in G.validate_layout(lay)))
 
-        def no_ahead_note(key, copy):  # первая копия без записки на шаг вперёд
-            rc = orig(key, copy)
-            if key == G.RM_L and copy == 1:
-                return replace(rc, notes=())
-            return rc
-        lay.room_copy = no_ahead_note
+        def no_ahead_note(key):  # комната правильного пути без записки на шаг вперёд
+            rc = orig(key)
+            return replace(rc, notes=()) if key == G.RM_L else rc
+        lay.room = no_ahead_note
         self.assertTrue(any("next-link note" in e for e in G.validate_layout(lay)))
+
+        def no_leader(key):  # в рубке нет проводника
+            rc = orig(key)
+            return replace(rc, items=tuple(i for i in rc.items if i != lay.role_item[G.L])) if key == G.ANCHOR else rc
+        lay.room = no_leader
+        self.assertTrue(any("right-path item is missing" in e for e in G.validate_layout(lay)))
 
         lay2 = G.RunLayout(12)
         orig_look = lay2.look
@@ -136,7 +136,7 @@ class LayoutTest(unittest.TestCase):
 
 class SimTest(unittest.TestCase):
     def test_notes_player_always_finishes(self):
-        for cfg in (DEFAULT, replace(DEFAULT, items_in_run=10)):
+        for cfg in (DEFAULT, replace(DEFAULT, items_in_run=10, extras=2)):
             for s in range(1, 501):
                 r = sim.NotesPlayer(G.RunLayout(s, cfg), health=10 ** 9).run()
                 self.assertEqual(r.status, "win", f"seed {s}")
@@ -156,18 +156,68 @@ class SimTest(unittest.TestCase):
             self.assertEqual(p.room.look[0], G.BRIDGE)
             self.assertTrue(p.engine_fixed)
 
+    def test_anomaly_depends_on_set(self):
+        """Аномалия — свойство набора (решение автора 13.11): один набор — одна аномалия во всех копиях;
+        на правильном пути аномалий нет; у неправильных наборов она есть примерно в p_guess случаев."""
+        with_anomaly = total = 0
+        for s in range(1, 201):
+            layout = G.RunLayout(s)
+            for key in layout.all_keys():
+                a = layout.anomaly_of(key)
+                self.assertEqual(layout.room(key).anomaly, a)
+                if G.room_class(key) == G.CLS_GUESS:
+                    total += 1
+                    with_anomaly += a != G.NO_ANOMALY
+                else:
+                    self.assertEqual(a, G.NO_ANOMALY)
+        self.assertAlmostEqual(with_anomaly / total, DEFAULT.p_guess, delta=0.02)
+
+    def test_room_depends_only_on_set(self):
+        """Решение автора 13.11: неважно, какую дверь раскрыть, важно, что в руках. Сколько бы дверей
+        ни раскрыли с одним набором, за ними та же комната с теми же вещами, и взятое не возвращается."""
+        for s in range(1, 51):
+            p = sim.Sim(G.RunLayout(s))
+            p.enter(0)
+            start_items = list(p.room.items)
+            p.pick(G.NOTEBOOK)
+            seen = []
+            for _ in range(3):                      # три двери подряд с одним блокнотом
+                p.cur = 0
+                p.reveal(p.unrevealed()[0])
+                seen.append((p.room.look, list(p.room.items), p.room.notes))
+            self.assertEqual(seen[0], seen[1])
+            self.assertEqual(seen[1], seen[2])
+            self.assertEqual(seen[0][1], [i for i in start_items if i != G.NOTEBOOK])   # блокнот не вернулся
+            self.assertEqual(seen[0][0][0], G.BRIDGE)
+            self.assertIn(p.L.role_item[G.L], seen[0][1])                               # проводник лежит в рубке
+            dropped = p.room.items[-1]
+            p.pick(dropped)
+            p.drop(dropped)                          # выброшенное остаётся в комнате набора
+            p.cur = 0
+            self.assertIn(dropped, p.room.items)
+
+    def test_right_path_is_safe(self):
+        """Игрок по запискам урона не получает и всегда доходит до конца."""
+        for r in sim.run_many(DEFAULT, range(1, 301), "notes"):
+            self.assertEqual((r.status, r.hits), ("win", 0))
+
     def test_anomaly_state_persists(self):
-        """Устранённая аномалия не бьёт; неустранённая бьёт при каждом входе."""
+        """Устранённая аномалия не бьёт; неустранённая бьёт при каждом входе. Проверяется на игроке наугад:
+        только он заходит в комнаты с аномалиями и возвращается в них."""
         never_fix = replace(DEFAULT, p_hit=1.0, p_fix=0.0)
         always_fix = replace(DEFAULT, p_hit=1.0, p_fix=1.0)
+        entries = 0
         for s in range(1, 201):
-            r = sim.NotesPlayer(G.RunLayout(s, never_fix), health=10 ** 9).run()
+            r = sim.RandomPlayer(G.RunLayout(s, never_fix), health=10 ** 9).run()
             self.assertEqual(r.hits, r.anomaly_entries)
-            p = sim.NotesPlayer(G.RunLayout(s, always_fix), health=10 ** 9)
+            p = sim.RandomPlayer(G.RunLayout(s, always_fix), health=10 ** 9)
             r = p.run()
             # победная рубка не в счёт: концовка наступает раньше, чем аномалия успевает ударить
-            anomalous = sum(1 for rid in p.visited if rid != p.cur and p.world.rooms[rid].anomaly != G.NO_ANOMALY)
+            won_in = p.cur if r.status == "win" else -1
+            anomalous = sum(1 for rid in p.visited if rid != won_in and p.world.rooms[rid].anomaly != G.NO_ANOMALY)
             self.assertEqual(r.anomaly_entries, anomalous)  # в каждую аномальную комнату — ровно одно попадание
+            entries += r.anomaly_entries
+        self.assertGreater(entries, 100)
 
     def test_sim_deterministic(self):
         for name in sim.PLAYERS:

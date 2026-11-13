@@ -28,11 +28,9 @@ def item_name(i: int) -> str:
 def room_json(rc: G.RoomContent) -> dict:
     return {
         "key": rc.key,
-        "copy": rc.copy,
         "type": G.ROOM_TYPE_NAMES[rc.room_type],
         "switches": rc.switches,
         "anomaly": G.ANOMALY_NAMES[rc.anomaly],
-        "doors": rc.doors,
         "items": [item_name(i) for i in rc.items],
         "notes": [{"kind": C.NOTE_KIND_NAMES[n.kind], "items": [item_name(i) for i in n.items],
                    "tpl": n.tpl, "text": n.text()} for n in rc.notes],
@@ -44,24 +42,22 @@ def key_name(layout: G.RunLayout, key: int) -> str:
         return "{} (empty pocket)"
     if key == G.ANCHOR:
         return "{} (notebook only)"
-    return "{" + ", ".join(G.ROLE_NAMES[r] for r in range(G.NUM_SIG) if key & (1 << r)) + "}"
+    return "{" + ", ".join(G.role_name(r) for r in range(layout.num_sig) if key & (1 << r)) + "}"
 
 
-def dump(seed: int, cfg=DEFAULT, copies: int = 4) -> dict:
+def dump(seed: int, cfg=DEFAULT) -> dict:
     layout = G.RunLayout(seed, cfg)
     looks = []
-    for key in G.all_keys():
+    for key in layout.all_keys():
         t, sw = layout.look(key)
         looks.append({"key": key, "signature": key_name(layout, key), "class": G.CLS_NAMES[G.room_class(key)],
                       "level": G.chain_level(key), "type": G.ROOM_TYPE_NAMES[t], "switches": sw,
-                      "anomaly_chance": layout.anomaly_chance(key), "guarantee_copy": layout.guarantee_copy(key)})
-    chain_keys = [k for k in G.all_keys() if G.room_class(k) in (G.CLS_CHAIN, G.CLS_ENGINE)]
-    guess_keys = [G.RM_X, G.RM_L | G.RM_Y, G.RM_L | G.RM_K2, G.RM_K1 | G.RM_K2 | G.RM_K3 | G.RM_L]
-    rooms = {}
-    for k in chain_keys:
-        rooms[key_name(layout, k)] = [room_json(layout.room_copy(k, c)) for c in range(1, copies + 1)]
-    for k in guess_keys + [0]:
-        rooms[key_name(layout, k)] = [room_json(layout.room_copy(k, c)) for c in range(1, 3)]
+                      "anomaly": G.ANOMALY_NAMES[layout.anomaly_of(key)]})
+    # все комнаты правильного пути и несколько неправильных наборов
+    e1, e2 = 1 << G.NUM_CHAIN, 1 << (G.NUM_CHAIN + 1)   # первые два лишних значимых предмета
+    keys = [k for k in layout.all_keys() if G.room_class(k) in (G.CLS_CHAIN, G.CLS_ENGINE)]
+    keys += [e1, G.RM_L | e2, G.RM_L | G.RM_K2, G.RM_K1 | G.RM_K2 | G.RM_K3 | G.RM_L, e1 | e2]
+    rooms = {key_name(layout, k): room_json(layout.room(k)) for k in keys}
     return {
         "config": asdict(cfg),
         "layout": layout.describe(),
