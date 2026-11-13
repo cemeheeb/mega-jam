@@ -1,0 +1,1449 @@
+{
+ "config": {
+  "items_in_run": 16,
+  "health": 4,
+  "p_meaningful": 0.18,
+  "p_guess": 0.85,
+  "p_target": 0.2,
+  "target_guarantee_by": 5,
+  "filler_min": 2,
+  "filler_max": 3,
+  "dummy_weight": 1,
+  "false_weight": 1,
+  "doors_min": 2,
+  "doors_max": 3,
+  "p_extra_note": 0.5,
+  "p_guess_note": 0.3,
+  "hit_first": 1.0,
+  "hit_revisit": 0.5,
+  "max_entries": 400
+ },
+ "layout": {
+  "seed": 1,
+  "roles": {
+   "L": "Snow Globe",
+   "K1": "Flashlight",
+   "K2": "Gyroscope",
+   "K3": "Duct Tape",
+   "X": "Rubber Duck",
+   "Y": "Coffee Mug"
+  },
+  "dummies": [
+   "Coolant Valve",
+   "Ration Tin",
+   "Data Cartridge",
+   "Cassette Tape",
+   "Circuit Board",
+   "Pressure Gauge",
+   "Fuse",
+   "Family Photo",
+   "Power Cell",
+   "Sealant Can"
+  ],
+  "chain": [
+   "Snow Globe",
+   "Flashlight",
+   "Gyroscope",
+   "Duct Tape"
+  ],
+  "final_set": [
+   "Flashlight",
+   "Gyroscope",
+   "Duct Tape"
+  ],
+  "level_types": [
+   "Living",
+   "LifeSupport",
+   "Lab",
+   "LifeSupport"
+  ],
+  "notebook_first": "Everything you add, the singularity will erase. Only this remains.\nCarry the snow globe. It breaks the first loop."
+ },
+ "run_items": [
+  "Snow Globe",
+  "Flashlight",
+  "Gyroscope",
+  "Duct Tape",
+  "Rubber Duck",
+  "Coffee Mug",
+  "Coolant Valve",
+  "Ration Tin",
+  "Data Cartridge",
+  "Cassette Tape",
+  "Circuit Board",
+  "Pressure Gauge",
+  "Fuse",
+  "Family Photo",
+  "Power Cell",
+  "Sealant Can"
+ ],
+ "level_types": [
+  "Living",
+  "LifeSupport",
+  "Lab",
+  "LifeSupport"
+ ],
+ "switch_of": {
+  "Living": [
+   0,
+   2,
+   1,
+   4,
+   5,
+   3
+  ],
+  "Lab": [
+   2,
+   3,
+   0,
+   4,
+   5,
+   1
+  ],
+  "LifeSupport": [
+   2,
+   5,
+   1,
+   4,
+   0,
+   3
+  ]
+ },
+ "start_room": {
+  "key": 0,
+  "copy": 0,
+  "type": "Bridge",
+  "switches": 24,
+  "anomaly": "none",
+  "doors": 3,
+  "items": [
+   "Notebook",
+   "Pressure Gauge",
+   "Fuse"
+  ],
+  "notes": []
+ },
+ "looks": [
+  {
+   "key": 0,
+   "signature": "{} (empty pocket)",
+   "class": "bridge",
+   "level": -1,
+   "type": "Bridge",
+   "switches": 24,
+   "anomaly_chance": 0.0,
+   "guarantee_copy": 1
+  },
+  {
+   "key": 64,
+   "signature": "{} (notebook only)",
+   "class": "chain",
+   "level": 0,
+   "type": "Living",
+   "switches": 0,
+   "anomaly_chance": 0.18,
+   "guarantee_copy": 5
+  },
+  {
+   "key": 1,
+   "signature": "{L}",
+   "class": "chain",
+   "level": 1,
+   "type": "LifeSupport",
+   "switches": 4,
+   "anomaly_chance": 0.18,
+   "guarantee_copy": 1
+  },
+  {
+   "key": 2,
+   "signature": "{K1}",
+   "class": "chain",
+   "level": 2,
+   "type": "Lab",
+   "switches": 8,
+   "anomaly_chance": 0.18,
+   "guarantee_copy": 5
+  },
+  {
+   "key": 3,
+   "signature": "{L, K1}",
+   "class": "chain",
+   "level": 2,
+   "type": "Lab",
+   "switches": 12,
+   "anomaly_chance": 0.18,
+   "guarantee_copy": 1
+  },
+  {
+   "key": 4,
+   "signature": "{K2}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 2,
+   "anomaly_chance": 0.85,
+   "guarantee_copy": 2
+  },
+  {
+   "key": 5,
+   "signature": "{L, K2}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 6,
+   "anomaly_chance": 0.85,
+   "guarantee_copy": 5
+  },
+  {
+   "key": 6,
+   "signature": "{K1, K2}",
+   "class": "chain",
+   "level": 3,
+   "type": "LifeSupport",
+   "switches": 34,
+   "anomaly_chance": 0.18,
+   "guarantee_copy": 3
+  },
+  {
+   "key": 7,
+   "signature": "{L, K1, K2}",
+   "class": "chain",
+   "level": 3,
+   "type": "LifeSupport",
+   "switches": 38,
+   "anomaly_chance": 0.18,
+   "guarantee_copy": 3
+  },
+  {
+   "key": 8,
+   "signature": "{K3}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 16,
+   "anomaly_chance": 0.85,
+   "guarantee_copy": 5
+  },
+  {
+   "key": 9,
+   "signature": "{L, K3}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 20,
+   "anomaly_chance": 0.85,
+   "guarantee_copy": 4
+  },
+  {
+   "key": 10,
+   "signature": "{K1, K3}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 24,
+   "anomaly_chance": 0.85,
+   "guarantee_copy": 4
+  },
+  {
+   "key": 11,
+   "signature": "{L, K1, K3}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 52,
+   "anomaly_chance": 0.85,
+   "guarantee_copy": 2
+  },
+  {
+   "key": 12,
+   "signature": "{K2, K3}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 18,
+   "anomaly_chance": 0.85,
+   "guarantee_copy": 4
+  },
+  {
+   "key": 13,
+   "signature": "{L, K2, K3}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 22,
+   "anomaly_chance": 0.85,
+   "guarantee_copy": 1
+  },
+  {
+   "key": 14,
+   "signature": "{K1, K2, K3}",
+   "class": "engine",
+   "level": 4,
+   "type": "Engine",
+   "switches": 51,
+   "anomaly_chance": 0.0,
+   "guarantee_copy": 3
+  },
+  {
+   "key": 15,
+   "signature": "{L, K1, K2, K3}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 23,
+   "anomaly_chance": 0.85,
+   "guarantee_copy": 3
+  },
+  {
+   "key": 16,
+   "signature": "{X}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 32,
+   "anomaly_chance": 0.85,
+   "guarantee_copy": 3
+  },
+  {
+   "key": 17,
+   "signature": "{L, X}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 33,
+   "anomaly_chance": 0.85,
+   "guarantee_copy": 2
+  },
+  {
+   "key": 18,
+   "signature": "{K1, X}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 33,
+   "anomaly_chance": 0.85,
+   "guarantee_copy": 3
+  },
+  {
+   "key": 19,
+   "signature": "{L, K1, X}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 37,
+   "anomaly_chance": 0.85,
+   "guarantee_copy": 2
+  },
+  {
+   "key": 20,
+   "signature": "{K2, X}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 34,
+   "anomaly_chance": 0.85,
+   "guarantee_copy": 1
+  },
+  {
+   "key": 21,
+   "signature": "{L, K2, X}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 7,
+   "anomaly_chance": 0.85,
+   "guarantee_copy": 5
+  },
+  {
+   "key": 22,
+   "signature": "{K1, K2, X}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 41,
+   "anomaly_chance": 0.85,
+   "guarantee_copy": 5
+  },
+  {
+   "key": 23,
+   "signature": "{L, K1, K2, X}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 39,
+   "anomaly_chance": 0.85,
+   "guarantee_copy": 3
+  },
+  {
+   "key": 24,
+   "signature": "{K3, X}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 17,
+   "anomaly_chance": 0.85,
+   "guarantee_copy": 4
+  },
+  {
+   "key": 25,
+   "signature": "{L, K3, X}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 52,
+   "anomaly_chance": 0.85,
+   "guarantee_copy": 5
+  },
+  {
+   "key": 26,
+   "signature": "{K1, K3, X}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 52,
+   "anomaly_chance": 0.85,
+   "guarantee_copy": 4
+  },
+  {
+   "key": 27,
+   "signature": "{L, K1, K3, X}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 60,
+   "anomaly_chance": 0.85,
+   "guarantee_copy": 3
+  },
+  {
+   "key": 28,
+   "signature": "{K2, K3, X}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 50,
+   "anomaly_chance": 0.85,
+   "guarantee_copy": 5
+  },
+  {
+   "key": 29,
+   "signature": "{L, K2, K3, X}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 23,
+   "anomaly_chance": 0.85,
+   "guarantee_copy": 5
+  },
+  {
+   "key": 30,
+   "signature": "{K1, K2, K3, X}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 57,
+   "anomaly_chance": 0.85,
+   "guarantee_copy": 3
+  },
+  {
+   "key": 32,
+   "signature": "{Y}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 8,
+   "anomaly_chance": 0.85,
+   "guarantee_copy": 1
+  },
+  {
+   "key": 33,
+   "signature": "{L, Y}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 12,
+   "anomaly_chance": 0.85,
+   "guarantee_copy": 2
+  },
+  {
+   "key": 34,
+   "signature": "{K1, Y}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 40,
+   "anomaly_chance": 0.85,
+   "guarantee_copy": 5
+  },
+  {
+   "key": 35,
+   "signature": "{L, K1, Y}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 14,
+   "anomaly_chance": 0.85,
+   "guarantee_copy": 2
+  },
+  {
+   "key": 36,
+   "signature": "{K2, Y}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 3,
+   "anomaly_chance": 0.85,
+   "guarantee_copy": 3
+  },
+  {
+   "key": 37,
+   "signature": "{L, K2, Y}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 14,
+   "anomaly_chance": 0.85,
+   "guarantee_copy": 4
+  },
+  {
+   "key": 38,
+   "signature": "{K1, K2, Y}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 42,
+   "anomaly_chance": 0.85,
+   "guarantee_copy": 4
+  },
+  {
+   "key": 39,
+   "signature": "{L, K1, K2, Y}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 15,
+   "anomaly_chance": 0.85,
+   "guarantee_copy": 1
+  },
+  {
+   "key": 40,
+   "signature": "{K3, Y}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 24,
+   "anomaly_chance": 0.85,
+   "guarantee_copy": 1
+  },
+  {
+   "key": 41,
+   "signature": "{L, K3, Y}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 22,
+   "anomaly_chance": 0.85,
+   "guarantee_copy": 3
+  },
+  {
+   "key": 42,
+   "signature": "{K1, K3, Y}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 28,
+   "anomaly_chance": 0.85,
+   "guarantee_copy": 1
+  },
+  {
+   "key": 43,
+   "signature": "{L, K1, K3, Y}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 30,
+   "anomaly_chance": 0.85,
+   "guarantee_copy": 2
+  },
+  {
+   "key": 44,
+   "signature": "{K2, K3, Y}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 19,
+   "anomaly_chance": 0.85,
+   "guarantee_copy": 1
+  },
+  {
+   "key": 45,
+   "signature": "{L, K2, K3, Y}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 30,
+   "anomaly_chance": 0.85,
+   "guarantee_copy": 5
+  },
+  {
+   "key": 46,
+   "signature": "{K1, K2, K3, Y}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 27,
+   "anomaly_chance": 0.85,
+   "guarantee_copy": 4
+  },
+  {
+   "key": 48,
+   "signature": "{X, Y}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 9,
+   "anomaly_chance": 0.85,
+   "guarantee_copy": 2
+  },
+  {
+   "key": 49,
+   "signature": "{L, X, Y}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 38,
+   "anomaly_chance": 0.85,
+   "guarantee_copy": 3
+  },
+  {
+   "key": 50,
+   "signature": "{K1, X, Y}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 41,
+   "anomaly_chance": 0.85,
+   "guarantee_copy": 5
+  },
+  {
+   "key": 51,
+   "signature": "{L, K1, X, Y}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 46,
+   "anomaly_chance": 0.85,
+   "guarantee_copy": 3
+  },
+  {
+   "key": 52,
+   "signature": "{K2, X, Y}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 42,
+   "anomaly_chance": 0.85,
+   "guarantee_copy": 1
+  },
+  {
+   "key": 53,
+   "signature": "{L, K2, X, Y}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 39,
+   "anomaly_chance": 0.85,
+   "guarantee_copy": 4
+  },
+  {
+   "key": 54,
+   "signature": "{K1, K2, X, Y}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 43,
+   "anomaly_chance": 0.85,
+   "guarantee_copy": 5
+  },
+  {
+   "key": 56,
+   "signature": "{K3, X, Y}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 50,
+   "anomaly_chance": 0.85,
+   "guarantee_copy": 5
+  },
+  {
+   "key": 57,
+   "signature": "{L, K3, X, Y}",
+   "class": "guess",
+   "level": -1,
+   "type": "Living",
+   "switches": 57,
+   "anomaly_chance": 0.85,
+   "guarantee_copy": 4
+  },
+  {
+   "key": 58,
+   "signature": "{K1, K3, X, Y}",
+   "class": "guess",
+   "level": -1,
+   "type": "LifeSupport",
+   "switches": 57,
+   "anomaly_chance": 0.85,
+   "guarantee_copy": 1
+  },
+  {
+   "key": 60,
+   "signature": "{K2, K3, X, Y}",
+   "class": "guess",
+   "level": -1,
+   "type": "Lab",
+   "switches": 51,
+   "anomaly_chance": 0.85,
+   "guarantee_copy": 1
+  }
+ ],
+ "rooms": {
+  "{} (notebook only)": [
+   {
+    "key": 64,
+    "copy": 1,
+    "type": "Living",
+    "switches": 0,
+    "anomaly": "Radiation",
+    "doors": 3,
+    "items": [
+     "Coolant Valve",
+     "Data Cartridge",
+     "Rubber Duck"
+    ],
+    "notes": [
+     {
+      "kind": "next_key",
+      "items": [
+       "Flashlight",
+       "Snow Globe"
+      ],
+      "tpl": 0,
+      "text": "The flashlight only shows up for someone carrying the snow globe."
+     },
+     {
+      "kind": "danger",
+      "items": [
+       "Coffee Mug"
+      ],
+      "tpl": 2,
+      "text": "Whatever you do, leave the coffee mug behind. The rooms it brings will hurt you."
+     }
+    ]
+   },
+   {
+    "key": 64,
+    "copy": 2,
+    "type": "Living",
+    "switches": 0,
+    "anomaly": "none",
+    "doors": 2,
+    "items": [
+     "Coolant Valve",
+     "Rubber Duck"
+    ],
+    "notes": []
+   },
+   {
+    "key": 64,
+    "copy": 3,
+    "type": "Living",
+    "switches": 0,
+    "anomaly": "none",
+    "doors": 2,
+    "items": [
+     "Fuse",
+     "Pressure Gauge"
+    ],
+    "notes": [
+     {
+      "kind": "loop_exit",
+      "items": [
+       "Snow Globe"
+      ],
+      "tpl": 0,
+      "text": "Same rooms, over and over. The snow globe is what breaks this loop."
+     }
+    ]
+   },
+   {
+    "key": 64,
+    "copy": 4,
+    "type": "Living",
+    "switches": 0,
+    "anomaly": "Radiation",
+    "doors": 3,
+    "items": [
+     "Family Photo",
+     "Coffee Mug",
+     "Coolant Valve"
+    ],
+    "notes": []
+   }
+  ],
+  "{L}": [
+   {
+    "key": 1,
+    "copy": 1,
+    "type": "LifeSupport",
+    "switches": 4,
+    "anomaly": "SlowTime",
+    "doors": 2,
+    "items": [
+     "Flashlight",
+     "Data Cartridge",
+     "Coffee Mug"
+    ],
+    "notes": [
+     {
+      "kind": "next_key",
+      "items": [
+       "Gyroscope",
+       "Flashlight"
+      ],
+      "tpl": 2,
+      "text": "Looked everywhere for the gyroscope. It was never there until I picked up the flashlight."
+     },
+     {
+      "kind": "loop_exit",
+      "items": [
+       "Flashlight"
+      ],
+      "tpl": 2,
+      "text": "This loop only lets go of those who carry the flashlight."
+     }
+    ]
+   },
+   {
+    "key": 1,
+    "copy": 2,
+    "type": "LifeSupport",
+    "switches": 4,
+    "anomaly": "none",
+    "doors": 3,
+    "items": [
+     "Circuit Board",
+     "Sealant Can"
+    ],
+    "notes": []
+   },
+   {
+    "key": 1,
+    "copy": 3,
+    "type": "LifeSupport",
+    "switches": 4,
+    "anomaly": "none",
+    "doors": 2,
+    "items": [
+     "Data Cartridge",
+     "Ration Tin"
+    ],
+    "notes": [
+     {
+      "kind": "loop_exit",
+      "items": [
+       "Flashlight"
+      ],
+      "tpl": 2,
+      "text": "This loop only lets go of those who carry the flashlight."
+     }
+    ]
+   },
+   {
+    "key": 1,
+    "copy": 4,
+    "type": "LifeSupport",
+    "switches": 4,
+    "anomaly": "none",
+    "doors": 2,
+    "items": [
+     "Ration Tin",
+     "Power Cell"
+    ],
+    "notes": [
+     {
+      "kind": "useless",
+      "items": [
+       "Sealant Can"
+      ],
+      "tpl": 1,
+      "text": "Carried the sealant can through a dozen doors. Nothing changed. Drop it."
+     }
+    ]
+   }
+  ],
+  "{K1}": [
+   {
+    "key": 2,
+    "copy": 1,
+    "type": "Lab",
+    "switches": 8,
+    "anomaly": "none",
+    "doors": 3,
+    "items": [
+     "Coffee Mug",
+     "Family Photo"
+    ],
+    "notes": [
+     {
+      "kind": "next_key",
+      "items": [
+       "Duct Tape",
+       "Flashlight",
+       "Gyroscope"
+      ],
+      "tpl": 1,
+      "text": "You won't find the duct tape unless you carry the flashlight and the gyroscope. Don't ask me how I know."
+     }
+    ]
+   },
+   {
+    "key": 2,
+    "copy": 2,
+    "type": "Lab",
+    "switches": 8,
+    "anomaly": "none",
+    "doors": 2,
+    "items": [
+     "Cassette Tape",
+     "Pressure Gauge"
+    ],
+    "notes": []
+   },
+   {
+    "key": 2,
+    "copy": 3,
+    "type": "Lab",
+    "switches": 8,
+    "anomaly": "none",
+    "doors": 3,
+    "items": [
+     "Pressure Gauge",
+     "Cassette Tape"
+    ],
+    "notes": [
+     {
+      "kind": "next_key",
+      "items": [
+       "Duct Tape",
+       "Flashlight",
+       "Gyroscope"
+      ],
+      "tpl": 0,
+      "text": "The duct tape only shows up for someone carrying the flashlight and the gyroscope."
+     }
+    ]
+   },
+   {
+    "key": 2,
+    "copy": 4,
+    "type": "Lab",
+    "switches": 8,
+    "anomaly": "SlowTime",
+    "doors": 2,
+    "items": [
+     "Sealant Can",
+     "Fuse"
+    ],
+    "notes": []
+   }
+  ],
+  "{L, K1}": [
+   {
+    "key": 3,
+    "copy": 1,
+    "type": "Lab",
+    "switches": 12,
+    "anomaly": "none",
+    "doors": 3,
+    "items": [
+     "Gyroscope",
+     "Cassette Tape",
+     "Fuse",
+     "Sealant Can"
+    ],
+    "notes": [
+     {
+      "kind": "next_key",
+      "items": [
+       "Duct Tape",
+       "Flashlight",
+       "Gyroscope"
+      ],
+      "tpl": 2,
+      "text": "Looked everywhere for the duct tape. It was never there until I picked up the flashlight and the gyroscope."
+     },
+     {
+      "kind": "loop_exit",
+      "items": [
+       "Gyroscope"
+      ],
+      "tpl": 1,
+      "text": "I walked these rooms for hours before I got it. Carry the gyroscope and the doors let you go."
+     }
+    ]
+   },
+   {
+    "key": 3,
+    "copy": 2,
+    "type": "Lab",
+    "switches": 12,
+    "anomaly": "SlowTime",
+    "doors": 3,
+    "items": [
+     "Data Cartridge",
+     "Pressure Gauge"
+    ],
+    "notes": []
+   },
+   {
+    "key": 3,
+    "copy": 3,
+    "type": "Lab",
+    "switches": 12,
+    "anomaly": "none",
+    "doors": 2,
+    "items": [
+     "Family Photo",
+     "Circuit Board",
+     "Power Cell"
+    ],
+    "notes": [
+     {
+      "kind": "useless",
+      "items": [
+       "Coolant Valve"
+      ],
+      "tpl": 1,
+      "text": "Carried the coolant valve through a dozen doors. Nothing changed. Drop it."
+     }
+    ]
+   },
+   {
+    "key": 3,
+    "copy": 4,
+    "type": "Lab",
+    "switches": 12,
+    "anomaly": "none",
+    "doors": 3,
+    "items": [
+     "Gyroscope",
+     "Data Cartridge",
+     "Ration Tin",
+     "Sealant Can"
+    ],
+    "notes": []
+   }
+  ],
+  "{K1, K2}": [
+   {
+    "key": 6,
+    "copy": 1,
+    "type": "LifeSupport",
+    "switches": 34,
+    "anomaly": "none",
+    "doors": 3,
+    "items": [
+     "Sealant Can",
+     "Cassette Tape"
+    ],
+    "notes": [
+     {
+      "kind": "engine_set",
+      "items": [
+       "Flashlight",
+       "Gyroscope",
+       "Duct Tape",
+       "Snow Globe"
+      ],
+      "tpl": 1,
+      "text": "Engines. The flashlight, the gyroscope, the duct tape. Nothing else but this notebook. Drop the snow globe when the time comes."
+     }
+    ]
+   },
+   {
+    "key": 6,
+    "copy": 2,
+    "type": "LifeSupport",
+    "switches": 34,
+    "anomaly": "none",
+    "doors": 2,
+    "items": [
+     "Duct Tape",
+     "Coffee Mug",
+     "Ration Tin",
+     "Circuit Board"
+    ],
+    "notes": [
+     {
+      "kind": "useless",
+      "items": [
+       "Fuse"
+      ],
+      "tpl": 1,
+      "text": "Carried the fuse through a dozen doors. Nothing changed. Drop it."
+     }
+    ]
+   },
+   {
+    "key": 6,
+    "copy": 3,
+    "type": "LifeSupport",
+    "switches": 34,
+    "anomaly": "none",
+    "doors": 2,
+    "items": [
+     "Duct Tape",
+     "Fuse",
+     "Data Cartridge",
+     "Sealant Can"
+    ],
+    "notes": [
+     {
+      "kind": "engine_set",
+      "items": [
+       "Flashlight",
+       "Gyroscope",
+       "Duct Tape",
+       "Snow Globe"
+      ],
+      "tpl": 0,
+      "text": "The engine room answers to three things: the flashlight, the gyroscope and the duct tape. Keep the notebook. The snow globe has done its job. Let it go."
+     }
+    ]
+   },
+   {
+    "key": 6,
+    "copy": 4,
+    "type": "LifeSupport",
+    "switches": 34,
+    "anomaly": "none",
+    "doors": 3,
+    "items": [
+     "Ration Tin",
+     "Pressure Gauge",
+     "Fuse"
+    ],
+    "notes": [
+     {
+      "kind": "danger",
+      "items": [
+       "Coffee Mug"
+      ],
+      "tpl": 1,
+      "text": "The coffee mug opens the wrong rooms. I learned that the hard way."
+     }
+    ]
+   }
+  ],
+  "{L, K1, K2}": [
+   {
+    "key": 7,
+    "copy": 1,
+    "type": "LifeSupport",
+    "switches": 38,
+    "anomaly": "none",
+    "doors": 3,
+    "items": [
+     "Power Cell",
+     "Pressure Gauge"
+    ],
+    "notes": [
+     {
+      "kind": "engine_set",
+      "items": [
+       "Flashlight",
+       "Gyroscope",
+       "Duct Tape",
+       "Snow Globe"
+      ],
+      "tpl": 1,
+      "text": "Engines. The flashlight, the gyroscope, the duct tape. Nothing else but this notebook. Drop the snow globe when the time comes."
+     }
+    ]
+   },
+   {
+    "key": 7,
+    "copy": 2,
+    "type": "LifeSupport",
+    "switches": 38,
+    "anomaly": "none",
+    "doors": 3,
+    "items": [
+     "Pressure Gauge",
+     "Ration Tin"
+    ],
+    "notes": [
+     {
+      "kind": "useless",
+      "items": [
+       "Cassette Tape"
+      ],
+      "tpl": 2,
+      "text": "Don't waste a slot on the cassette tape."
+     }
+    ]
+   },
+   {
+    "key": 7,
+    "copy": 3,
+    "type": "LifeSupport",
+    "switches": 38,
+    "anomaly": "none",
+    "doors": 2,
+    "items": [
+     "Duct Tape",
+     "Coolant Valve",
+     "Data Cartridge"
+    ],
+    "notes": []
+   },
+   {
+    "key": 7,
+    "copy": 4,
+    "type": "LifeSupport",
+    "switches": 38,
+    "anomaly": "none",
+    "doors": 2,
+    "items": [
+     "Fuse",
+     "Coolant Valve"
+    ],
+    "notes": []
+   }
+  ],
+  "{K1, K2, K3}": [
+   {
+    "key": 14,
+    "copy": 1,
+    "type": "Engine",
+    "switches": 51,
+    "anomaly": "none",
+    "doors": 2,
+    "items": [],
+    "notes": [
+     {
+      "kind": "finale",
+      "items": [],
+      "tpl": 1,
+      "text": "It's fixed. The bridge only opens to empty hands. Leave it all here, the notebook last."
+     }
+    ]
+   },
+   {
+    "key": 14,
+    "copy": 2,
+    "type": "Engine",
+    "switches": 51,
+    "anomaly": "none",
+    "doors": 2,
+    "items": [],
+    "notes": [
+     {
+      "kind": "finale",
+      "items": [],
+      "tpl": 0,
+      "text": "The engines are humming. Now go home: empty your pockets. Everything. The notebook last."
+     }
+    ]
+   },
+   {
+    "key": 14,
+    "copy": 3,
+    "type": "Engine",
+    "switches": 51,
+    "anomaly": "none",
+    "doors": 2,
+    "items": [],
+    "notes": [
+     {
+      "kind": "finale",
+      "items": [],
+      "tpl": 1,
+      "text": "It's fixed. The bridge only opens to empty hands. Leave it all here, the notebook last."
+     }
+    ]
+   },
+   {
+    "key": 14,
+    "copy": 4,
+    "type": "Engine",
+    "switches": 51,
+    "anomaly": "none",
+    "doors": 2,
+    "items": [],
+    "notes": [
+     {
+      "kind": "finale",
+      "items": [],
+      "tpl": 0,
+      "text": "The engines are humming. Now go home: empty your pockets. Everything. The notebook last."
+     }
+    ]
+   }
+  ],
+  "{X}": [
+   {
+    "key": 16,
+    "copy": 1,
+    "type": "Lab",
+    "switches": 32,
+    "anomaly": "GravityFailure",
+    "doors": 3,
+    "items": [
+     "Sealant Can",
+     "Rubber Duck",
+     "Family Photo"
+    ],
+    "notes": []
+   },
+   {
+    "key": 16,
+    "copy": 2,
+    "type": "Lab",
+    "switches": 32,
+    "anomaly": "GravityFailure",
+    "doors": 2,
+    "items": [
+     "Fuse",
+     "Pressure Gauge"
+    ],
+    "notes": []
+   }
+  ],
+  "{L, Y}": [
+   {
+    "key": 33,
+    "copy": 1,
+    "type": "LifeSupport",
+    "switches": 12,
+    "anomaly": "FrozenMoment",
+    "doors": 3,
+    "items": [
+     "Coffee Mug",
+     "Coolant Valve",
+     "Ration Tin"
+    ],
+    "notes": []
+   },
+   {
+    "key": 33,
+    "copy": 2,
+    "type": "LifeSupport",
+    "switches": 12,
+    "anomaly": "Radiation",
+    "doors": 2,
+    "items": [
+     "Fuse",
+     "Coolant Valve",
+     "Power Cell"
+    ],
+    "notes": []
+   }
+  ],
+  "{L, K2}": [
+   {
+    "key": 5,
+    "copy": 1,
+    "type": "LifeSupport",
+    "switches": 6,
+    "anomaly": "Radiation",
+    "doors": 2,
+    "items": [
+     "Power Cell",
+     "Sealant Can",
+     "Coolant Valve"
+    ],
+    "notes": []
+   },
+   {
+    "key": 5,
+    "copy": 2,
+    "type": "LifeSupport",
+    "switches": 6,
+    "anomaly": "GravityFailure",
+    "doors": 2,
+    "items": [
+     "Circuit Board",
+     "Data Cartridge",
+     "Family Photo"
+    ],
+    "notes": [
+     {
+      "kind": "danger",
+      "items": [
+       "Coffee Mug"
+      ],
+      "tpl": 1,
+      "text": "The coffee mug opens the wrong rooms. I learned that the hard way."
+     }
+    ]
+   }
+  ],
+  "{L, K1, K2, K3}": [
+   {
+    "key": 15,
+    "copy": 1,
+    "type": "Living",
+    "switches": 23,
+    "anomaly": "Radiation",
+    "doors": 2,
+    "items": [
+     "Coffee Mug",
+     "Family Photo"
+    ],
+    "notes": []
+   },
+   {
+    "key": 15,
+    "copy": 2,
+    "type": "Living",
+    "switches": 23,
+    "anomaly": "Radiation",
+    "doors": 2,
+    "items": [
+     "Data Cartridge",
+     "Coffee Mug",
+     "Family Photo"
+    ],
+    "notes": []
+   }
+  ],
+  "{} (empty pocket)": [
+   {
+    "key": 0,
+    "copy": 1,
+    "type": "Bridge",
+    "switches": 24,
+    "anomaly": "none",
+    "doors": 3,
+    "items": [
+     "Cassette Tape",
+     "Family Photo"
+    ],
+    "notes": []
+   },
+   {
+    "key": 0,
+    "copy": 2,
+    "type": "Bridge",
+    "switches": 24,
+    "anomaly": "none",
+    "doors": 3,
+    "items": [
+     "Circuit Board",
+     "Coolant Valve"
+    ],
+    "notes": []
+   }
+  ]
+ }
+}
