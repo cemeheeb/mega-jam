@@ -1,0 +1,5 @@
+title: Pressure Gauge
+kind: model
+idea: Round analog gauge with cracked glass on a short pipe stub.
+prompt: "A round analog pressure gauge on a short pipe stub: a thick brushed aluminium case with a knurled bezel, an off-white dial with graphite tick marks and no numbers, a thin international orange needle and an orange danger arc at the end of the scale, a flat glass face with one hairline crack across it, and below the case a short threaded aluminium pipe stub with a hexagonal nut."
+avoid: numbers on the dial, long pipes

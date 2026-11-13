@@ -1,0 +1,62 @@
+# Настройки Студии. Правится руками, Студия перечитывает файл сама.
+
+downloads: ~/Downloads
+blender: /Applications/Blender.app
+
+# Стиль ассета берётся по папке. В карточке ассета его можно задать вручную (поле style в asset.yml).
+folders:
+  environment: interior
+  interior: interior
+  items: prop
+default_style: prop
+
+# Стили промта. {prompt} — описание из asset.yml, {avoid} — свои запреты ассета (поле avoid).
+# Основа взята из промтов Singula: шапка, описание, ракурс, стиль, запреты.
+styles:
+  # Интерьер корабля: стены, пол, двери, мебель, оборудование. Палитра задана жёстко.
+  interior:
+    title: Интерьер
+    model: |
+      3D render of a single game-ready prop with semi-realistic PBR materials for a third-person sci-fi game set aboard a bright NASA-punk spaceship. Alone, centered, filling most of the frame, on a plain seamless light-grey studio background with only a soft shadow under it.
+
+      {prompt}
+
+      Colors: off-white paint #ECEAE4, warm light-grey aluminium #B9BCC0, graphite rubber and plastic #2E3236, international orange accents and stripes #F26A21, muted teal screens and indicators #5FC6C9. No other colors.
+
+      View: three-quarter view from slightly above, the whole object fully visible.
+
+      Style: realistic proportions and materials: satin painted metal with light wear on the edges, brushed aluminium, matte rubber and plastic; subtle surface variation and a little dust in the crevices; soft physically based studio lighting.
+
+      Avoid: heavy rust, heavy grime, text, logos, table or visible floor, scenery, several objects, a base or plinth, cropped parts, glow, transparency, loose cables or cords{avoid}.
+    texture: |
+      PBR albedo texture for a third-person sci-fi video game set aboard a bright NASA-punk spaceship: a square swatch of the surface seen straight from above, filling the whole frame edge to edge. One continuous image, not a grid of repeated copies.
+
+      {prompt}
+
+      Colors: only the ship palette, as named in the description: off-white paint #ECEAE4, warm light-grey aluminium #B9BCC0, graphite rubber and plastic #2E3236, international orange #F26A21, muted teal #5FC6C9. No other colors.
+
+      Style: semi-realistic material at real-world scale; subtle surface variation, light wear and a little dust in the crevices; flat even diffuse lighting with no shadows, highlights or reflections; low contrast so it reads as one calm surface from a distance.
+
+      Avoid: large distinct elements, high contrast, a grid of repeated copies, side view, perspective, horizon, objects, text, logos, directional shadows, specular highlights, vignette, borders, heavy rust, heavy grime{avoid}.
+
+  # Предметы и всё остальное: палитры нет, цвета задаёт описание самого предмета.
+  prop:
+    title: Предметы
+    model: |
+      3D render of a single game-ready prop with semi-realistic PBR materials for a third-person sci-fi game set aboard a bright NASA-punk spaceship. Alone, centered, filling most of the frame, on a plain seamless light-grey studio background with only a soft shadow under it.
+
+      {prompt}
+
+      View: three-quarter view from slightly above, the whole object fully visible.
+
+      Style: realistic proportions and materials; light wear on the edges, subtle surface variation and a little dust in the crevices; soft physically based studio lighting.
+
+      Avoid: heavy rust, heavy grime, text, logos, table or visible floor, scenery, several objects, a base or plinth, cropped parts, glow, transparency, loose cables or cords{avoid}.
+    texture: |
+      PBR albedo texture for a third-person sci-fi video game: a square swatch of the surface seen straight from above, filling the whole frame edge to edge. One continuous image, not a grid of repeated copies.
+
+      {prompt}
+
+      Style: semi-realistic material at real-world scale; subtle surface variation and light wear; flat even diffuse lighting with no shadows, highlights or reflections.
+
+      Avoid: a grid of repeated copies, side view, perspective, horizon, objects, text, logos, directional shadows, specular highlights, vignette, borders{avoid}.

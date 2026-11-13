@@ -1,0 +1,5 @@
+title: Coolant Valve
+kind: model
+idea: Red handwheel valve on a short insulated pipe section.
+prompt: "A handwheel valve on a short pipe section: a round red painted metal handwheel with five spokes on a short stem, a chunky cast steel valve body with hexagonal bolts, and a short thick pipe wrapped in off-white insulation, with a black rubber flange and a ring of bolts at each end."
+avoid: long pipes, steam, dripping liquid

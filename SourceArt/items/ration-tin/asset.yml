@@ -1,0 +1,5 @@
+title: Ration Tin
+kind: model
+idea: Dented food tin with a peeling label.
+prompt: "A dented rectangular food ration tin with rounded corners: a brushed aluminium body with a shallow dent in one side, a lid with a pull ring, and a half-peeled off-white paper label with an international orange stripe and no text, one corner of the label curling away."
+avoid: open lid, food
