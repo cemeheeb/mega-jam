@@ -14,8 +14,8 @@
   "doors_max": 3,
   "p_extra_note": 0.5,
   "p_guess_note": 0.3,
-  "hit_first": 1.0,
-  "hit_revisit": 0.5,
+  "p_hit": 1.0,
+  "p_fix": 0.5,
   "max_entries": 400
  },
  "layout": {
@@ -51,12 +51,16 @@
    "Circuit Board",
    "Sealant Can"
   ],
-  "level_types": [
-   "Living",
-   "LifeSupport",
-   "Lab",
-   "LifeSupport"
-  ],
+  "chain_room_types": {
+   "notebook only": "Bridge",
+   "empty pocket": "Living",
+   "L": "Lab",
+   "L,K1": "Lab",
+   "K1": "Lab",
+   "L,K1,K2": "Living",
+   "K1,K2": "Living",
+   "K1,K2,K3": "Engine"
+  },
   "notebook_first": "Everything you add, the singularity will erase. Only this remains.\nCarry the flashlight. It breaks the first loop."
  },
  "run_items": [
@@ -76,12 +80,6 @@
   "Snow Globe",
   "Fuse",
   "Family Photo"
- ],
- "level_types": [
-  "Living",
-  "LifeSupport",
-  "Lab",
-  "LifeSupport"
  ],
  "switch_of": {
   "Living": [
@@ -110,7 +108,7 @@
   ]
  },
  "start_room": {
-  "key": 0,
+  "key": 64,
   "copy": 0,
   "type": "Bridge",
   "switches": 40,
@@ -127,11 +125,11 @@
   {
    "key": 0,
    "signature": "{} (empty pocket)",
-   "class": "bridge",
-   "level": -1,
-   "type": "Bridge",
-   "switches": 40,
-   "anomaly_chance": 0.0,
+   "class": "chain",
+   "level": 0,
+   "type": "Living",
+   "switches": 0,
+   "anomaly_chance": 0.18,
    "guarantee_copy": 3
   },
   {
@@ -139,8 +137,8 @@
    "signature": "{} (notebook only)",
    "class": "chain",
    "level": 0,
-   "type": "Living",
-   "switches": 0,
+   "type": "Bridge",
+   "switches": 40,
    "anomaly_chance": 0.18,
    "guarantee_copy": 5
   },
@@ -149,8 +147,8 @@
    "signature": "{L}",
    "class": "chain",
    "level": 1,
-   "type": "LifeSupport",
-   "switches": 4,
+   "type": "Lab",
+   "switches": 16,
    "anomaly_chance": 0.18,
    "guarantee_copy": 3
   },
@@ -199,7 +197,7 @@
    "signature": "{K1, K2}",
    "class": "chain",
    "level": 3,
-   "type": "LifeSupport",
+   "type": "Living",
    "switches": 40,
    "anomaly_chance": 0.18,
    "guarantee_copy": 3
@@ -209,8 +207,8 @@
    "signature": "{L, K1, K2}",
    "class": "chain",
    "level": 3,
-   "type": "LifeSupport",
-   "switches": 44,
+   "type": "Living",
+   "switches": 41,
    "anomaly_chance": 0.18,
    "guarantee_copy": 3
   },
@@ -706,12 +704,60 @@
   }
  ],
  "rooms": {
+  "{} (empty pocket)": [
+   {
+    "key": 0,
+    "copy": 1,
+    "type": "Living",
+    "switches": 0,
+    "anomaly": "none",
+    "doors": 2,
+    "items": [
+     "Coolant Valve",
+     "Coffee Mug"
+    ],
+    "notes": [
+     {
+      "kind": "next_key",
+      "items": [
+       "Rubber Duck",
+       "Flashlight"
+      ],
+      "tpl": 2,
+      "text": "Looked everywhere for the rubber duck. It was never there until I picked up the flashlight."
+     },
+     {
+      "kind": "loop_exit",
+      "items": [
+       "Flashlight"
+      ],
+      "tpl": 1,
+      "text": "I walked these rooms for hours before I got it. Carry the flashlight and the doors let you go."
+     }
+    ]
+   },
+   {
+    "key": 0,
+    "copy": 2,
+    "type": "Living",
+    "switches": 0,
+    "anomaly": "none",
+    "doors": 2,
+    "items": [
+     "Flashlight",
+     "Ration Tin",
+     "Coolant Valve",
+     "Cassette Tape"
+    ],
+    "notes": []
+   }
+  ],
   "{} (notebook only)": [
    {
     "key": 64,
     "copy": 1,
-    "type": "Living",
-    "switches": 0,
+    "type": "Bridge",
+    "switches": 40,
     "anomaly": "none",
     "doors": 3,
     "items": [
@@ -741,8 +787,8 @@
    {
     "key": 64,
     "copy": 2,
-    "type": "Living",
-    "switches": 0,
+    "type": "Bridge",
+    "switches": 40,
     "anomaly": "Radiation",
     "doors": 3,
     "items": [
@@ -764,8 +810,8 @@
    {
     "key": 64,
     "copy": 3,
-    "type": "Living",
-    "switches": 0,
+    "type": "Bridge",
+    "switches": 40,
     "anomaly": "none",
     "doors": 2,
     "items": [
@@ -777,8 +823,8 @@
    {
     "key": 64,
     "copy": 4,
-    "type": "Living",
-    "switches": 0,
+    "type": "Bridge",
+    "switches": 40,
     "anomaly": "none",
     "doors": 2,
     "items": [
@@ -792,8 +838,8 @@
    {
     "key": 1,
     "copy": 1,
-    "type": "LifeSupport",
-    "switches": 4,
+    "type": "Lab",
+    "switches": 16,
     "anomaly": "none",
     "doors": 2,
     "items": [
@@ -823,8 +869,8 @@
    {
     "key": 1,
     "copy": 2,
-    "type": "LifeSupport",
-    "switches": 4,
+    "type": "Lab",
+    "switches": 16,
     "anomaly": "FrozenMoment",
     "doors": 3,
     "items": [
@@ -848,8 +894,8 @@
    {
     "key": 1,
     "copy": 3,
-    "type": "LifeSupport",
-    "switches": 4,
+    "type": "Lab",
+    "switches": 16,
     "anomaly": "none",
     "doors": 2,
     "items": [
@@ -871,8 +917,8 @@
    {
     "key": 1,
     "copy": 4,
-    "type": "LifeSupport",
-    "switches": 4,
+    "type": "Lab",
+    "switches": 16,
     "anomaly": "none",
     "doors": 2,
     "items": [
@@ -1056,7 +1102,7 @@
    {
     "key": 6,
     "copy": 1,
-    "type": "LifeSupport",
+    "type": "Living",
     "switches": 40,
     "anomaly": "none",
     "doors": 3,
@@ -1082,7 +1128,7 @@
    {
     "key": 6,
     "copy": 2,
-    "type": "LifeSupport",
+    "type": "Living",
     "switches": 40,
     "anomaly": "none",
     "doors": 2,
@@ -1105,7 +1151,7 @@
    {
     "key": 6,
     "copy": 3,
-    "type": "LifeSupport",
+    "type": "Living",
     "switches": 40,
     "anomaly": "none",
     "doors": 3,
@@ -1119,7 +1165,7 @@
    {
     "key": 6,
     "copy": 4,
-    "type": "LifeSupport",
+    "type": "Living",
     "switches": 40,
     "anomaly": "none",
     "doors": 2,
@@ -1134,8 +1180,8 @@
    {
     "key": 7,
     "copy": 1,
-    "type": "LifeSupport",
-    "switches": 44,
+    "type": "Living",
+    "switches": 41,
     "anomaly": "none",
     "doors": 2,
     "items": [
@@ -1159,8 +1205,8 @@
    {
     "key": 7,
     "copy": 2,
-    "type": "LifeSupport",
-    "switches": 44,
+    "type": "Living",
+    "switches": 41,
     "anomaly": "none",
     "doors": 3,
     "items": [
@@ -1185,8 +1231,8 @@
    {
     "key": 7,
     "copy": 3,
-    "type": "LifeSupport",
-    "switches": 44,
+    "type": "Living",
+    "switches": 41,
     "anomaly": "none",
     "doors": 2,
     "items": [
@@ -1200,8 +1246,8 @@
    {
     "key": 7,
     "copy": 4,
-    "type": "LifeSupport",
-    "switches": 44,
+    "type": "Living",
+    "switches": 41,
     "anomaly": "none",
     "doors": 3,
     "items": [
@@ -1225,8 +1271,8 @@
      {
       "kind": "finale",
       "items": [],
-      "tpl": 0,
-      "text": "The engines are humming. Now go home: empty your pockets. Everything. The notebook last."
+      "tpl": 1,
+      "text": "The engines are humming. Now remember how you got to the bridge."
      }
     ]
    },
@@ -1242,8 +1288,8 @@
      {
       "kind": "finale",
       "items": [],
-      "tpl": 0,
-      "text": "The engines are humming. Now go home: empty your pockets. Everything. The notebook last."
+      "tpl": 1,
+      "text": "The engines are humming. Now remember how you got to the bridge."
      }
     ]
    },
@@ -1260,7 +1306,7 @@
       "kind": "finale",
       "items": [],
       "tpl": 0,
-      "text": "The engines are humming. Now go home: empty your pockets. Everything. The notebook last."
+      "text": "Remember how you got to the bridge."
      }
     ]
    },
@@ -1276,8 +1322,8 @@
      {
       "kind": "finale",
       "items": [],
-      "tpl": 1,
-      "text": "It's fixed. The bridge only opens to empty hands. Leave it all here, the notebook last."
+      "tpl": 0,
+      "text": "Remember how you got to the bridge."
      }
     ]
    }
@@ -1412,34 +1458,6 @@
      "Pressure Gauge",
      "Power Cell",
      "Family Photo"
-    ],
-    "notes": []
-   }
-  ],
-  "{} (empty pocket)": [
-   {
-    "key": 0,
-    "copy": 1,
-    "type": "Bridge",
-    "switches": 40,
-    "anomaly": "none",
-    "doors": 3,
-    "items": [
-     "Family Photo",
-     "Duct Tape"
-    ],
-    "notes": []
-   },
-   {
-    "key": 0,
-    "copy": 2,
-    "type": "Bridge",
-    "switches": 40,
-    "anomaly": "none",
-    "doors": 3,
-    "items": [
-     "Duct Tape",
-     "Snow Globe"
     ],
     "notes": []
    }

@@ -14,8 +14,8 @@
   "doors_max": 3,
   "p_extra_note": 0.5,
   "p_guess_note": 0.3,
-  "hit_first": 1.0,
-  "hit_revisit": 0.5,
+  "p_hit": 1.0,
+  "p_fix": 0.5,
   "max_entries": 400
  },
  "layout": {
@@ -51,12 +51,16 @@
    "Gyroscope",
    "Duct Tape"
   ],
-  "level_types": [
-   "Living",
-   "LifeSupport",
-   "Lab",
-   "LifeSupport"
-  ],
+  "chain_room_types": {
+   "notebook only": "Bridge",
+   "empty pocket": "Living",
+   "L": "Living",
+   "L,K1": "Lab",
+   "K1": "Lab",
+   "L,K1,K2": "LifeSupport",
+   "K1,K2": "LifeSupport",
+   "K1,K2,K3": "Engine"
+  },
   "notebook_first": "Everything you add, the singularity will erase. Only this remains.\nCarry the snow globe. It breaks the first loop."
  },
  "run_items": [
@@ -76,12 +80,6 @@
   "Family Photo",
   "Power Cell",
   "Sealant Can"
- ],
- "level_types": [
-  "Living",
-  "LifeSupport",
-  "Lab",
-  "LifeSupport"
  ],
  "switch_of": {
   "Living": [
@@ -110,7 +108,7 @@
   ]
  },
  "start_room": {
-  "key": 0,
+  "key": 64,
   "copy": 0,
   "type": "Bridge",
   "switches": 24,
@@ -127,11 +125,11 @@
   {
    "key": 0,
    "signature": "{} (empty pocket)",
-   "class": "bridge",
-   "level": -1,
-   "type": "Bridge",
-   "switches": 24,
-   "anomaly_chance": 0.0,
+   "class": "chain",
+   "level": 0,
+   "type": "Living",
+   "switches": 0,
+   "anomaly_chance": 0.18,
    "guarantee_copy": 1
   },
   {
@@ -139,8 +137,8 @@
    "signature": "{} (notebook only)",
    "class": "chain",
    "level": 0,
-   "type": "Living",
-   "switches": 0,
+   "type": "Bridge",
+   "switches": 24,
    "anomaly_chance": 0.18,
    "guarantee_copy": 5
   },
@@ -149,8 +147,8 @@
    "signature": "{L}",
    "class": "chain",
    "level": 1,
-   "type": "LifeSupport",
-   "switches": 4,
+   "type": "Living",
+   "switches": 1,
    "anomaly_chance": 0.18,
    "guarantee_copy": 1
   },
@@ -706,12 +704,61 @@
   }
  ],
  "rooms": {
+  "{} (empty pocket)": [
+   {
+    "key": 0,
+    "copy": 1,
+    "type": "Living",
+    "switches": 0,
+    "anomaly": "none",
+    "doors": 3,
+    "items": [
+     "Snow Globe",
+     "Circuit Board",
+     "Coolant Valve"
+    ],
+    "notes": [
+     {
+      "kind": "next_key",
+      "items": [
+       "Flashlight",
+       "Snow Globe"
+      ],
+      "tpl": 0,
+      "text": "The flashlight only shows up for someone carrying the snow globe."
+     }
+    ]
+   },
+   {
+    "key": 0,
+    "copy": 2,
+    "type": "Living",
+    "switches": 0,
+    "anomaly": "Radiation",
+    "doors": 2,
+    "items": [
+     "Fuse",
+     "Rubber Duck",
+     "Family Photo"
+    ],
+    "notes": [
+     {
+      "kind": "useless",
+      "items": [
+       "Power Cell"
+      ],
+      "tpl": 2,
+      "text": "Don't waste a slot on the power cell."
+     }
+    ]
+   }
+  ],
   "{} (notebook only)": [
    {
     "key": 64,
     "copy": 1,
-    "type": "Living",
-    "switches": 0,
+    "type": "Bridge",
+    "switches": 24,
     "anomaly": "Radiation",
     "doors": 3,
     "items": [
@@ -742,8 +789,8 @@
    {
     "key": 64,
     "copy": 2,
-    "type": "Living",
-    "switches": 0,
+    "type": "Bridge",
+    "switches": 24,
     "anomaly": "none",
     "doors": 2,
     "items": [
@@ -755,8 +802,8 @@
    {
     "key": 64,
     "copy": 3,
-    "type": "Living",
-    "switches": 0,
+    "type": "Bridge",
+    "switches": 24,
     "anomaly": "none",
     "doors": 2,
     "items": [
@@ -777,8 +824,8 @@
    {
     "key": 64,
     "copy": 4,
-    "type": "Living",
-    "switches": 0,
+    "type": "Bridge",
+    "switches": 24,
     "anomaly": "Radiation",
     "doors": 3,
     "items": [
@@ -793,8 +840,8 @@
    {
     "key": 1,
     "copy": 1,
-    "type": "LifeSupport",
-    "switches": 4,
+    "type": "Living",
+    "switches": 1,
     "anomaly": "SlowTime",
     "doors": 2,
     "items": [
@@ -825,8 +872,8 @@
    {
     "key": 1,
     "copy": 2,
-    "type": "LifeSupport",
-    "switches": 4,
+    "type": "Living",
+    "switches": 1,
     "anomaly": "none",
     "doors": 3,
     "items": [
@@ -838,8 +885,8 @@
    {
     "key": 1,
     "copy": 3,
-    "type": "LifeSupport",
-    "switches": 4,
+    "type": "Living",
+    "switches": 1,
     "anomaly": "none",
     "doors": 2,
     "items": [
@@ -860,8 +907,8 @@
    {
     "key": 1,
     "copy": 4,
-    "type": "LifeSupport",
-    "switches": 4,
+    "type": "Living",
+    "switches": 1,
     "anomaly": "none",
     "doors": 2,
     "items": [
@@ -1233,8 +1280,8 @@
      {
       "kind": "finale",
       "items": [],
-      "tpl": 1,
-      "text": "It's fixed. The bridge only opens to empty hands. Leave it all here, the notebook last."
+      "tpl": 2,
+      "text": "It's fixed. Remember how you got to the bridge, and do it once more."
      }
     ]
    },
@@ -1250,8 +1297,8 @@
      {
       "kind": "finale",
       "items": [],
-      "tpl": 0,
-      "text": "The engines are humming. Now go home: empty your pockets. Everything. The notebook last."
+      "tpl": 1,
+      "text": "The engines are humming. Now remember how you got to the bridge."
      }
     ]
    },
@@ -1267,8 +1314,8 @@
      {
       "kind": "finale",
       "items": [],
-      "tpl": 1,
-      "text": "It's fixed. The bridge only opens to empty hands. Leave it all here, the notebook last."
+      "tpl": 2,
+      "text": "It's fixed. Remember how you got to the bridge, and do it once more."
      }
     ]
    },
@@ -1284,8 +1331,8 @@
      {
       "kind": "finale",
       "items": [],
-      "tpl": 0,
-      "text": "The engines are humming. Now go home: empty your pockets. Everything. The notebook last."
+      "tpl": 1,
+      "text": "The engines are humming. Now remember how you got to the bridge."
      }
     ]
    }
@@ -1413,34 +1460,6 @@
      "Data Cartridge",
      "Coffee Mug",
      "Family Photo"
-    ],
-    "notes": []
-   }
-  ],
-  "{} (empty pocket)": [
-   {
-    "key": 0,
-    "copy": 1,
-    "type": "Bridge",
-    "switches": 24,
-    "anomaly": "none",
-    "doors": 3,
-    "items": [
-     "Cassette Tape",
-     "Family Photo"
-    ],
-    "notes": []
-   },
-   {
-    "key": 0,
-    "copy": 2,
-    "type": "Bridge",
-    "switches": 24,
-    "anomaly": "none",
-    "doors": 3,
-    "items": [
-     "Circuit Board",
-     "Coolant Valve"
     ],
     "notes": []
    }

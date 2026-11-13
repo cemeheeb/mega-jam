@@ -66,7 +66,6 @@ def dump(seed: int, cfg=DEFAULT, copies: int = 4) -> dict:
         "config": asdict(cfg),
         "layout": layout.describe(),
         "run_items": [C.CATALOG[i].name for i in layout.run_items],
-        "level_types": [G.ROOM_TYPE_NAMES[t] for t in layout.level_type],
         "switch_of": {G.ROOM_TYPE_NAMES[t]: list(p) for t, p in layout.switch_of.items()},
         "start_room": room_json(layout.start_room()),
         "looks": looks,

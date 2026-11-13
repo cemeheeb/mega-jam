@@ -14,8 +14,8 @@
   "doors_max": 3,
   "p_extra_note": 0.5,
   "p_guess_note": 0.3,
-  "hit_first": 1.0,
-  "hit_revisit": 0.5,
+  "p_hit": 1.0,
+  "p_fix": 0.5,
   "max_entries": 400
  },
  "layout": {
@@ -51,12 +51,16 @@
    "Duct Tape",
    "Coffee Mug"
   ],
-  "level_types": [
-   "Living",
-   "Lab",
-   "Living",
-   "LifeSupport"
-  ],
+  "chain_room_types": {
+   "notebook only": "Bridge",
+   "empty pocket": "Living",
+   "L": "Lab",
+   "L,K1": "Lab",
+   "K1": "Lab",
+   "L,K1,K2": "Lab",
+   "K1,K2": "Living",
+   "K1,K2,K3": "Engine"
+  },
   "notebook_first": "Everything you add, the singularity will erase. Only this remains.\nCarry the circuit board. It breaks the first loop."
  },
  "run_items": [
@@ -76,12 +80,6 @@
   "Sealant Can",
   "Ration Tin",
   "Family Photo"
- ],
- "level_types": [
-  "Living",
-  "Lab",
-  "Living",
-  "LifeSupport"
  ],
  "switch_of": {
   "Living": [
@@ -110,7 +108,7 @@
   ]
  },
  "start_room": {
-  "key": 0,
+  "key": 64,
   "copy": 0,
   "type": "Bridge",
   "switches": 21,
@@ -127,11 +125,11 @@
   {
    "key": 0,
    "signature": "{} (empty pocket)",
-   "class": "bridge",
-   "level": -1,
-   "type": "Bridge",
-   "switches": 21,
-   "anomaly_chance": 0.0,
+   "class": "chain",
+   "level": 0,
+   "type": "Living",
+   "switches": 0,
+   "anomaly_chance": 0.18,
    "guarantee_copy": 3
   },
   {
@@ -139,8 +137,8 @@
    "signature": "{} (notebook only)",
    "class": "chain",
    "level": 0,
-   "type": "Living",
-   "switches": 0,
+   "type": "Bridge",
+   "switches": 21,
    "anomaly_chance": 0.18,
    "guarantee_copy": 3
   },
@@ -159,8 +157,8 @@
    "signature": "{K1}",
    "class": "chain",
    "level": 2,
-   "type": "Living",
-   "switches": 8,
+   "type": "Lab",
+   "switches": 4,
    "anomaly_chance": 0.18,
    "guarantee_copy": 5
   },
@@ -169,8 +167,8 @@
    "signature": "{L, K1}",
    "class": "chain",
    "level": 2,
-   "type": "Living",
-   "switches": 24,
+   "type": "Lab",
+   "switches": 36,
    "anomaly_chance": 0.18,
    "guarantee_copy": 1
   },
@@ -199,8 +197,8 @@
    "signature": "{K1, K2}",
    "class": "chain",
    "level": 3,
-   "type": "LifeSupport",
-   "switches": 34,
+   "type": "Living",
+   "switches": 10,
    "anomaly_chance": 0.18,
    "guarantee_copy": 4
   },
@@ -209,8 +207,8 @@
    "signature": "{L, K1, K2}",
    "class": "chain",
    "level": 3,
-   "type": "LifeSupport",
-   "switches": 35,
+   "type": "Lab",
+   "switches": 52,
    "anomaly_chance": 0.18,
    "guarantee_copy": 5
   },
@@ -706,12 +704,69 @@
   }
  ],
  "rooms": {
+  "{} (empty pocket)": [
+   {
+    "key": 0,
+    "copy": 1,
+    "type": "Living",
+    "switches": 0,
+    "anomaly": "none",
+    "doors": 3,
+    "items": [
+     "Power Cell",
+     "Data Cartridge",
+     "Fuse"
+    ],
+    "notes": [
+     {
+      "kind": "next_key",
+      "items": [
+       "Gyroscope",
+       "Circuit Board"
+      ],
+      "tpl": 1,
+      "text": "You won't find the gyroscope unless you carry the circuit board. Don't ask me how I know."
+     },
+     {
+      "kind": "loop_exit",
+      "items": [
+       "Circuit Board"
+      ],
+      "tpl": 2,
+      "text": "This loop only lets go of those who carry the circuit board."
+     }
+    ]
+   },
+   {
+    "key": 0,
+    "copy": 2,
+    "type": "Living",
+    "switches": 0,
+    "anomaly": "none",
+    "doors": 2,
+    "items": [
+     "Rubber Duck",
+     "Power Cell"
+    ],
+    "notes": [
+     {
+      "kind": "next_key",
+      "items": [
+       "Gyroscope",
+       "Circuit Board"
+      ],
+      "tpl": 0,
+      "text": "The gyroscope only shows up for someone carrying the circuit board."
+     }
+    ]
+   }
+  ],
   "{} (notebook only)": [
    {
     "key": 64,
     "copy": 1,
-    "type": "Living",
-    "switches": 0,
+    "type": "Bridge",
+    "switches": 21,
     "anomaly": "none",
     "doors": 3,
     "items": [
@@ -734,8 +789,8 @@
    {
     "key": 64,
     "copy": 2,
-    "type": "Living",
-    "switches": 0,
+    "type": "Bridge",
+    "switches": 21,
     "anomaly": "none",
     "doors": 2,
     "items": [
@@ -747,8 +802,8 @@
    {
     "key": 64,
     "copy": 3,
-    "type": "Living",
-    "switches": 0,
+    "type": "Bridge",
+    "switches": 21,
     "anomaly": "none",
     "doors": 2,
     "items": [
@@ -771,8 +826,8 @@
    {
     "key": 64,
     "copy": 4,
-    "type": "Living",
-    "switches": 0,
+    "type": "Bridge",
+    "switches": 21,
     "anomaly": "GravityFailure",
     "doors": 3,
     "items": [
@@ -865,8 +920,8 @@
    {
     "key": 2,
     "copy": 1,
-    "type": "Living",
-    "switches": 8,
+    "type": "Lab",
+    "switches": 4,
     "anomaly": "none",
     "doors": 3,
     "items": [
@@ -889,8 +944,8 @@
    {
     "key": 2,
     "copy": 2,
-    "type": "Living",
-    "switches": 8,
+    "type": "Lab",
+    "switches": 4,
     "anomaly": "none",
     "doors": 3,
     "items": [
@@ -912,8 +967,8 @@
    {
     "key": 2,
     "copy": 3,
-    "type": "Living",
-    "switches": 8,
+    "type": "Lab",
+    "switches": 4,
     "anomaly": "none",
     "doors": 3,
     "items": [
@@ -925,8 +980,8 @@
    {
     "key": 2,
     "copy": 4,
-    "type": "Living",
-    "switches": 8,
+    "type": "Lab",
+    "switches": 4,
     "anomaly": "none",
     "doors": 3,
     "items": [
@@ -941,8 +996,8 @@
    {
     "key": 3,
     "copy": 1,
-    "type": "Living",
-    "switches": 24,
+    "type": "Lab",
+    "switches": 36,
     "anomaly": "none",
     "doors": 2,
     "items": [
@@ -975,8 +1030,8 @@
    {
     "key": 3,
     "copy": 2,
-    "type": "Living",
-    "switches": 24,
+    "type": "Lab",
+    "switches": 36,
     "anomaly": "Radiation",
     "doors": 2,
     "items": [
@@ -989,8 +1044,8 @@
    {
     "key": 3,
     "copy": 3,
-    "type": "Living",
-    "switches": 24,
+    "type": "Lab",
+    "switches": 36,
     "anomaly": "none",
     "doors": 2,
     "items": [
@@ -1011,8 +1066,8 @@
    {
     "key": 3,
     "copy": 4,
-    "type": "Living",
-    "switches": 24,
+    "type": "Lab",
+    "switches": 36,
     "anomaly": "none",
     "doors": 2,
     "items": [
@@ -1036,8 +1091,8 @@
    {
     "key": 6,
     "copy": 1,
-    "type": "LifeSupport",
-    "switches": 34,
+    "type": "Living",
+    "switches": 10,
     "anomaly": "none",
     "doors": 3,
     "items": [
@@ -1062,8 +1117,8 @@
    {
     "key": 6,
     "copy": 2,
-    "type": "LifeSupport",
-    "switches": 34,
+    "type": "Living",
+    "switches": 10,
     "anomaly": "none",
     "doors": 3,
     "items": [
@@ -1084,8 +1139,8 @@
    {
     "key": 6,
     "copy": 3,
-    "type": "LifeSupport",
-    "switches": 34,
+    "type": "Living",
+    "switches": 10,
     "anomaly": "none",
     "doors": 3,
     "items": [
@@ -1107,8 +1162,8 @@
    {
     "key": 6,
     "copy": 4,
-    "type": "LifeSupport",
-    "switches": 34,
+    "type": "Living",
+    "switches": 10,
     "anomaly": "none",
     "doors": 2,
     "items": [
@@ -1124,8 +1179,8 @@
    {
     "key": 7,
     "copy": 1,
-    "type": "LifeSupport",
-    "switches": 35,
+    "type": "Lab",
+    "switches": 52,
     "anomaly": "none",
     "doors": 2,
     "items": [
@@ -1157,8 +1212,8 @@
    {
     "key": 7,
     "copy": 2,
-    "type": "LifeSupport",
-    "switches": 35,
+    "type": "Lab",
+    "switches": 52,
     "anomaly": "FrozenMoment",
     "doors": 3,
     "items": [
@@ -1180,8 +1235,8 @@
    {
     "key": 7,
     "copy": 3,
-    "type": "LifeSupport",
-    "switches": 35,
+    "type": "Lab",
+    "switches": 52,
     "anomaly": "none",
     "doors": 2,
     "items": [
@@ -1203,8 +1258,8 @@
    {
     "key": 7,
     "copy": 4,
-    "type": "LifeSupport",
-    "switches": 35,
+    "type": "Lab",
+    "switches": 52,
     "anomaly": "none",
     "doors": 2,
     "items": [
@@ -1228,8 +1283,8 @@
      {
       "kind": "finale",
       "items": [],
-      "tpl": 1,
-      "text": "It's fixed. The bridge only opens to empty hands. Leave it all here, the notebook last."
+      "tpl": 0,
+      "text": "Remember how you got to the bridge."
      }
     ]
    },
@@ -1245,8 +1300,8 @@
      {
       "kind": "finale",
       "items": [],
-      "tpl": 1,
-      "text": "It's fixed. The bridge only opens to empty hands. Leave it all here, the notebook last."
+      "tpl": 0,
+      "text": "Remember how you got to the bridge."
      }
     ]
    },
@@ -1262,8 +1317,8 @@
      {
       "kind": "finale",
       "items": [],
-      "tpl": 1,
-      "text": "It's fixed. The bridge only opens to empty hands. Leave it all here, the notebook last."
+      "tpl": 2,
+      "text": "It's fixed. Remember how you got to the bridge, and do it once more."
      }
     ]
    },
@@ -1279,8 +1334,8 @@
      {
       "kind": "finale",
       "items": [],
-      "tpl": 0,
-      "text": "The engines are humming. Now go home: empty your pockets. Everything. The notebook last."
+      "tpl": 1,
+      "text": "The engines are humming. Now remember how you got to the bridge."
      }
     ]
    }
@@ -1431,34 +1486,6 @@
      "Data Cartridge",
      "Cassette Tape",
      "Power Cell"
-    ],
-    "notes": []
-   }
-  ],
-  "{} (empty pocket)": [
-   {
-    "key": 0,
-    "copy": 1,
-    "type": "Bridge",
-    "switches": 21,
-    "anomaly": "none",
-    "doors": 3,
-    "items": [
-     "Family Photo",
-     "Rubber Duck"
-    ],
-    "notes": []
-   },
-   {
-    "key": 0,
-    "copy": 2,
-    "type": "Bridge",
-    "switches": 21,
-    "anomaly": "none",
-    "doors": 3,
-    "items": [
-     "Family Photo",
-     "Sealant Can"
     ],
     "notes": []
    }

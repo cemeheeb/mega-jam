@@ -63,7 +63,7 @@ N_NEXT_KEY = 2        # где появляется следующий ключ
 N_USELESS = 3         # какой предмет бесполезен
 N_DANGER = 4          # какой предмет ведёт в опасные комнаты
 N_ENGINE_SET = 5      # какой набор нужен для двигательного отсека
-N_FINALE = 6          # [допущение] записка в двигательном отсеке: как вернуться
+N_FINALE = 6          # записка в двигательном отсеке: «вспомни, как попал в рубку» (решение автора 13.11)
 
 NOTE_KIND_NAMES = ("notebook_first", "loop_exit", "next_key", "useless",
                    "danger", "engine_set", "finale")
@@ -103,8 +103,9 @@ TEMPLATES: dict[int, tuple[str, ...]] = {
         "Drop {leader} when the time comes.",
     ),
     N_FINALE: (
-        "The engines are humming. Now go home: empty your pockets. Everything. The notebook last.",
-        "It's fixed. The bridge only opens to empty hands. Leave it all here, the notebook last.",
+        "Remember how you got to the bridge.",
+        "The engines are humming. Now remember how you got to the bridge.",
+        "It's fixed. Remember how you got to the bridge, and do it once more.",
     ),
 }
 

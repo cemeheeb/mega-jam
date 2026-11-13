@@ -48,12 +48,22 @@ class LayoutTest(unittest.TestCase):
 
     def test_look_rules(self):
         lay = G.RunLayout(77)
-        self.assertEqual(lay.look(0)[0], G.BRIDGE)
-        self.assertEqual(lay.look(G.ANCHOR), (G.LIVING, 0))
+        self.assertEqual(lay.look(G.ANCHOR)[0], G.BRIDGE)       # только блокнот — рубка, первая петля
+        self.assertEqual(lay.look(0), (G.LIVING, 0))            # пустой карман — жилая
         self.assertEqual(lay.look(G.FINAL_MASK)[0], G.ENGINE)
+        self.assertEqual(lay.start_room().room_type, G.BRIDGE)
         for k in G.all_keys():
-            if k not in (0, G.FINAL_MASK):
+            if k not in (G.ANCHOR, G.FINAL_MASK):
                 self.assertIn(lay.look(k)[0], G.ORDINARY_TYPES)
+
+    def test_chain_step_may_keep_room_type(self):
+        """Шаг цепочки не обязан менять тип отсека (решение автора 13.11)."""
+        same = 0
+        for s in range(1, 301):
+            lay = G.RunLayout(s)
+            if lay.look(G.RM_L)[0] == lay.look(G.RM_L | G.RM_K1)[0]:
+                same += 1
+        self.assertGreater(same, 0)
 
     def test_pocket_key(self):
         lay = G.RunLayout(3)
@@ -115,8 +125,9 @@ class LayoutTest(unittest.TestCase):
         self.assertTrue(any("next-link note" in e for e in G.validate_layout(lay)))
 
         lay2 = G.RunLayout(12)
-        lay2.level_type = (G.LIVING, G.LIVING, G.LAB, G.LIFE_SUPPORT)
-        self.assertTrue(any("same room type" in e for e in G.validate_layout(lay2)))
+        orig_look = lay2.look
+        lay2.look = lambda key: (G.LIVING, 0) if key == G.ANCHOR else orig_look(key)  # блокнот не в рубку
+        self.assertTrue(any("bridge rule" in e for e in G.validate_layout(lay2)))
 
     def test_catalog(self):
         self.assertEqual(len(C.CATALOG), 16)
@@ -135,6 +146,28 @@ class SimTest(unittest.TestCase):
         for s in range(1, 301):
             r = sim.NotesPlayer(G.RunLayout(s), health=10 ** 9, miss=0.5).run()
             self.assertEqual(r.status, "win", f"seed {s}")
+
+    def test_finale_keeps_notebook_and_reaches_bridge(self):
+        for s in range(1, 101):
+            p = sim.NotesPlayer(G.RunLayout(s), health=10 ** 9)
+            r = p.run()
+            self.assertEqual(r.status, "win")
+            self.assertEqual(p.pocket, [G.NOTEBOOK])
+            self.assertEqual(p.room.look[0], G.BRIDGE)
+            self.assertTrue(p.engine_fixed)
+
+    def test_anomaly_state_persists(self):
+        """Устранённая аномалия не бьёт; неустранённая бьёт при каждом входе."""
+        never_fix = replace(DEFAULT, p_hit=1.0, p_fix=0.0)
+        always_fix = replace(DEFAULT, p_hit=1.0, p_fix=1.0)
+        for s in range(1, 201):
+            r = sim.NotesPlayer(G.RunLayout(s, never_fix), health=10 ** 9).run()
+            self.assertEqual(r.hits, r.anomaly_entries)
+            p = sim.NotesPlayer(G.RunLayout(s, always_fix), health=10 ** 9)
+            r = p.run()
+            # победная рубка не в счёт: концовка наступает раньше, чем аномалия успевает ударить
+            anomalous = sum(1 for rid in p.visited if rid != p.cur and p.world.rooms[rid].anomaly != G.NO_ANOMALY)
+            self.assertEqual(r.anomaly_entries, anomalous)  # в каждую аномальную комнату — ровно одно попадание
 
     def test_sim_deterministic(self):
         for name in sim.PLAYERS:

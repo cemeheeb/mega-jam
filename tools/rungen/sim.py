@@ -22,16 +22,20 @@ from rng import Rng
 
 
 class Room:
-    __slots__ = ("id", "key", "copy", "cls", "level", "look", "anomaly", "items", "notes", "doors", "parent")
+    __slots__ = ("id", "key", "copy", "cls", "level", "look", "anomaly", "anomaly_active", "items", "notes",
+                 "doors", "parent")
 
     def __init__(self, rid, rc: G.RoomContent, parent):
         self.id = rid
         self.key = rc.key
         self.copy = rc.copy
-        self.cls = G.room_class(rc.key) if rc.copy > 0 else G.CLS_BRIDGE
+        self.cls = G.room_class(rc.key) if rc.copy > 0 else G.CLS_START
         self.level = G.chain_level(rc.key)
         self.look = (rc.room_type, rc.switches)
         self.anomaly = rc.anomaly
+        # Состояние аномалии хранится в комнате: устранённая в этой копии больше не бьёт.
+        # Новая копия (через нераскрытую дверь) всегда начинает с исходного состояния.
+        self.anomaly_active = rc.anomaly != G.NO_ANOMALY
         self.items = list(rc.items)
         self.notes = rc.notes
         self.doors: list = [None] * rc.doors   # id комнаты за дверью или None, если не раскрыта
@@ -84,6 +88,7 @@ class Result:
     doors: int = 0             # раскрыто дверей (включая дверь в двигательный отсек и финальную в рубку)
     entries: int = 0           # входов в комнаты, включая повторные
     hits: int = 0
+    anomaly_entries: int = 0   # входов в комнату с действующей аномалией
     max_level: int = 0         # самый дальний уровень цепочки, куда дошёл
     guess_rooms: int = 0       # сколько раз раскрыл дверь в комнату-догадку
 
@@ -100,6 +105,7 @@ class Sim:
         self.pocket: list[int] = []
         self.cur = 0
         self.visited: set[int] = set()
+        self.engine_fixed = False
         self.res = Result()
 
     # --- действия ---
@@ -114,11 +120,20 @@ class Sim:
         self.cur = rid
         self.res.entries += 1
         r = self.room
-        if r.anomaly != G.NO_ANOMALY:
-            if self.rng.chance(self.cfg.hit_first if first else self.cfg.hit_revisit):
+        if r.cls == G.CLS_ENGINE:
+            self.engine_fixed = True        # 5.10: войти с правильным набором достаточно
+        if self.engine_fixed and r.look[0] == G.BRIDGE:
+            self.res.status = "win"         # рубка после починки двигателя — концовка
+            return
+        if r.anomaly_active:
+            self.res.anomaly_entries += 1
+            if self.rng.chance(self.cfg.p_hit):
                 self.res.hits += 1
                 if self.res.hits >= self.health:
                     self.res.status = "dead"
+                    return
+            if self.rng.chance(self.cfg.p_fix):
+                r.anomaly_active = False
         if first:
             self.on_first_visit(r)
 
@@ -166,13 +181,12 @@ class Sim:
                 self.res.status = "timeout"
                 break
             if self.room.cls == G.CLS_ENGINE:
-                # Финал 5.10: двигатель починен, выложить всё (блокнот последним), пустой карман ведёт в рубку.
-                for it in [i for i in self.pocket if i != G.NOTEBOOK] + [G.NOTEBOOK]:
-                    if it in self.pocket:
-                        self.drop(it)
+                # Финал (решение автора 13.11): двигатель починен; «вспомни, как попал в рубку» —
+                # выложить всё, кроме блокнота: один блокнот ведёт в рубку, это концовка.
+                for it in [i for i in self.pocket if i != G.NOTEBOOK]:
+                    self.drop(it)
                 self.reveal(self.unrevealed()[0])
-                assert self.room.look[0] == G.BRIDGE
-                self.res.status = "win"
+                assert self.res.status == "win" and self.room.look[0] == G.BRIDGE
                 break
             self.step()
         return self.res
@@ -256,7 +270,7 @@ class NotesPlayer(Sim):
         if want:
             p = self.world.path(self.cur, lambda r: any(i in want for i in r.items) and r.id in self.visited)
             if p is not None:
-                risky = sum(1 for rid in p if self.world.rooms[rid].anomaly != G.NO_ANOMALY)
+                risky = sum(1 for rid in p if self.world.rooms[rid].anomaly_active)
                 if risky <= self.max_risky_backtrack:
                     self.enter(p[0])
                     return
@@ -402,6 +416,7 @@ def summarize(results: list[Result], health: int) -> dict:
         "dead": st["dead"] / n,
         "timeout": st["timeout"] / n,
         "hits_mean": statistics.fmean(r.hits for r in results),
+        "anomaly_entries_mean": statistics.fmean(r.anomaly_entries for r in results),
         "doors_mean_all": statistics.fmean(r.doors for r in results),
         "guess_rooms_mean": statistics.fmean(r.guess_rooms for r in results),
         "max_level": dict(sorted(Counter(r.max_level for r in results).items())),
@@ -426,7 +441,7 @@ def print_summary(title: str, s: dict, health: int) -> None:
     print(f"  забегов {s['runs']}: победа {pct(s['win'])}, смерть {pct(s['dead'])}, завис {pct(s['timeout'])}")
     print(f"  урон в среднем {s['hits_mean']:.2f} из {health}; распределение попаданий {s['hits_hist']}")
     print(f"  комнат-догадок за забег в среднем {s['guess_rooms_mean']:.2f}")
-    print(f"  дальний уровень цепочки (0 жилая петля .. 4 двигатель): {s['max_level']}")
+    print(f"  дальний уровень цепочки (0 рубка-петля .. 4 двигатель): {s['max_level']}")
     if "win_doors_mean" in s:
         print(f"  до победы раскрыто дверей: среднее {s['win_doors_mean']:.1f}, медиана {s['win_doors_median']}, "
               f"10–90% {s['win_doors_p10']}–{s['win_doors_p90']}")

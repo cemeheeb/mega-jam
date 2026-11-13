@@ -6,8 +6,9 @@
 
 Сигнатура хранится как маска ролей (6 бит): бит 0 — проводник L, 1–3 — ключи K1–K3,
 4–5 — ложные X и Y. Пустышки в маску не попадают. Ключ комнаты = маска, а при пустой
-маске добавляется бит ANCHOR, если в кармане блокнот (рубка и жилая петля различаются
-только им). Всего ключей 0..127, счётчики копий можно держать в массиве.
+маске добавляется бит ANCHOR, если в кармане блокнот. Только блокнот (ANCHOR) — капитанская
+рубка, это первая петля; совсем пустой карман (ключ 0) — жилая комната. Всего ключей 0..127,
+счётчики копий можно держать в массиве.
 """
 
 from dataclasses import dataclass
@@ -34,9 +35,9 @@ BRIDGE, LIVING, LAB, LIFE_SUPPORT, ENGINE = 0, 1, 2, 3, 4
 ROOM_TYPE_NAMES = ("Bridge", "Living", "Lab", "LifeSupport", "Engine")
 ORDINARY_TYPES = (LIVING, LAB, LIFE_SUPPORT)
 
-# Класс комнаты
-CLS_BRIDGE, CLS_CHAIN, CLS_GUESS, CLS_ENGINE = 0, 1, 2, 3
-CLS_NAMES = ("bridge", "chain", "guess", "engine")
+# Класс комнаты. CLS_START — только стартовая рубка (копия 0), у ключей такого класса нет.
+CLS_START, CLS_CHAIN, CLS_GUESS, CLS_ENGINE = 0, 1, 2, 3
+CLS_NAMES = ("start", "chain", "guess", "engine")
 
 # Аномалии ядра, 5.9
 NO_ANOMALY, FROZEN_MOMENT, RADIATION, GRAVITY_FAILURE, SLOW_TIME = 0, 1, 2, 3, 4
@@ -45,8 +46,8 @@ ANOMALY_NAMES = ("none", "FrozenMoment", "Radiation", "GravityFailure", "SlowTim
 # Записки
 N_NOTEBOOK_FIRST, N_LOOP_EXIT, N_NEXT_KEY, N_USELESS, N_DANGER, N_ENGINE_SET, N_FINALE = range(7)
 
-# Домены ГСЧ
-D_ROLES, D_LEVEL_TYPE, D_GUESS_TYPE, D_SWITCH, D_ANOMALY, D_DOORS, D_ITEMS, D_NOTES, \
+# Домены ГСЧ. Номер 2 свободен: раньше им выбирались типы уровней цепочки.
+D_ROLES, _D_FREE_2, D_ROOM_TYPE, D_SWITCH, D_ANOMALY, D_DOORS, D_ITEMS, D_NOTES, \
     D_GUARANTEE, D_COSMETIC, D_START, D_PLAYER = range(1, 13)
 
 # Цепочка: уровень петли -> роль предмета, который из неё выводит
@@ -66,11 +67,10 @@ def room_key(role_mask: int, has_notebook: bool) -> int:
 
 
 def chain_level(key: int) -> int:
-    """Уровень петли: 0 жилая петля (только блокнот), 1 {L}, 2 {L,K1}/{K1},
-    3 {L,K1,K2}/{K1,K2}, 4 двигательный отсек. -1 — рубка или догадка."""
-    if key == 0:
-        return -1
-    if key == ANCHOR:
+    """Уровень петли: 0 — без значимых предметов (рубка-петля при одном блокноте,
+    жилая при пустом кармане), 1 {L}, 2 {L,K1}/{K1}, 3 {L,K1,K2}/{K1,K2},
+    4 двигательный отсек. -1 — догадка."""
+    if key in (0, ANCHOR):
         return 0
     if key & (RM_X | RM_Y):
         return -1
@@ -86,8 +86,6 @@ def chain_level(key: int) -> int:
 
 
 def room_class(key: int) -> int:
-    if key == 0:
-        return CLS_BRIDGE
     lvl = chain_level(key)
     if lvl == 4:
         return CLS_ENGINE
@@ -149,14 +147,9 @@ class RunLayout:
         for it in self.dummies:
             self.item_role[it] = DUMMY
 
-        # 2. Типы отсеков по уровням цепочки: жилая петля, затем каждый уровень
-        #    отличается от предыдущего, чтобы выход из петли было видно.
-        trng = Rng(self.seed, D_LEVEL_TYPE)
-        lt = [LIVING, 0, 0, 0]
-        for lvl in (1, 2, 3):
-            choices = [t for t in ORDINARY_TYPES if t != lt[lvl - 1]]
-            lt[lvl] = choices[trng.below(len(choices))]
-        self.level_type: tuple[int, ...] = tuple(lt)
+        # 2. Тип отсека для сигнатуры со значимыми предметами — по хешу в look().
+        #    Шаг цепочки не обязан менять тип: выход из петли видно по переключателям
+        #    и поведению комнаты (решение автора 13.11).
 
         # 3. Переключатели, 5.1: в каждом обычном типе каждый значимый предмет
         #    включает ровно один из шести переключателей. switch_of[type][role] -> номер.
@@ -165,8 +158,8 @@ class RunLayout:
             perm = list(range(NUM_SIG))
             Rng(self.seed, D_SWITCH, t).shuffle(perm)
             self.switch_of[t] = tuple(perm)
-        # Рубка и двигательный отсек бывают при одной сигнатуре: их переключатели
-        # косметические, постоянные в пределах забега.
+        # Рубка (только блокнот) и двигательный отсек бывают при одной сигнатуре:
+        # их переключатели косметические, постоянные в пределах забега.
         self.bridge_switches = hash32(self.seed, D_COSMETIC, BRIDGE) & 63
         self.engine_switches = hash32(self.seed, D_COSMETIC, ENGINE) & 63
 
@@ -198,17 +191,13 @@ class RunLayout:
 
     def look(self, key: int) -> tuple[int, int]:
         """(тип отсека, маска переключателей). Детерминирована от seed и key."""
-        if key == 0:
+        if key == ANCHOR:
             return BRIDGE, self.bridge_switches
+        if key == 0:
+            return LIVING, 0
         if key == FINAL_MASK:
             return ENGINE, self.engine_switches
-        if key == ANCHOR:
-            return LIVING, 0
-        lvl = chain_level(key)
-        if 1 <= lvl <= 3:
-            t = self.level_type[lvl]
-        else:
-            t = ORDINARY_TYPES[hash32(self.seed, D_GUESS_TYPE, key) % len(ORDINARY_TYPES)]
+        t = ORDINARY_TYPES[hash32(self.seed, D_ROOM_TYPE, key) % len(ORDINARY_TYPES)]
         sw = 0
         perm = self.switch_of[t]
         for r in range(NUM_SIG):
@@ -293,13 +282,14 @@ class RunLayout:
         return out
 
     def start_room(self) -> RoomContent:
-        """Рубка в начале забега: блокнот и две пустышки, без аномалии и записок."""
+        """Рубка в начале забега: блокнот и две пустышки, без аномалии и записок.
+        Вид — как у рубки-петли (ключ ANCHOR), номер копии 0."""
         rng = Rng(self.seed, D_START)
         dummies = list(self.dummies)
         a = dummies.pop(rng.below(len(dummies)))
         b = dummies.pop(rng.below(len(dummies)))
-        t, sw = self.look(0)
-        return RoomContent(0, 0, t, sw, NO_ANOMALY, 3, (NOTEBOOK, a, b), ())
+        t, sw = self.look(ANCHOR)
+        return RoomContent(ANCHOR, 0, t, sw, NO_ANOMALY, 3, (NOTEBOOK, a, b), ())
 
     def room_copy(self, key: int, copy: int) -> RoomContent:
         """Содержимое copy-й (с 1) копии комнаты с ключом key. Разыгрывается отдельно
@@ -308,9 +298,6 @@ class RunLayout:
         t, sw = self.look(key)
         cls = room_class(key)
 
-        if cls == CLS_BRIDGE:
-            rng = Rng(self.seed, D_ITEMS, key, copy)
-            return RoomContent(key, copy, t, sw, NO_ANOMALY, 3, tuple(self._draw_filler_dummies(rng, 2)), ())
         if cls == CLS_ENGINE:
             rng = Rng(self.seed, D_NOTES, key, copy)
             return RoomContent(key, copy, t, sw, NO_ANOMALY, 2, (), (self._note(rng, N_FINALE, ()),))
@@ -336,10 +323,6 @@ class RunLayout:
         notes = self._chain_notes(key, copy) if cls == CLS_CHAIN else self._guess_notes(key, copy)
         return RoomContent(key, copy, t, sw, anomaly, doors, tuple(items), notes)
 
-    def _draw_filler_dummies(self, rng: Rng, n: int) -> list[int]:
-        pool = list(self.dummies)
-        return [pool.pop(rng.below(len(pool))) for _ in range(min(n, len(pool)))]
-
     # ---------- описание для дампа ----------
 
     def describe(self) -> dict:
@@ -350,7 +333,10 @@ class RunLayout:
             "dummies": [C.CATALOG[i].name for i in self.dummies],
             "chain": [C.CATALOG[ri[r]].name for r in CHAIN_TARGET],
             "final_set": [C.CATALOG[ri[r]].name for r in (K1, K2, K3)],
-            "level_types": [ROOM_TYPE_NAMES[t] for t in self.level_type],
+            "chain_room_types": {name: ROOM_TYPE_NAMES[self.look(k)[0]] for name, k in (
+                ("notebook only", ANCHOR), ("empty pocket", 0), ("L", RM_L), ("L,K1", RM_L | RM_K1),
+                ("K1", RM_K1), ("L,K1,K2", RM_L | RM_K1 | RM_K2), ("K1,K2", RM_K1 | RM_K2),
+                ("K1,K2,K3", FINAL_MASK))},
             "notebook_first": self.first_note.text(),
         }
 
@@ -401,25 +387,22 @@ def validate_layout(layout: RunLayout, copies: int = 12) -> list[str]:
     if popcount(FINAL_MASK) > POCKET_SLOTS - 1:
         err.append("final set does not fit next to the notebook")
 
-    # Вид комнаты: рубка только при пустом кармане, двигатель только при финальной сигнатуре,
-    # жилая петля при одном блокноте, один вид на одну сигнатуру, разные виды у разных.
+    # Вид комнаты: рубка только при одном блокноте, жилая при пустом кармане, двигатель только
+    # при финальной сигнатуре, один вид на одну сигнатуру, разные виды у разных.
     seen_looks: dict[tuple[int, int], int] = {}
     for key in all_keys():
         t, sw = layout.look(key)
-        if (t == BRIDGE) != (key == 0):
+        if (t == BRIDGE) != (key == ANCHOR):
             err.append(f"key {key}: bridge rule broken")
         if (t == ENGINE) != (key == FINAL_MASK):
             err.append(f"key {key}: engine rule broken")
-        if key == ANCHOR and t != LIVING:
-            err.append("notebook-only pocket does not lead to living quarters")
+        if key == 0 and t != LIVING:
+            err.append("empty pocket does not lead to living quarters")
         if (t, sw) in seen_looks:
             err.append(f"keys {seen_looks[(t, sw)]} and {key} look identical")
         seen_looks[(t, sw)] = key
         if layout.look(key) != (t, sw):
             err.append(f"key {key}: look not deterministic")
-    for lvl in (1, 2, 3):
-        if layout.level_type[lvl] == layout.level_type[lvl - 1]:
-            err.append(f"chain level {lvl} has the same room type as level {lvl - 1}")
 
     # Содержимое копий: предпосылки, гарантия цели, правдивость записок,
     # записка на шаг вперёд в первой копии каждой петли цепочки.
@@ -436,8 +419,8 @@ def validate_layout(layout: RunLayout, copies: int = 12) -> list[str]:
                 if it in chain_items:
                     need = chain_items[it]
                     if it == ri[L]:
-                        if key != ANCHOR:
-                            err.append(f"key {key} copy {c}: L outside the base loop")
+                        if lvl != 0:
+                            err.append(f"key {key} copy {c}: L outside the first loop")
                     elif key & need != need:
                         err.append(f"key {key} copy {c}: {ROLE_NAMES[layout.role_of(it)]} without prerequisites")
                     if cls != CLS_CHAIN or it != ri[CHAIN_TARGET[lvl]]:
@@ -451,7 +434,7 @@ def validate_layout(layout: RunLayout, copies: int = 12) -> list[str]:
                     err.append(f"key {key} copy {c}: false note {n}")
                 if n.kind in (N_LOOP_EXIT, N_NEXT_KEY, N_ENGINE_SET) and cls != CLS_CHAIN:
                     err.append(f"key {key} copy {c}: chain note outside the chain")
-            if cls in (CLS_BRIDGE, CLS_ENGINE) and rc.anomaly != NO_ANOMALY:
+            if cls == CLS_ENGINE and rc.anomaly != NO_ANOMALY:
                 err.append(f"key {key}: anomaly in a safe room")
             if cls == CLS_CHAIN and c == 1:
                 want_kind, want_items = layout._ahead_note(lvl)
