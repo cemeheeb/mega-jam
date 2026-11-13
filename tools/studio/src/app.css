@@ -1,0 +1,113 @@
+:root {
+  --bg: #15171b;
+  --panel: #1d2026;
+  --field: #272b33;
+  --line: #343944;
+  --text: #e7e9ee;
+  --muted: #8d95a3;
+  --accent: #e8a33d;
+  --ok: #4fae74;
+  --bad: #d9534f;
+  --mono: ui-monospace, 'SF Mono', Menlo, monospace;
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f4f4f1;
+    --panel: #ffffff;
+    --field: #ecece8;
+    --line: #d5d5cf;
+    --text: #1d1f23;
+    --muted: #6b7078;
+    --accent: #d98a17;
+    --ok: #2f8f58;
+    --bad: #c63f3b;
+    color-scheme: light;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 14px/1.4 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+button,
+a.btn {
+  font: inherit;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--field);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 5px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  text-decoration: none;
+}
+button:hover:not(:disabled),
+a.btn:hover {
+  border-color: var(--accent);
+}
+button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #1a1206;
+  font-weight: 600;
+}
+button.ok {
+  background: color-mix(in srgb, var(--ok) 22%, transparent);
+  border-color: var(--ok);
+  color: var(--text);
+  font-weight: 600;
+}
+button.quiet {
+  background: transparent;
+  border-color: transparent;
+  color: var(--muted);
+  padding: 5px 6px;
+}
+button.link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--accent);
+  font-size: 13px;
+}
+button.link:hover {
+  text-decoration: underline;
+}
+
+.seg {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.seg button {
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: var(--muted);
+  padding: 4px 10px;
+}
+.seg button.on {
+  background: var(--field);
+  color: var(--text);
+  font-weight: 600;
+}
+
+code {
+  font-family: var(--mono);
+  font-size: 12px;
+}
