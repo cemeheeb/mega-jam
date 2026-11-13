@@ -1,0 +1,690 @@
+"""Серая сборка девяти типов отсеков (DESIGN.md 5.1): блюпринты BP_Room_<Тип>, уровень игры Lvl_Game
+и проверочный уровень Lvl_Rooms, где все комнаты стоят в ряд.
+
+Геометрию комнаты даёт блюпринт, поведение — его C++-родитель ARunRoom (Source/MegaJam/Run/RunRoom.h).
+Он ищет компоненты по именам: <N|S|W|E>_DoorInner — створки, ItemSpot*/NoteSpot* — места предметов и записок.
+Размеры коробки ниже должны совпадать с RunRoomGeo в RunRoom.h.
+
+Комнаты описаны данными ниже и собираются в редакторе через MCP. Повторный запуск
+пересобирает блюпринты с нуля. Нужен открытый редактор с проектом MegaJam.
+
+    python3 tools/ue/build_rooms.py            # обе комнаты
+    python3 tools/ue/build_rooms.py Bridge     # одна
+    python3 tools/ue/build_rooms.py --dry      # только показать, что будет построено
+
+Единицы — сантиметры. Начало координат комнаты — центр пола.
+Стороны света: север — +X, восток — +Y, юг — −X, запад — −Y.
+Правило локаций (DESIGN.md 5.2): в каждой комнате четыре двери, по одной в каждой стене.
+"""
+
+import json
+import math
+import sys
+
+from uemcp import tool
+
+BP = "editor_toolset.toolsets.blueprint.BlueprintTools"
+PR = "editor_toolset.toolsets.primitive.PrimitiveTools"
+AS = "editor_toolset.toolsets.asset.AssetTools"
+OB = "editor_toolset.toolsets.object.ObjectTools"
+SC = "editor_toolset.toolsets.scene.SceneTools"
+AC = "editor_toolset.toolsets.actor.ActorTools"
+MI = "editor_toolset.toolsets.material_instance.MaterialInstanceTools"
+
+ROOT = "/Game/Game"
+LEVEL = f"{ROOT}/Maps/Lvl_Rooms"
+GAME_LEVEL = f"{ROOT}/Maps/Lvl_Game"
+ROOM_CLASS = "/Script/MegaJam.RunRoom"
+DIRECTOR_CLASS = "/Script/MegaJam.RunDirector"
+# где комнаты стоят на проверочном уровне и где появляется игрок
+PLACES = {"Living": (0, 0, 0), "Bridge": (0, 3000, 0), "Lab": (0, 6000, 0),
+          "LifeSupport": (0, 9000, 0), "Engine": (0, 12000, 0), "Medbay": (0, 15000, 0),
+          "Cargo": (0, 18000, 0), "Mess": (0, 21000, 0), "Computer": (0, 24000, 0)}
+PLAYER_START = (-290, -225, 100)   # в жилой комнате, перед спальной капсулой
+
+# --- размеры коробки, общие для всех комнат ---
+LX, LY, H = 900, 750, 300      # комната внутри: с юга на север, с запада на восток, высота
+T = 30                         # толщина стен
+DW, DH = 150, 225              # проём двери: ширина, высота
+VW, VD = 450, 300              # тамбур шлюза внутри: ширина вдоль стены, глубина наружу
+LEAF = 10                      # толщина створки
+
+# --- материалы: имя -> цвет поверхности (r, g, b) ---
+MATERIALS = {
+    "Wall": (0.62, 0.62, 0.60),
+    "Floor": (0.10, 0.11, 0.12),
+    "Ceiling": (0.35, 0.35, 0.35),
+    "Dark": (0.06, 0.07, 0.08),
+    "Door": (0.85, 0.33, 0.08),
+    "Furniture": (0.42, 0.44, 0.47),
+    "Bed": (0.20, 0.55, 0.58),
+    "Linen": (0.80, 0.80, 0.76),
+    "Glow": (0.25, 0.85, 0.95),
+    "Plant": (0.18, 0.45, 0.16),
+    "Tank": (0.72, 0.74, 0.76),
+}
+
+
+class Room:
+    def __init__(self, name):
+        self.name = name
+        self.boxes = []      # (имя, размер, центр, материал, поворот вокруг Z)
+        self.cylinders = []  # (имя, радиус, высота, центр, материал, поворот (pitch, yaw, roll))
+        self.lights = []     # (имя, положение, сила, радиус, цвет)
+        self.spots = []      # (имя, положение): места для предметов и записок, высота — верх поверхности
+
+    def box(self, name, size, center, mat, yaw=0.0):
+        self.boxes.append((name, size, center, mat, yaw))
+
+    def cylinder(self, name, radius, height, center, mat, rot=(0, 0, 0)):
+        """Цилиндр стоит вертикально. Лежачий вдоль X — rot=(90, 0, 0), вдоль Y — rot=(90, 90, 0)."""
+        self.cylinders.append((name, radius, height, center, mat, rot))
+
+    def light(self, name, pos, intensity, radius, color):
+        self.lights.append((name, pos, intensity, radius, color))
+
+    def spots_for(self, prefix, points):
+        for i, p in enumerate(points):
+            self.spots.append((f"{prefix}{i + 1}", p))
+
+    def names(self):
+        return ([b[0] for b in self.boxes] + [c[0] for c in self.cylinders] + [l[0] for l in self.lights]
+                + [sp[0] for sp in self.spots])
+
+
+# ---------- коробка: пол, потолок, четыре стены с проёмами, четыре шлюза, свет ----------
+
+def wall_with_door(room, prefix, axis, fixed, lo, hi, door_at):
+    """Стена с проёмом. axis — вдоль какой оси идёт стена, fixed — её координата по другой оси."""
+    left_len = (door_at - DW / 2) - lo
+    right_len = hi - (door_at + DW / 2)
+    parts = [
+        ("A", left_len, lo + left_len / 2, H, H / 2),
+        ("B", right_len, hi - right_len / 2, H, H / 2),
+        ("Lintel", DW, door_at, H - DH, DH + (H - DH) / 2),
+    ]
+    for tag, length, mid, height, z in parts:
+        if axis == "y":
+            room.box(f"{prefix}_{tag}", (T, length, height), (fixed, mid, z), "Wall")
+        else:
+            room.box(f"{prefix}_{tag}", (length, T, height), (mid, fixed, z), "Wall")
+
+
+def airlock(room, side, door_at=0):
+    """Тамбур шлюза снаружи стены. u — вдоль стены, v — наружу от её внешней грани."""
+    def place(name, su, sv, sz, u, v, z, mat):
+        if side == "N":         # стена +X, наружу +X
+            room.box(name, (sv, su, sz), ((LX / 2 + T) + v, door_at + u, z), mat)
+        elif side == "S":       # стена −X, наружу −X
+            room.box(name, (sv, su, sz), (-(LX / 2 + T) - v, door_at + u, z), mat)
+        elif side == "W":       # стена −Y, наружу −Y
+            room.box(name, (su, sv, sz), (door_at + u, -(LY / 2 + T) - v, z), mat)
+        else:                   # "E": стена +Y, наружу +Y
+            room.box(name, (su, sv, sz), (door_at + u, (LY / 2 + T) + v, z), mat)
+
+    p = f"{side}_Airlock"
+    place(f"{p}_Floor", VW + 2 * T, VD + T, 20, 0, (VD + T) / 2, -10, "Floor")
+    place(f"{p}_Ceiling", VW + 2 * T, VD + T, 20, 0, (VD + T) / 2, H + 10, "Ceiling")
+    for sgn, tag in ((-1, "SideA"), (1, "SideB")):
+        place(f"{p}_{tag}", T, VD, H, sgn * (VW / 2 + T / 2), VD / 2, H / 2, "Wall")
+    seg = VW / 2 + T - DW / 2
+    for sgn, tag in ((-1, "EndA"), (1, "EndB")):
+        place(f"{p}_{tag}", seg, T, H, sgn * (DW / 2 + seg / 2), VD + T / 2, H / 2, "Wall")
+    place(f"{p}_EndLintel", DW, T, H - DH, 0, VD + T / 2, DH + (H - DH) / 2, "Wall")
+    # Створки стоят закрытыми. Внутреннюю двигает ARunRoom, внешняя не открывается никогда:
+    # при переходе на её месте оказывается внутренняя створка соседней комнаты.
+    place(f"{side}_DoorInner", DW, LEAF, DH, 0, LEAF / 2, DH / 2, "Door")
+    place(f"{side}_DoorOuter", DW, LEAF, DH, 0, VD - LEAF / 2, DH / 2, "Door")
+    mid = {"N": ((LX / 2 + T) + VD / 2, door_at), "S": (-(LX / 2 + T) - VD / 2, door_at),
+           "W": (door_at, -(LY / 2 + T) - VD / 2), "E": (door_at, (LY / 2 + T) + VD / 2)}[side]
+    room.light(f"{p}_Light", (mid[0], mid[1], H - 40), 600, 700, (1.0, 0.72, 0.45))
+
+
+def shell(room):
+    room.box("Floor", (LX + 2 * T, LY + 2 * T, 20), (0, 0, -10), "Floor")
+    room.box("Ceiling", (LX + 2 * T, LY + 2 * T, 20), (0, 0, H + 10), "Ceiling")
+    wall_with_door(room, "Wall_N", "y", LX / 2 + T / 2, -(LY / 2 + T), LY / 2 + T, 0)
+    wall_with_door(room, "Wall_S", "y", -(LX / 2 + T / 2), -(LY / 2 + T), LY / 2 + T, 0)
+    wall_with_door(room, "Wall_W", "x", -(LY / 2 + T / 2), -LX / 2, LX / 2, 0)
+    wall_with_door(room, "Wall_E", "x", LY / 2 + T / 2, -LX / 2, LX / 2, 0)
+    for side in "NSWE":
+        airlock(room, side)
+    for i, x in enumerate((-250, 100, 330)):
+        room.light(f"Room_Light{i + 1}", (x, 0, H - 30), 1800, 1200, (1.0, 0.96, 0.90))
+
+
+# ---------- жилая комната: спальная капсула, шкафчики, кухонный уголок со столом, уборная ----------
+
+def living():
+    r = Room("Living")
+    shell(r)
+    # спальная капсула в юго-западном углу, у южной стены; голова к западной стене
+    px, py = -LX / 2 + 50, -225
+    r.box("Sleep_Base", (100, 220, 45), (px, py, 22.5), "Furniture")
+    r.box("Sleep_Mattress", (90, 200, 12), (px, py, 51), "Bed")
+    r.box("Sleep_Pillow", (60, 40, 10), (px, py - 78, 62), "Linen")
+    r.box("Sleep_Blanket", (86, 110, 6), (px, py + 40, 60), "Linen")
+    r.box("Sleep_HeadWall", (100, 8, 170), (px, py - 114, 130), "Furniture")
+    r.box("Sleep_FootWall", (100, 8, 170), (px, py + 114, 130), "Furniture")
+    r.box("Sleep_Canopy", (100, 236, 8), (px, py, 219), "Furniture")
+    r.box("Sleep_Visor", (8, 220, 40), (px + 46, py, 195), "Dark")
+    r.box("Sleep_Step", (30, 120, 20), (px + 65, py, 10), "Furniture")
+    r.light("Sleep_Light", (px, py, 190), 250, 350, (0.45, 0.90, 0.95))
+    # три шкафчика в юго-восточном углу, вдоль южной стены
+    for i in range(3):
+        y = 150 + i * 80
+        r.box(f"Locker{i + 1}", (50, 76, 200), (-LX / 2 + 25, y, 100), "Furniture")
+        r.box(f"Locker{i + 1}_Handle", (4, 6, 30), (-LX / 2 + 52, y + 26, 110), "Dark")
+    # кухонный уголок у северной стены, в северо-западной четверти
+    r.box("Galley_Counter", (60, 220, 90), (LX / 2 - 30, -230, 45), "Furniture")
+    r.box("Galley_Top", (62, 222, 4), (LX / 2 - 30, -230, 92), "Dark")
+    r.box("Galley_Cabinet", (35, 220, 60), (LX / 2 - 17.5, -230, 190), "Furniture")
+    # стол и два табурета перед кухонным уголком
+    r.box("Table_Top", (120, 80, 6), (250, -230, 75), "Furniture")
+    r.box("Table_Leg", (20, 20, 72), (250, -230, 36), "Dark")
+    r.box("Stool1", (36, 36, 45), (250, -300, 22.5), "Furniture")
+    r.box("Stool2", (36, 36, 45), (250, -160, 22.5), "Furniture")
+    # уборная: кабинка 1,6 × 1,6 м в северо-восточном углу, дверь смотрит на юг
+    x0, y0, w = 285, 210, 8                     # южная и западная грани кабинки, толщина перегородки
+    x1, y1 = LX / 2, LY / 2                     # северная и восточная стены комнаты
+    r.box("Lavatory_WallW", (x1 - x0, w, H), ((x0 + x1) / 2, y0 + w / 2, H / 2), "Wall")
+    g0, g1, gh = 250, 330, 210                  # проём двери по Y и его высота
+    r.box("Lavatory_WallS_A", (w, g0 - (y0 + w), H), (x0 + w / 2, (y0 + w + g0) / 2, H / 2), "Wall")
+    r.box("Lavatory_WallS_B", (w, y1 - g1, H), (x0 + w / 2, (g1 + y1) / 2, H / 2), "Wall")
+    r.box("Lavatory_Lintel", (w, g1 - g0, H - gh), (x0 + w / 2, (g0 + g1) / 2, gh + (H - gh) / 2), "Wall")
+    # дверь приоткрыта наружу на 75°, петля у восточного края проёма
+    ang = math.radians(75)
+    leaf = g1 - g0 - 2
+    r.box("Lavatory_Door", (4, leaf, gh - 2),
+          (x0 + 2 - math.sin(ang) * leaf / 2, g1 - math.cos(ang) * leaf / 2, (gh - 2) / 2), "Furniture", yaw=-75)
+    r.box("Lavatory_Toilet", (55, 38, 40), (x1 - 30, 300, 20), "Linen")
+    r.box("Lavatory_ToiletLid", (50, 36, 4), (x1 - 31, 300, 42), "Dark")
+    r.box("Lavatory_Tank", (18, 40, 42), (x1 - 9, 300, 61), "Linen")
+    r.box("Lavatory_SinkStand", (16, 16, 80), (330, y1 - 12, 40), "Furniture")
+    r.box("Lavatory_Sink", (42, 32, 12), (330, y1 - 18, 86), "Linen")
+    r.box("Lavatory_Mirror", (34, 3, 45), (330, y1 - 1.5, 145), "Dark")
+    r.light("Lavatory_Light", ((x0 + x1) / 2, (y0 + y1) / 2, 255), 300, 320, (1.0, 0.96, 0.90))
+    r.spots_for("ItemSpot", [(250, -205, 78), (250, -255, 78), (LX / 2 - 30, -170, 94), (LX / 2 - 30, -290, 94),
+                             (px, py + 60, 63), (-250, 150, 0), (150, 150, 0), (-100, -250, 0)])
+    r.spots_for("NoteSpot", [(215, -230, 78), (-330, 120, 0), (330, 150, 0)])
+    return r
+
+
+# ---------- рубка: только центральный пост — кресло, панель управления, консоли по кругу ----------
+
+def bridge():
+    r = Room("Bridge")
+    shell(r)
+    r.cylinder("Post_Dais", 120, 12, (0, 0, 6), "Furniture")
+    # кресло в центре, лицом на север
+    r.box("Chair_Seat", (60, 60, 45), (0, 0, 12 + 22.5), "Furniture")
+    r.box("Chair_Back", (12, 60, 75), (-24, 0, 12 + 45 + 37.5), "Furniture")
+    for sgn, tag in ((-1, "W"), (1, "E")):
+        r.box(f"Chair_Arm{tag}", (50, 8, 20), (4, sgn * 34, 12 + 45 + 10), "Furniture")
+    # центральная панель управления перед креслом
+    r.box("Panel_Body", (36, 120, 78), (72, 0, 12 + 39), "Furniture")
+    r.box("Panel_Top", (40, 124, 6), (72, 0, 12 + 81), "Dark")
+    # кольцо консолей вокруг поста; на юге проход к креслу
+    radius, depth, width = 215, 60, 150
+    for i, deg in enumerate((0, 45, 90, 135, 225, 270, 315)):
+        a = math.radians(deg)
+        x, y = radius * math.cos(a), radius * math.sin(a)
+        r.box(f"Ring_Console{i + 1}", (depth, width, 95), (x, y, 47.5), "Furniture", yaw=deg)
+        r.box(f"Ring_Screen{i + 1}", (depth - 14, width - 16, 6), (x, y, 98), "Dark", yaw=deg)
+    r.light("Post_Light", (0, 0, 200), 500, 500, (0.45, 0.90, 0.95))
+    d = radius * math.sqrt(0.5)
+    r.spots_for("ItemSpot", [(d, d, 101), (-d, d, 101), (d, -d, 101), (-d, -d, 101), (0, radius, 101),
+                             (0, -radius, 101), (350, 300, 0), (-350, -300, 0)])
+    r.spots_for("NoteSpot", [(radius, 0, 101), (-350, 300, 0), (350, -300, 0)])
+    return r
+
+
+# ---------- лаборатория: клетки сбежавших крыс, капсула с образцом, столы с приборами, вытяжной шкаф ----------
+
+def lab():
+    r = Room("Lab")
+    shell(r)
+    # стеллаж с клетками вдоль южной стены, юго-западная четверть; одна клетка распахнута
+    r.box("Cages_Rack", (50, 240, 190), (-LX / 2 + 25, -225, 95), "Furniture")
+    for row in range(2):
+        for col in range(3):
+            y, z = -305 + col * 80, 55 + row * 85
+            if (row, col) == (0, 1):
+                r.box("Cage_Open_Hole", (6, 68, 68), (-LX / 2 + 49, y, z), "Dark")
+                r.box("Cage_Open_Door", (4, 68, 68), (-LX / 2 + 84, y + 36, z), "Furniture", yaw=80)
+            else:
+                r.box(f"Cage_{row}{col}", (4, 68, 68), (-LX / 2 + 52, y, z), "Dark")
+    # капсула с образцом в юго-восточной четверти и пульт к ней
+    cx, cy = -270, 250
+    r.cylinder("Specimen_Base", 75, 30, (cx, cy, 15), "Furniture")
+    r.cylinder("Specimen_Tube", 60, 190, (cx, cy, 125), "Glow")
+    r.cylinder("Specimen_Cap", 75, 24, (cx, cy, 232), "Furniture")
+    r.box("Specimen_Panel", (30, 44, 100), (cx + 110, cy - 90, 50), "Furniture", yaw=35)
+    r.box("Specimen_PanelTop", (26, 40, 4), (cx + 110, cy - 90, 102), "Dark", yaw=35)
+    r.light("Specimen_Light", (cx, cy, 270), 400, 400, (0.45, 0.90, 0.95))
+    # лабораторный стол у западной стены, северо-западная четверть
+    r.box("BenchW", (240, 70, 90), (250, -LY / 2 + 35, 45), "Furniture")
+    r.box("BenchW_Top", (244, 74, 4), (250, -LY / 2 + 35, 92), "Dark")
+    r.box("BenchW_Microscope", (22, 22, 38), (190, -LY / 2 + 35, 113), "Linen")
+    r.box("BenchW_Centrifuge", (44, 44, 30), (320, -LY / 2 + 38, 109), "Linen")
+    for i in range(3):
+        r.cylinder(f"BenchW_Flask{i + 1}", 6, 22, (236 + i * 16, -LY / 2 + 30, 105), "Glow")
+    r.box("BenchW_Stool", (36, 36, 55), (250, -LY / 2 + 110, 27.5), "Furniture")
+    # вытяжной шкаф у северной стены и стол-остров, северо-восточная четверть
+    r.box("Hood_Body", (60, 200, 210), (LX / 2 - 30, 240, 105), "Furniture")
+    r.box("Hood_Window", (4, 170, 80), (LX / 2 - 62, 240, 150), "Dark")
+    r.box("Island", (80, 200, 90), (230, 240, 45), "Furniture")
+    r.box("Island_Top", (84, 204, 4), (230, 240, 92), "Dark")
+    r.box("Island_Monitor", (6, 50, 36), (230, 190, 114), "Dark")
+    r.box("Island_Samples", (30, 60, 14), (230, 290, 101), "Linen")
+    r.spots_for("ItemSpot", [(280, -LY / 2 + 35, 94), (150, -LY / 2 + 35, 94), (230, 240, 94), (200, 320, 94),
+                             (-200, -100, 0), (-130, 130, 0), (120, -150, 0), (-150, 330, 0)])
+    r.spots_for("NoteSpot", [(255, 150, 94), (165, -LY / 2 + 50, 94), (-330, 100, 0)])
+    return r
+
+
+# ---------- жизнеобеспечение: баки, очистители воздуха, гидропоника, трубы, баллоны ----------
+
+def life_support():
+    r = Room("LifeSupport")
+    shell(r)
+    # два больших бака у западной стены, северо-западная четверть
+    for i, x in enumerate((180, 350)):
+        r.cylinder(f"Tank{i + 1}", 75, 250, (x, -LY / 2 + 85, 125), "Tank")
+        r.cylinder(f"Tank{i + 1}_Band", 78, 14, (x, -LY / 2 + 85, 70), "Door")
+        r.box(f"Tank{i + 1}_Gauge", (24, 6, 24), (x, -LY / 2 + 163, 140), "Dark")
+    # два очистителя воздуха у северной стены, северо-восточная четверть
+    for i, y in enumerate((150, 290)):
+        r.box(f"Scrubber{i + 1}", (80, 120, 220), (LX / 2 - 40, y, 110), "Furniture")
+        r.box(f"Scrubber{i + 1}_Grille", (4, 100, 110), (LX / 2 - 82, y, 140), "Dark")
+        r.cylinder(f"Scrubber{i + 1}_Duct", 22, 80, (LX / 2 - 40, y, 260), "Tank")
+    # гидропонные стеллажи в юго-восточной четверти: вдоль южной и восточной стен
+    def rack(tag, center, size, along):
+        r.box(f"Hydro{tag}_Frame", size, (center[0], center[1], 100), "Furniture")
+        for lvl in range(3):
+            tray = (size[0] + 6, size[1] - 10, 8) if along == "y" else (size[0] - 10, size[1] + 6, 8)
+            r.box(f"Hydro{tag}_Tray{lvl + 1}", tray, (center[0], center[1], 45 + lvl * 65), "Plant")
+    rack("S", (-LX / 2 + 25, 230), (50, 240, 200), "y")
+    rack("E", (-200, LY / 2 - 25), (200, 50, 200), "x")
+    r.light("Hydro_Light", (-320, 260, 250), 500, 450, (0.85, 0.55, 0.95))
+    # пульт и стойка кислородных баллонов в юго-западной четверти
+    r.box("Control", (60, 130, 100), (-LX / 2 + 30, -150, 50), "Furniture")
+    r.box("Control_Screen", (4, 110, 60), (-LX / 2 + 3, -150, 150), "Dark")
+    for i in range(4):
+        r.cylinder(f"Oxygen{i + 1}", 14, 120, (-LX / 2 + 24, -260 - i * 34, 60), "Linen")
+    r.box("Oxygen_Rack", (36, 150, 10), (-LX / 2 + 24, -311, 95), "Dark")
+    # трубы под потолком вдоль западной и восточной стен, на каждой по вентилю
+    for sgn, tag in ((-1, "W"), (1, "E")):
+        y = sgn * (LY / 2 - 18)
+        r.cylinder(f"Pipe{tag}1", 10, LX, (0, y, 265), "Tank", rot=(90, 0, 0))
+        r.cylinder(f"Pipe{tag}2", 7, LX, (0, y, 238), "Door", rot=(90, 0, 0))
+        r.cylinder(f"Pipe{tag}_Valve", 16, 6, (-150, sgn * (LY / 2 - 34), 238), "Door", rot=(90, 90, 0))
+    r.spots_for("ItemSpot", [(-LX / 2 + 30, -115, 100), (-LX / 2 + 30, -185, 100), (200, -170, 0), (300, 120, 0),
+                             (-150, 150, 0), (-330, -300, 0), (120, -120, 0), (-250, 250, 0)])
+    r.spots_for("NoteSpot", [(-LX / 2 + 30, -150, 100), (250, 200, 0), (-120, -200, 0)])
+    return r
+
+
+# ---------- двигательный отсек: ядро варп-двигателя, пилоны, пульты, баки охлаждения, щит питания ----------
+
+def engine():
+    r = Room("Engine")
+    shell(r)
+    # ядро в центре, от пола до потолка
+    r.cylinder("Core_Base", 150, 20, (0, 0, 10), "Furniture")
+    r.cylinder("Core_Column", 85, 260, (0, 0, 150), "Glow")
+    r.cylinder("Core_RingLow", 115, 16, (0, 0, 80), "Dark")
+    r.cylinder("Core_RingHigh", 115, 16, (0, 0, 220), "Dark")
+    r.cylinder("Core_Top", 150, 20, (0, 0, 290), "Furniture")
+    r.light("Core_Light", (140, 0, 150), 2500, 900, (0.35, 0.85, 1.0))
+    r.light("Core_Light2", (-140, 0, 150), 2500, 900, (0.35, 0.85, 1.0))
+    # четыре пилона по диагоналям и силовые шины от них к ядру
+    for i, deg in enumerate((45, 135, 225, 315)):
+        a = math.radians(deg)
+        x, y = 215 * math.cos(a), 215 * math.sin(a)
+        r.box(f"Pylon{i + 1}", (40, 40, H), (x, y, H / 2), "Furniture", yaw=deg)
+        r.box(f"Pylon{i + 1}_Bus", (110, 14, 14), (150 * math.cos(a), 150 * math.sin(a), 250), "Door", yaw=deg)
+    # два пульта у южной стены, по сторонам от двери
+    for sgn, tag in ((-1, "W"), (1, "E")):
+        r.box(f"Console{tag}", (60, 180, 100), (-LX / 2 + 30, sgn * 220, 50), "Furniture")
+        r.box(f"Console{tag}_Screen", (4, 160, 70), (-LX / 2 + 3, sgn * 220, 160), "Dark")
+    # баки охлаждения в северных углах с трубами к потолку
+    for sgn, tag in ((-1, "W"), (1, "E")):
+        r.cylinder(f"Coolant{tag}", 55, 220, (LX / 2 - 65, sgn * (LY / 2 - 65), 110), "Tank")
+        r.cylinder(f"Coolant{tag}_Band", 58, 14, (LX / 2 - 65, sgn * (LY / 2 - 65), 60), "Door")
+        r.cylinder(f"Coolant{tag}_Pipe", 12, 70, (LX / 2 - 65, sgn * (LY / 2 - 65), 255), "Tank")
+    # щит питания на западной стене: гнёзда под батареи и предохранители
+    r.box("Power_Board", (150, 10, 150), (-230, -LY / 2 + 5, 130), "Dark")
+    for i in range(3):
+        r.cylinder(f"Power_Cell{i + 1}", 14, 40, (-275 + i * 45, -LY / 2 + 24, 150), "Glow", rot=(90, 90, 0))
+    for i in range(4):
+        r.box(f"Power_Fuse{i + 1}", (16, 8, 34), (-284 + i * 36, -LY / 2 + 13, 92), "Linen")
+    # гироскоп навигации у восточной стены
+    r.cylinder("Gyro_Stand", 30, 90, (-230, LY / 2 - 50, 45), "Furniture")
+    r.cylinder("Gyro_Ring", 42, 8, (-230, LY / 2 - 50, 122), "Tank", rot=(90, 90, 0))
+    r.cylinder("Gyro_Rotor", 22, 20, (-230, LY / 2 - 50, 122), "Door", rot=(90, 90, 0))
+    r.spots_for("ItemSpot", [(300, 150, 0), (300, -150, 0), (-300, 120, 0), (-300, -120, 0)])
+    r.spots_for("NoteSpot", [(-LX / 2 + 30, -220, 100), (-LX / 2 + 30, 220, 100)])
+    return r
+
+
+# ---------- медотсек: две койки с мониторами, диагностическая капсула, шкафы с лекарствами, смотровое кресло ----------
+
+def medbay():
+    r = Room("Medbay")
+    shell(r)
+    # две койки у западной стены, изголовьем к стене; северо-западная четверть
+    for i, x in enumerate((150, 310)):
+        y = -LY / 2 + 100
+        r.box(f"Bed{i + 1}_Frame", (80, 200, 55), (x, y, 27.5), "Furniture")
+        r.box(f"Bed{i + 1}_Mattress", (76, 190, 10), (x, y, 60), "Linen")
+        r.box(f"Bed{i + 1}_Pillow", (60, 36, 8), (x, y - 72, 69), "Bed")
+        r.box(f"Bed{i + 1}_MonitorStand", (8, 8, 150), (x - 48, -LY / 2 + 20, 75), "Dark")
+        r.box(f"Bed{i + 1}_Monitor", (40, 6, 30), (x - 48, -LY / 2 + 24, 160), "Dark")
+    # диагностическая капсула в северо-восточной четверти: лежачий цилиндр на основании и пульт
+    r.box("Scanner_Base", (90, 230, 40), (300, 250, 20), "Furniture")
+    r.cylinder("Scanner_Tube", 48, 220, (300, 250, 90), "Glow", rot=(90, 90, 0))
+    r.box("Scanner_RingA", (104, 14, 104), (300, 160, 92), "Furniture")
+    r.box("Scanner_RingB", (104, 14, 104), (300, 340, 92), "Furniture")
+    r.box("Scanner_Panel", (36, 70, 100), (180, 330, 50), "Furniture")
+    r.box("Scanner_PanelTop", (32, 66, 4), (180, 330, 102), "Dark")
+    r.light("Scanner_Light", (300, 250, 240), 350, 400, (0.45, 0.90, 0.95))
+    # шкафы с лекарствами и раковина вдоль южной стены, юго-восточная четверть
+    for i in range(3):
+        y = 130 + i * 84
+        r.box(f"Cabinet{i + 1}", (40, 80, 200), (-LX / 2 + 20, y, 100), "Furniture")
+        r.box(f"Cabinet{i + 1}_Glass", (4, 66, 90), (-LX / 2 + 42, y, 145), "Dark")
+    r.box("Sink_Stand", (40, 60, 85), (-LX / 2 + 20, 345, 42.5), "Furniture")
+    r.cylinder("Sink_Bowl", 20, 8, (-LX / 2 + 22, 345, 88), "Linen")
+    # смотровое кресло под хирургической лампой и ширма, юго-западная четверть
+    cx, cy = -250, -220
+    r.box("Chair_Seat", (70, 60, 50), (cx, cy, 25), "Furniture")
+    r.box("Chair_Back", (16, 60, 80), (cx - 40, cy, 80), "Furniture", yaw=0)
+    r.box("Chair_Leg", (70, 56, 12), (cx + 65, cy, 44), "Furniture")
+    r.cylinder("Lamp_Arm", 5, 60, (cx, cy, 265), "Dark")
+    r.cylinder("Lamp_Head", 38, 10, (cx, cy, 232), "Linen")
+    r.light("Lamp_Light", (cx, cy, 215), 900, 300, (1.0, 0.98, 0.95))
+    r.box("Screen", (6, 170, 170), (cx + 130, cy - 40, 85), "Linen")
+    r.box("Tray", (40, 30, 80), (cx - 20, cy - 90, 40), "Furniture")
+    r.box("Biohazard_Bin", (36, 36, 60), (-LX / 2 + 20, -100, 30), "Door")
+    r.spots_for("ItemSpot", [(150, -LY / 2 + 130, 65), (310, -LY / 2 + 130, 65), (180, 330, 104), (cx - 20, cy - 90, 80),
+                             (cx + 4, cy, 50), (150, 120, 0), (-150, 150, 0), (-330, -100, 0)])
+    r.spots_for("NoteSpot", [(310, -LY / 2 + 70, 65), (180, 315, 104), (-200, 250, 0)])
+    return r
+
+
+# ---------- грузовой отсек: ящики, бочки, контейнер, стеллаж, кран-балка ----------
+
+def cargo():
+    r = Room("Cargo")
+    shell(r)
+    # штабель ящиков в северо-западной четверти
+    r.box("CrateA", (120, 120, 120), (340, -280, 60), "Furniture")
+    r.box("CrateB", (120, 120, 120), (200, -300, 60), "Furniture")
+    r.box("CrateC", (100, 100, 100), (330, -285, 170), "Tank")
+    r.box("CrateD", (80, 80, 80), (190, -160, 40), "Tank")
+    for tag, c in (("A", (340, -280)), ("B", (200, -300))):
+        r.box(f"Crate{tag}_Band", (124, 124, 12), (c[0], c[1], 96), "Door")
+    # бочки в северо-восточной четверти
+    k = 0
+    for bx in (300, 372):
+        for by in (200, 272, 344):
+            k += 1
+            r.cylinder(f"Barrel{k}", 32, 90, (bx, by, 45), "Tank" if k % 2 else "Door")
+    r.cylinder("Barrel_Top", 32, 90, (336, 236, 135), "Tank")
+    # стеллаж с коробками вдоль южной стены, юго-восточная четверть
+    r.box("Shelf_Frame", (60, 260, 8), (-LX / 2 + 30, 240, 4), "Dark")
+    for lvl in range(3):
+        z = 70 + lvl * 75
+        r.box(f"Shelf_Board{lvl + 1}", (60, 260, 6), (-LX / 2 + 30, 240, z), "Dark")
+        for j in range(3):
+            if (lvl + j) % 3 != 2:
+                r.box(f"Shelf_Box{lvl + 1}{j + 1}", (46, 60, 50), (-LX / 2 + 30, 160 + j * 80, z + 28), "Furniture")
+    for j, y in enumerate((112, 368)):
+        r.box(f"Shelf_Post{j + 1}", (60, 8, 230), (-LX / 2 + 30, y, 115), "Dark")
+    # длинный контейнер и тележка с ящиком, юго-западная четверть
+    r.box("Container", (110, 240, 130), (-LX / 2 + 55, -230, 65), "Furniture")
+    r.box("Container_Door", (4, 100, 110), (-LX / 2 + 112, -280, 60), "Dark")
+    r.box("Container_Stripe", (112, 242, 14), (-LX / 2 + 55, -230, 118), "Door")
+    r.box("Cart_Deck", (90, 60, 10), (-180, -200, 25), "Dark")
+    r.box("Cart_Handle", (6, 60, 90), (-225, -200, 65), "Dark")
+    r.box("Cart_Crate", (60, 50, 50), (-170, -200, 55), "Tank")
+    # кран-балка под потолком с крюком
+    r.box("Crane_Rail", (LX, 20, 16), (0, 180, 284), "Dark")
+    r.box("Crane_Trolley", (50, 40, 24), (120, 180, 264), "Door")
+    r.cylinder("Crane_Cable", 3, 60, (120, 180, 222), "Dark")
+    r.box("Crane_Hook", (16, 16, 24), (120, 180, 182), "Dark")
+    # разметка на полу у дверей
+    for sgn, tag in ((-1, "W"), (1, "E")):
+        r.box(f"Floor_Stripe{tag}", (160, 10, 1), (0, sgn * 300, 0.5), "Door")
+    r.spots_for("ItemSpot", [(190, -160, 80), (-170, -200, 80), (-LX / 2 + 55, -200, 130), (200, -300, 120),
+                             (150, 130, 0), (-150, 130, 0), (-200, -100, 0), (120, -130, 0)])
+    r.spots_for("NoteSpot", [(340, -250, 120), (-LX / 2 + 55, -260, 130), (-250, 200, 0)])
+    return r
+
+
+# ---------- столовая: два стола с лавками, раздаточный автомат, камбуз, холодильник, бак с водой ----------
+
+def mess():
+    r = Room("Mess")
+    shell(r)
+    # два стола с лавками в северных четвертях
+    for sgn, tag in ((-1, "W"), (1, "E")):
+        y = sgn * 230
+        r.box(f"Table{tag}_Top", (200, 80, 6), (250, y, 75), "Furniture")
+        for j, x in enumerate((170, 330)):
+            r.box(f"Table{tag}_Leg{j + 1}", (12, 70, 72), (x, y, 36), "Dark")
+        for j, dy in enumerate((-62, 62)):
+            r.box(f"Bench{tag}{j + 1}", (200, 30, 45), (250, y + dy, 22.5), "Furniture")
+        r.box(f"Tray{tag}1", (40, 30, 3), (200, y, 79.5), "Linen")
+        r.box(f"Tray{tag}2", (40, 30, 3), (300, y + 8, 79.5), "Linen")
+        r.cylinder(f"Cup{tag}", 5, 10, (220, y + 22, 83), "Door")
+    # камбуз вдоль южной стены, юго-восточная четверть: стойка, плита, шкаф над ней
+    r.box("Galley_Counter", (60, 260, 90), (-LX / 2 + 30, 240, 45), "Furniture")
+    r.box("Galley_Top", (62, 262, 4), (-LX / 2 + 30, 240, 92), "Dark")
+    r.box("Galley_Hob", (40, 60, 3), (-LX / 2 + 30, 190, 95.5), "Door")
+    r.cylinder("Galley_Pot", 14, 18, (-LX / 2 + 30, 190, 106), "Tank")
+    r.box("Galley_Cabinet", (35, 260, 60), (-LX / 2 + 17.5, 240, 190), "Furniture")
+    # раздаточный автомат у восточной стены
+    r.box("Dispenser", (120, 50, 200), (-230, LY / 2 - 25, 100), "Furniture")
+    r.box("Dispenser_Screen", (60, 4, 40), (-230, LY / 2 - 52, 150), "Dark")
+    r.box("Dispenser_Slot", (70, 6, 26), (-230, LY / 2 - 52, 95), "Dark")
+    r.light("Dispenser_Light", (-230, LY / 2 - 90, 160), 200, 250, (0.45, 0.90, 0.95))
+    # холодильник, бак с водой и утилизатор, юго-западная четверть
+    r.box("Fridge", (70, 90, 200), (-LX / 2 + 35, -320, 100), "Tank")
+    r.box("Fridge_Handle", (4, 6, 60), (-LX / 2 + 72, -285, 120), "Dark")
+    r.cylinder("Water_Tank", 28, 110, (-LX / 2 + 32, -210, 55), "Glow")
+    r.cylinder("Water_Cap", 30, 12, (-LX / 2 + 32, -210, 116), "Furniture")
+    r.box("Recycler", (50, 50, 80), (-LX / 2 + 27, -130, 40), "Furniture")
+    r.box("Recycler_Slot", (4, 30, 10), (-LX / 2 + 54, -130, 60), "Dark")
+    r.box("Wall_Screen", (200, 6, 90), (-200, -LY / 2 + 3, 160), "Dark")
+    r.spots_for("ItemSpot", [(250, -250, 78), (300, -215, 78), (250, 250, 78), (190, 215, 78),
+                             (-LX / 2 + 30, 290, 94), (-LX / 2 + 30, 130, 94), (-150, -120, 0), (-150, 150, 0)])
+    r.spots_for("NoteSpot", [(310, -235, 78), (220, 240, 78), (-LX / 2 + 30, 330, 94)])
+    return r
+
+
+# ---------- вычислительный центр: стойки серверов, охладители, пульт оператора, кабельные лотки ----------
+
+def computer():
+    r = Room("Computer")
+    shell(r)
+    # по две стойки в северных четвертях, лицом друг к другу
+    k = 0
+    for sgn in (-1, 1):
+        for x in (190, 340):
+            k += 1
+            y = sgn * 250
+            r.box(f"Rack{k}", (70, 200, 240), (x, y, 120), "Dark")
+            for lvl in range(4):
+                r.box(f"Rack{k}_Strip{lvl + 1}", (4, 180, 8), (x - 37, y, 50 + lvl * 50), "Glow")
+            r.box(f"Rack{k}_Top", (74, 204, 6), (x, y, 243), "Furniture")
+    r.light("Racks_LightW", (265, -250, 150), 300, 350, (0.35, 0.85, 1.0))
+    r.light("Racks_LightE", (265, 250, 150), 300, 350, (0.35, 0.85, 1.0))
+    # охладители в юго-восточной четверти: два цилиндра с трубами к потолку
+    for i, y in enumerate((190, 310)):
+        r.cylinder(f"Cooler{i + 1}", 45, 200, (-LX / 2 + 60, y, 100), "Tank")
+        r.cylinder(f"Cooler{i + 1}_Band", 48, 14, (-LX / 2 + 60, y, 60), "Door")
+        r.cylinder(f"Cooler{i + 1}_Pipe", 10, 90, (-LX / 2 + 60, y, 245), "Tank")
+    r.box("Cooler_Panel", (30, 60, 110), (-250, LY / 2 - 30, 55), "Furniture")
+    # пульт оператора у южной стены, юго-западная четверть
+    r.box("Desk", (60, 220, 78), (-LX / 2 + 30, -230, 39), "Furniture")
+    r.box("Desk_Top", (64, 224, 4), (-LX / 2 + 30, -230, 80), "Dark")
+    for j, y in enumerate((-300, -230, -160)):
+        r.box(f"Desk_Screen{j + 1}", (4, 60, 40), (-LX / 2 + 4, y, 150), "Dark")
+    r.box("Desk_Keyboard", (20, 50, 3), (-LX / 2 + 40, -230, 83.5), "Linen")
+    r.box("Desk_Chair", (50, 50, 45), (-LX / 2 + 110, -230, 22.5), "Furniture")
+    r.box("Desk_ChairBack", (10, 50, 60), (-LX / 2 + 136, -230, 75), "Furniture")
+    # ячейка с накопителями данных: стеллаж картриджей у западной стены
+    r.box("Vault", (160, 40, 180), (-200, -LY / 2 + 20, 90), "Furniture")
+    for row in range(3):
+        for col in range(4):
+            r.box(f"Vault_Slot{row}{col}", (30, 4, 40), (-257 + col * 38, -LY / 2 + 42, 45 + row * 50), "Glow" if (row + col) % 3 else "Dark")
+    # кабельные лотки под потолком
+    for sgn, tag in ((-1, "W"), (1, "E")):
+        r.box(f"CableTray{tag}", (LX, 30, 8), (0, sgn * 250, 280), "Dark")
+    r.spots_for("ItemSpot", [(-LX / 2 + 30, -290, 82), (-LX / 2 + 30, -170, 82), (-250, LY / 2 - 30, 110), (265, -130, 0),
+                             (265, 130, 0), (-150, -150, 0), (-150, 130, 0), (120, 0, 0)])
+    r.spots_for("NoteSpot", [(-LX / 2 + 30, -230, 82), (265, -150, 0), (-220, 220, 0)])
+    return r
+
+
+ROOMS = {"Living": living, "Bridge": bridge, "Lab": lab, "LifeSupport": life_support, "Engine": engine,
+         "Medbay": medbay, "Cargo": cargo, "Mess": mess, "Computer": computer}
+
+
+# ---------- сборка в редакторе ----------
+
+def call(toolset, name, args):
+    res = tool(toolset, name, args)
+    if "ERROR" in res[:12]:
+        raise RuntimeError(f"{name}: {res[:400]}")
+    return json.loads(res).get("returnValue") if res.strip() else None
+
+
+def ensure_materials():
+    call(AS, "create_folder", {"path": f"{ROOT}/Materials"})
+    parent = {"refPath": "/Game/LevelPrototyping/Materials/M_PrototypeGrid.M_PrototypeGrid"}
+    out = {}
+    for name, (r, g, b) in MATERIALS.items():
+        path = f"{ROOT}/Materials/MI_Gray_{name}"
+        ref = {"refPath": f"{path}.MI_Gray_{name}"}
+        if not call(AS, "exists", {"path": path}):
+            call(MI, "create", {"folder_path": f"{ROOT}/Materials", "asset_name": f"MI_Gray_{name}", "parent": parent})
+        for param, k in (("SurfaceColor", 1.0), ("TopSurfaceColor", 1.0), ("GridColor", 0.75), ("SubGridColor", 0.9)):
+            call(MI, "set_vector_parameter", {"instance": ref, "name": param,
+                                             "value": {"r": r * k, "g": g * k, "b": b * k, "a": 1.0}})
+        call(AS, "save_assets", {"asset_paths": [path]})
+        out[name] = ref
+    return out
+
+
+def xform(center, yaw=0.0, rot=None):
+    t = {"location": {"x": center[0], "y": center[1], "z": center[2]}}
+    if rot and any(rot):
+        t["rotation"] = {"pitch": rot[0], "yaw": rot[1], "roll": rot[2]}
+    elif yaw:
+        t["rotation"] = {"pitch": 0, "yaw": yaw, "roll": 0}
+    return t
+
+
+def build_blueprint(room, mats):
+    bp_name = f"BP_Room_{room.name}"
+    path = f"{ROOT}/Rooms/{bp_name}"
+    call(AS, "create_folder", {"path": f"{ROOT}/Rooms"})
+    if call(AS, "exists", {"path": path}):
+        # убрать экземпляры с открытого уровня, иначе удаление блюпринта оставит битые ссылки
+        for a in call(SC, "find_actors", {"name": bp_name, "tag": "", "collision_channels": []}) or []:
+            call(SC, "remove_from_scene", {"actor": a})
+        call(AS, "delete", {"path": path})
+    bp = call(BP, "create", {"folder_path": f"{ROOT}/Rooms", "asset_name": bp_name, "asset_type": {"refPath": ROOM_CLASS}})
+    cdo = call(BP, "get_default_object", {"blueprint": bp})
+
+    def paint(comp, mat):
+        call(OB, "set_properties", {"instance": comp, "values": json.dumps({"OverrideMaterials": [mats[mat]]})})
+
+    for name, size, center, mat, yaw in room.boxes:
+        paint(call(PR, "add_cube", {"actor": cdo, "name": name, "dimensions": dict(zip("xyz", size)),
+                                    "local_transform": xform(center, yaw)}), mat)
+    for name, radius, height, center, mat, rot in room.cylinders:
+        paint(call(PR, "add_cylinder", {"actor": cdo, "name": name, "radius": radius, "height": height,
+                                        "local_transform": xform(center, rot=rot)}), mat)
+    for name, pos, intensity, radius, (r, g, b) in room.lights:
+        comp = call(AC, "add_component", {"owner": cdo, "component_type": {"refPath": "/Script/Engine.PointLightComponent"}, "name": name})
+        call(OB, "set_properties", {"instance": comp, "values": json.dumps({
+            "RelativeLocation": dict(zip("xyz", pos)),
+            "Intensity": intensity, "AttenuationRadius": radius,
+            "LightColor": {"r": int(r * 255), "g": int(g * 255), "b": int(b * 255), "a": 255},
+        })})
+    for name, pos in room.spots:
+        comp = call(AC, "add_component", {"owner": cdo, "component_type": {"refPath": "/Script/Engine.SceneComponent"}, "name": name})
+        call(OB, "set_properties", {"instance": comp, "values": json.dumps({"RelativeLocation": dict(zip("xyz", pos))})})
+    call(BP, "compile_blueprint", {"blueprint": bp})
+    call(AS, "save_assets", {"asset_paths": [path]})
+    return path
+
+
+def labels(name_part):
+    out = []
+    for a in call(SC, "find_actors", {"name": name_part, "tag": "", "collision_channels": []}) or []:
+        out.append((call(AC, "get_label", {"actor": a}), a))
+    return out
+
+
+def ensure_level(level=None):
+    """Уровень: создать из пустого шаблона движка, если его нет, и открыть."""
+    level = level or LEVEL
+    if not call(AS, "exists", {"path": level}):
+        call(AS, "create_folder", {"path": f"{ROOT}/Maps"})
+        call(AS, "duplicate", {"path": "/Engine/Maps/Templates/Template_Default", "new_path": level})
+        call(AS, "save_assets", {"asset_paths": [level]})
+    if call(SC, "get_current_level", {}) != level:
+        call(SC, "load_level", {"level_path": level})
+    for label, actor in labels("Floor"):
+        if label == "Floor":   # пол шаблона: у комнат свой
+            call(SC, "remove_from_scene", {"actor": actor})
+
+
+def ensure_game_level():
+    """Уровень игры: на нём только ведущий забега ARunDirector, комнаты он создаёт сам."""
+    ensure_level(GAME_LEVEL)
+    if not labels("RunDirector"):
+        call(SC, "add_to_scene_from_class", {"actor_type": {"refPath": DIRECTOR_CLASS}, "name": "RunDirector",
+                                             "xform": {"location": {"x": 0, "y": 0, "z": 0}}})
+    for label, actor in labels("PlayerStart"):
+        call(AC, "set_actor_transform", {"actor": actor, "worldspace": True, "xform": {
+            "location": {"x": -330, "y": 0, "z": 100}, "rotation": {"pitch": 0, "yaw": 0, "roll": 0}}})
+    call(AS, "save_assets", {"asset_paths": [GAME_LEVEL]})
+
+
+def place_rooms(built):
+    for name, path in built.items():
+        x, y, z = PLACES[name]
+        call(SC, "add_to_scene_from_asset", {"asset_path": path, "name": f"BP_Room_{name}",
+                                             "xform": {"location": {"x": x, "y": y, "z": z}}})
+    for label, actor in labels("PlayerStart"):
+        call(AC, "set_actor_transform", {"actor": actor, "worldspace": True, "xform": {
+            "location": dict(zip("xyz", PLAYER_START)), "rotation": {"pitch": 0, "yaw": 0, "roll": 0}}})
+    call(AS, "save_assets", {"asset_paths": [LEVEL]})
+
+
+def main():
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    rooms = [ROOMS[n]() for n in (args or ROOMS)]
+    for room in rooms:
+        names = room.names()
+        assert len(names) == len(set(names)), f"{room.name}: имена компонентов повторяются"
+        print(f"{room.name}: {len(room.boxes)} коробок, {len(room.cylinders)} цилиндров, {len(room.lights)} источников света")
+    if "--dry" in sys.argv:
+        return
+    mats = ensure_materials()
+    ensure_level()
+    built = {room.name: build_blueprint(room, mats) for room in rooms}
+    place_rooms(built)
+    print("собрано и поставлено на уровень", LEVEL, "—", ", ".join(built.values()))
+    ensure_game_level()
+    print("уровень игры готов:", GAME_LEVEL)
+
+
+if __name__ == "__main__":
+    main()

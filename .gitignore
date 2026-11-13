@@ -18,3 +18,16 @@ Saved/
 .idea/
 *.sln
 *.xcworkspace
+
+# Node
+node_modules/
+tools/studio/dist/
+
+# Blender: резервные копии
+*.blend1
+
+# Unreal: бинарные ассеты в репозиторий не идут (решение автора 13.11).
+# Комнаты и материалы пересобираются скриптом tools/ue/build_rooms.py, содержимое шаблона
+# Third Person берётся из движка. Исходные ассеты игры лежат в SourceArt/.
+*.uasset
+*.umap
