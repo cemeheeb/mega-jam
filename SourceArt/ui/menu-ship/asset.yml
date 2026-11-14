@@ -1,0 +1,12 @@
+title: Menu Ship
+kind: model
+style: interior
+idea: The whole ship seen from outside, slowly turning against the black hole on the main menu.
+prompt: ""
+notes: |
+  Меш и текстура цвета — Tripo, сделал автор 14.11 (source/tripo/ship.fbx, ship.fbm/ship_basecolor.jpg; копия из Загрузок).
+  Автор хотел перегенерировать, но сказал «делай с тем что есть»: новый меш положить в source/tripo/ и выгрузить заново.
+  Выгрузка: tools/blender/export_menu_ship.py -> SM_MenuShip.fbx в сантиметрах, нос (антенны) в +X Unreal,
+  начало координат в середине, длина 60 м; T_MenuShip_BaseColor, T_MenuShip_Emissive (огни по цвету базовой текстуры:
+  бирюзовые полосы и тёплые окна), T_MenuShip_ORM (однотонная).
+  В Unreal: /Game/Game/Menu, импорт tools/ue/build_menu.py, ставит его AMenuDirector на уровне Lvl_Menu.
