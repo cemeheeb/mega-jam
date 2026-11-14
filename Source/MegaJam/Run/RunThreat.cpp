@@ -105,7 +105,7 @@ void ARunThreat::Setup(int32 InKind, ARunDirector* InDirector, const FVector& In
 	SetActorLocation(Origin);
 	// место, где игрок выходит из тамбура: рядом с ним ничего опасного не ставим
 	const FVector Entry = ArrivalDoor >= 0
-		? Origin + RunRoomGeo::Dir(ArrivalDoor) * (RunRoomGeo::OuterFace(ArrivalDoor) - RunRoomGeo::Wall - 60.f) : Origin;
+		? Origin + RunRoomGeo::Dir(ArrivalDoor) * (RunRoomGeo::InnerFace(ArrivalDoor) - 60.f) : Origin;
 
 	if (Kind == ThreatRobot || Kind == ThreatRats || Kind == ThreatHuman)
 	{
@@ -168,11 +168,11 @@ void ARunThreat::Setup(int32 InKind, ARunDirector* InDirector, const FVector& In
 	}
 }
 
-void ARunThreat::Hurt(const TCHAR* Text, const FVector& From)
+void ARunThreat::Hurt(const TCHAR* Text, const FVector& From, float Damage)
 {
 	if (Director.IsValid())
 	{
-		Director->HurtPlayer(Text, From);
+		Director->HurtPlayer(Text, From, Damage);
 	}
 }
 
@@ -202,7 +202,7 @@ void ARunThreat::TickEcho(float Dt, const FVector& P)
 	B.Mesh->SetWorldLocation(FVector(B.Pos.X, B.Pos.Y, Origin.Z + B.HalfHeight));
 	if (FVector::Dist2D(B.Pos, P) < EchoReach)
 	{
-		Hurt(TEXT("Your own echo walks through you."), B.Pos);
+		Hurt(TEXT("Your own echo walks through you."), B.Pos, EchoDamage);
 	}
 }
 
@@ -221,7 +221,7 @@ void ARunThreat::TickBars(const FVector& Local)
 		const float Dist = FMath::Abs((B.bSpansY ? Local.X : Local.Y) - B.Coord);
 		if (bOn && Dist < BarHalfWidth && InsideRoom(Local) && Age > EntryGrace)
 		{
-			Hurt(TEXT("The discharge catches you."), Origin + (B.bSpansY ? FVector(B.Coord, Local.Y, 0) : FVector(Local.X, B.Coord, 0)));
+			Hurt(TEXT("The discharge catches you."), Origin + (B.bSpansY ? FVector(B.Coord, Local.Y, 0) : FVector(Local.X, B.Coord, 0)), BarDamage);
 		}
 	}
 }
@@ -241,7 +241,7 @@ void ARunThreat::TickRadiation(float Dt, const FVector& P)
 	if (Exposure >= RadiationDose)
 	{
 		Exposure = 0.f;
-		Hurt(TEXT("Radiation burns through you."), P);
+		Hurt(TEXT("Radiation burns through you."), P, RadiationDamage);
 	}
 }
 
@@ -278,7 +278,7 @@ void ARunThreat::TickGravity(float Dt, APawn* Pawn, const FVector& Local)
 	const float ToWall = (GravityDir < 2 ? InX : InY) - FVector::DotProduct(Local, Pull);
 	if (ToWall < GravityWallReach)
 	{
-		Hurt(TEXT("Gravity slams you into the live wall."), Pawn->GetActorLocation() + Pull * 100.f);
+		Hurt(TEXT("Gravity slams you into the live wall."), Pawn->GetActorLocation() + Pull * 100.f, GravityDamage);
 	}
 }
 
@@ -308,7 +308,7 @@ void ARunThreat::TickSlowTime(float Dt, const FVector& P, const FVector& Local)
 	const float Side = FMath::Abs(FVector::CrossProduct(ArmDir, Flat).Z);
 	if (Along > ArmInner && Along < ArmLength && Side < BarHalfWidth && InsideRoom(Local) && Age > EntryGrace)
 	{
-		Hurt(TEXT("The beam sweeps over you while time drags."), Origin + ArmDir * Along);
+		Hurt(TEXT("The beam sweeps over you while time drags."), Origin + ArmDir * Along, BeamDamage);
 	}
 }
 

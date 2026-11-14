@@ -1,8 +1,11 @@
 #include "RunDirector.h"
 
+#include "Camera/CameraComponent.h"
 #include "Components/InputComponent.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Components/StaticMeshComponent.h"
 #include "Engine/SkeletalMesh.h"
+#include "Engine/StaticMesh.h"
 #include "Engine/World.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -12,6 +15,7 @@
 #include "InputCoreTypes.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "Materials/MaterialInterface.h"
 #include "Misc/CommandLine.h"
 #include "Misc/Parse.h"
 #include "RunEnemy.h"
@@ -36,11 +40,6 @@ ARunDirector::ARunDirector()
 
 ARunDirector::~ARunDirector() = default;
 
-int32 ARunDirector::GetHealth() const
-{
-	return Layout ? Layout->Cfg.Health : 0;
-}
-
 void ARunDirector::BeginPlay()
 {
 	Super::BeginPlay();
@@ -58,7 +57,8 @@ void ARunDirector::BeginPlay()
 	{
 		Seed = Hash32({ static_cast<uint32>(FDateTime::UtcNow().GetTicks() & 0xFFFFFFFF), static_cast<uint32>(FPlatformTime::Cycles()) });
 	}
-	bSelfTest = bAutoPlayTest || FParse::Param(FCommandLine::Get(), TEXT("RunSelfTest"));
+	bShowTest = FParse::Param(FCommandLine::Get(), TEXT("RunShow"));
+	bSelfTest = bAutoPlayTest || bShowTest || FParse::Param(FCommandLine::Get(), TEXT("RunSelfTest"));
 	bWinTest = FParse::Param(FCommandLine::Get(), TEXT("RunWin"));
 	RunStartAt = GetWorld()->GetTimeSeconds();
 	FParse::Value(FCommandLine::Get(), TEXT("RunThreat="), ForceThreatKind);
@@ -70,8 +70,9 @@ void ARunDirector::BeginPlay()
 	StartKey.Content = Layout->StartRoom();
 	for (int32 It : StartKey.Content.Items)
 	{
-		StartKey.Items.Add({ It, false, FVector::ZeroVector, StartKey.Items.Num() });
+		AddPlaced(StartKey, It);
 	}
+	AddMedkit(StartKey);
 	StartKey.NoteRead.Init(false, StartKey.Content.Notes.Num());
 	FRunRoomState Start;
 	Start.Key = Anchor;
@@ -142,10 +143,31 @@ FRunKeyState& ARunDirector::KeyState(int32 Key)
 	State.Content = Layout->Room(Key);
 	for (int32 It : State.Content.Items)
 	{
-		State.Items.Add({ It, false, FVector::ZeroVector, State.Items.Num() });
+		AddPlaced(State, It);
 	}
+	AddMedkit(State);
 	State.NoteRead.Init(false, State.Content.Notes.Num());
 	return State;
+}
+
+FRunPlacedItem& ARunDirector::AddPlaced(FRunKeyState& State, int32 Item)
+{
+	FRunPlacedItem& P = State.Items.AddDefaulted_GetRef();
+	P.Item = Item;
+	P.Spot = State.Items.Num() - 1;
+	P.Uid = NextUid++;
+	return P;
+}
+
+// Аптечка лежит в аварийной нише не в каждой комнате: в какой есть и в какой нише — решают зерно и набор,
+// поэтому комната набора всегда выглядит одинаково. Взятая не возвращается, как и любая вещь (решение автора 14.11).
+void ARunDirector::AddMedkit(FRunKeyState& State)
+{
+	const uint32 H = Hash32({ Seed, 301U, static_cast<uint32>(State.Content.Key) });
+	if (H % 100U < static_cast<uint32>(FMath::Clamp(MedkitChancePercent, 0, 100)))
+	{
+		AddPlaced(State, Medkit).Niche = static_cast<int32>((H / 100U) % 1024U);
+	}
 }
 
 void ARunDirector::SetupPlayer()
@@ -174,11 +196,44 @@ void ARunDirector::SetupPlayer()
 		Boom->SocketOffset = FVector(0.f, 55.f, 45.f);
 	}
 
+	// вещь в руке: держится за кисть героя. Поворот свой (по направлению героя), а не кисти:
+	// оси кости у манекена неочевидны, а так вещь висит под рукой ровно при любой анимации
+	if (Hero)
+	{
+		HandPivot = NewObject<USceneComponent>(this, TEXT("HandPivot"));
+		HandPivot->SetupAttachment(Hero->GetMesh(), TEXT("hand_r"));
+		HandPivot->SetUsingAbsoluteRotation(true);
+		HandPivot->RegisterComponent();
+		HandMesh = NewObject<UStaticMeshComponent>(this, TEXT("HandMesh"));
+		HandMesh->SetupAttachment(HandPivot);
+		HandMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		HandMesh->SetCastShadow(false);
+		HandMesh->SetVisibility(false);
+		HandMesh->RegisterComponent();
+	}
+	// вещь на осмотре: перед камерой. Рисуется как «от первого лица» — придвинута к камере и не уходит в стену
+	if (UCameraComponent* Camera = Pawn->FindComponentByClass<UCameraComponent>())
+	{
+		Camera->SetEnableFirstPersonScale(true);
+		Camera->SetFirstPersonScale(0.5f);
+		InspectPivot = NewObject<USceneComponent>(this, TEXT("InspectPivot"));
+		InspectPivot->SetupAttachment(Camera);
+		InspectPivot->SetRelativeLocation(FVector(50.f, 0.f, 2.f));
+		InspectPivot->RegisterComponent();
+		InspectMesh = NewObject<UStaticMeshComponent>(this, TEXT("InspectMesh"));
+		InspectMesh->SetupAttachment(InspectPivot);
+		InspectMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		InspectMesh->SetCastShadow(false);
+		InspectMesh->SetFirstPersonPrimitiveType(EFirstPersonPrimitiveType::FirstPerson);
+		InspectMesh->SetVisibility(false);
+		InspectMesh->RegisterComponent();
+	}
+
 	EnableInput(PC);
 	if (InputComponent)
 	{
 		InputComponent->BindKey(EKeys::E, IE_Pressed, this, &ARunDirector::OnInteract);
-		InputComponent->BindKey(EKeys::LeftMouseButton, IE_Pressed, this, &ARunDirector::OnAttack);
+		InputComponent->BindKey(EKeys::LeftMouseButton, IE_Pressed, this, &ARunDirector::OnUse);
 		InputComponent->BindKey(EKeys::F, IE_Pressed, this, &ARunDirector::OnAttack);
 		InputComponent->BindKey(EKeys::Enter, IE_Pressed, this, &ARunDirector::OnConfirm);
 		// пауза: Esc в сборке; в редакторе Esc останавливает игру, поэтому есть ещё P. Клавиши паузы работают и на паузе.
@@ -186,10 +241,18 @@ void ARunDirector::SetupPlayer()
 		InputComponent->BindKey(EKeys::P, IE_Pressed, this, &ARunDirector::OnPause).bExecuteWhenPaused = true;
 		InputComponent->BindKey(EKeys::R, IE_Pressed, this, &ARunDirector::OnRestartKey).bExecuteWhenPaused = true;
 		InputComponent->BindKey(EKeys::Q, IE_Pressed, this, &ARunDirector::OnQuitKey).bExecuteWhenPaused = true;
-		InputComponent->BindKey(EKeys::One, IE_Pressed, this, &ARunDirector::OnDrop1);
-		InputComponent->BindKey(EKeys::Two, IE_Pressed, this, &ARunDirector::OnDrop2);
-		InputComponent->BindKey(EKeys::Three, IE_Pressed, this, &ARunDirector::OnDrop3);
-		InputComponent->BindKey(EKeys::Four, IE_Pressed, this, &ARunDirector::OnDrop4);
+		// карман: 1–4 и колесо — взять вещь в руку, G — выбросить её, правая кнопка — рассмотреть,
+		// левая — применить (аптечка) или ударить ключом (решение автора 14.11: инвентарь с вещью в руке)
+		InputComponent->BindKey(EKeys::One, IE_Pressed, this, &ARunDirector::OnSelect1);
+		InputComponent->BindKey(EKeys::Two, IE_Pressed, this, &ARunDirector::OnSelect2);
+		InputComponent->BindKey(EKeys::Three, IE_Pressed, this, &ARunDirector::OnSelect3);
+		InputComponent->BindKey(EKeys::Four, IE_Pressed, this, &ARunDirector::OnSelect4);
+		InputComponent->BindKey(EKeys::MouseScrollUp, IE_Pressed, this, &ARunDirector::OnWheelUp);
+		InputComponent->BindKey(EKeys::MouseScrollDown, IE_Pressed, this, &ARunDirector::OnWheelDown);
+		InputComponent->BindKey(EKeys::G, IE_Pressed, this, &ARunDirector::OnDropHeld);
+		InputComponent->BindKey(EKeys::RightMouseButton, IE_Pressed, this, &ARunDirector::OnInspect);
+		InputComponent->BindKey(EKeys::Left, IE_Pressed, this, &ARunDirector::OnPagePrev);
+		InputComponent->BindKey(EKeys::Right, IE_Pressed, this, &ARunDirector::OnPageNext);
 		InputComponent->BindKey(EKeys::Tab, IE_Pressed, this, &ARunDirector::OnToggleJournal);
 		// не F1–F12: в редакторе это клавиши режимов вида (F1 — каркас, F2 — без света, F3 — со светом)
 		InputComponent->BindKey(EKeys::H, IE_Pressed, this, &ARunDirector::OnToggleDebug);
@@ -653,17 +716,24 @@ void ARunDirector::SetThreatHint(const FString& Text, float Meter)
 	ThreatMeter = FMath::Clamp(Meter, 0.f, 1.f);
 }
 
-void ARunDirector::HurtPlayer(const FString& Text, const FVector& From)
+float ARunDirector::GetHealFlash() const
+{
+	return GetWorld() ? FMath::Clamp(1.f - (GetWorld()->GetTimeSeconds() - HealAt) / 0.6f, 0.f, 1.f) : 0.f;
+}
+
+void ARunDirector::HurtPlayer(const FString& Text, const FVector& From, float Damage)
 {
 	const float Now = GetWorld()->GetTimeSeconds();
-	if (Phase != ERunPhase::Playing || Now < InvulnerableUntil)
+	if (Phase != ERunPhase::Playing || Now < InvulnerableUntil || Damage <= 0.f)
 	{
 		return;
 	}
 	InvulnerableUntil = Now + HurtGraceSeconds;
 	HurtAt = Now;
-	++Hits;
-	UE_LOG(LogRun, Display, TEXT("Run: hurt hits=%d (%s)"), Hits, *Text);
+	const float Took = FMath::Min(Health, Damage);
+	Health -= Took;
+	DamageTaken += Took;
+	UE_LOG(LogRun, Display, TEXT("Run: hurt damage=%.0f health=%.0f (%s)"), Damage, Health, *Text);
 	if (ACharacter* Ch = Cast<ACharacter>(UGameplayStatics::GetPlayerPawn(this, 0)))
 	{
 		FVector Away = Ch->GetActorLocation() - From;
@@ -671,17 +741,19 @@ void ARunDirector::HurtPlayer(const FString& Text, const FVector& From)
 		Ch->LaunchCharacter(Away.GetSafeNormal2D() * 520.f + FVector(0, 0, 180.f), true, true);
 	}
 	// в самопроверке игрок бессмертен, чтобы сценарий дошёл до конца; ключ -RunDie возвращает смерть (проверка экрана смерти)
-	if (Hits >= GetHealth() && bSelfTest && !FParse::Param(FCommandLine::Get(), TEXT("RunDie")))
+	if (Health <= 0.f && bSelfTest && !FParse::Param(FCommandLine::Get(), TEXT("RunDie")))
 	{
 		UE_LOG(LogRun, Display, TEXT("Run: test: here the player would be dead"));
+		Health = MaxHealth;
 	}
-	else if (Hits >= GetHealth())
+	else if (Health <= 0.f)
 	{
 		Phase = ERunPhase::Dead;
 		RestartAt = Now + 12.f;
 		RunEndAt = Now;
 		DeathCause = Text;
-		Say(Text + TEXT(" It was one hit too many. YOU DIED."), 5.f);
+		SetInspecting(false);
+		Say(Text + TEXT(" Everything goes dark. YOU DIED."), 5.f);
 	}
 	else
 	{
@@ -689,10 +761,11 @@ void ARunDirector::HurtPlayer(const FString& Text, const FVector& From)
 	}
 }
 
-ARunItem* ARunDirector::SpawnItemActor(int32 Item, int32 NoteIndex, const FVector& Location)
+ARunItem* ARunDirector::SpawnItemActor(int32 Item, int32 NoteIndex, const FVector& Location, int32 Uid)
 {
 	ARunItem* Actor = GetWorld()->SpawnActor<ARunItem>(ARunItem::StaticClass(), Location, FRotator::ZeroRotator);
 	Actor->Setup(Item, NoteIndex, NoteIndex >= 0 ? FString(TEXT("Note")) : ItemName(Item));
+	Actor->PlacedUid = Uid;
 	ItemActors.Add(Actor);
 	return Actor;
 }
@@ -712,6 +785,7 @@ void ARunDirector::SpawnRoomContents()
 	const FVector Origin = RoomActor->GetActorLocation();
 	TArray<FVector> ItemSpots = RoomActor->GetSpots(TEXT("ItemSpot"));
 	TArray<FVector> NoteSpots = RoomActor->GetSpots(TEXT("NoteSpot"));
+	const TArray<FTransform> Niches = RoomActor->TakeFirstAidCases();
 	// на какие метки лягут вещи, решают зерно и набор: комната набора всегда выглядит одинаково
 	const uint32 Shift = Hash32({ Seed, 100U, static_cast<uint32>(State.Content.Key) });
 	for (const FRunPlacedItem& P : State.Items)
@@ -719,6 +793,13 @@ void ARunDirector::SpawnRoomContents()
 		// метка закреплена за вещью: взяли одну — остальные лежат, где лежали
 		const int32 Spot = FMath::Max(0, P.Spot);
 		FVector Loc;
+		if (!P.bHasPos && P.Niche >= 0 && Niches.Num() > 0)
+		{
+			// аптечка стоит в нише ровно там, где стоял спрятанный кейс
+			const FTransform& Case = Niches[P.Niche % Niches.Num()];
+			SpawnItemActor(P.Item, -1, Case.GetLocation(), P.Uid)->PlaceAt(Case);
+			continue;
+		}
 		if (P.bHasPos)
 		{
 			Loc = Origin + P.LocalPos;
@@ -731,7 +812,7 @@ void ARunDirector::SpawnRoomContents()
 		{
 			Loc = Origin + FVector(-150.f + 60.f * Spot, 250.f, 11.f);
 		}
-		SpawnItemActor(P.Item, -1, Loc);
+		SpawnItemActor(P.Item, -1, Loc, P.Uid);
 	}
 	for (int32 I = 0; I < State.Content.Notes.Num(); ++I)
 	{
@@ -833,7 +914,9 @@ void ARunDirector::EnterRoom(int32 RoomId)
 		Phase = ERunPhase::Won;
 		RunEndAt = GetWorld()->GetTimeSeconds();
 		RestartAt = RunEndAt + 90.f;   // экран победы с титрами держится, пока игрок не нажмёт клавишу
-		UE_LOG(LogRun, Display, TEXT("Run: WON doors=%d notes=%d hits=%d seconds=%.0f"), GetDoorsOpened(), NotesRead, Hits, GetRunSeconds());
+		SetInspecting(false);
+		UE_LOG(LogRun, Display, TEXT("Run: WON doors=%d notes=%d damage=%.0f health=%.0f medkits=%d seconds=%.0f"), GetDoorsOpened(), NotesRead,
+			DamageTaken, Health, MedkitsUsed, GetRunSeconds());
 		Say(TEXT("You are on the bridge. The ship tears itself free. YOU ESCAPED."), 8.f);
 		return;
 	}
@@ -909,7 +992,7 @@ FString ARunDirector::GetPrompt() const
 			return TEXT("[E] Read the note");
 		}
 		return Pocket.Num() < PocketSlots ? FString::Printf(TEXT("[E] Take %s"), *ItemNoun(A->ItemId).Replace(TEXT("the "), TEXT("")))
-			: FString(TEXT("Pocket is full. Drop something with [1]-[4]"));
+			: FString(TEXT("Pocket is full. [1]-[4] pick an item, [G] drop it"));
 	}
 	return FString();
 }
@@ -950,12 +1033,21 @@ void ARunDirector::OnInteract()
 			return;
 		}
 		const int32 Item = A->ItemId;
-		const int32 Index = State.Items.IndexOfByPredicate([Item](const FRunPlacedItem& P) { return P.Item == Item; });
+		const int32 Uid = A->PlacedUid;
+		int32 Index = State.Items.IndexOfByPredicate([Uid](const FRunPlacedItem& P) { return P.Uid == Uid; });
+		if (Index == INDEX_NONE)
+		{
+			Index = State.Items.IndexOfByPredicate([Item](const FRunPlacedItem& P) { return P.Item == Item; });
+		}
 		if (Index != INDEX_NONE)
 		{
 			State.Items.RemoveAt(Index);
 		}
 		Pocket.Add(Item);
+		if (GetHeldSlot() < 0)
+		{
+			HeldSlot = Pocket.Num() - 1;   // руки были пусты — взятое сразу в руке
+		}
 		if (Item == Notebook && !bFirstNoteRead)
 		{
 			bFirstNoteRead = true;
@@ -964,17 +1056,22 @@ void ARunDirector::OnInteract()
 			Say(Text, 10.f);
 			ShowTip(TEXT("[Tab] opens the notebook"), 8.f);
 		}
+		else if (Item == Medkit && !bTipMedkit)
+		{
+			bTipMedkit = true;
+			ShowTip(TEXT("Medkit: take it in hand with [1]-[4], [LMB] to use"), 7.f);
+		}
 		else if (Pocket.Num() >= PocketSlots && !bTipDrop)
 		{
 			bTipDrop = true;
-			ShowTip(TEXT("Pocket is full. [1]-[4] drops an item"), 7.f);
+			ShowTip(TEXT("Pocket is full. [1]-[4] takes an item in hand, [G] drops it"), 7.f);
 		}
 	}
 	ItemActors.Remove(A);
 	A->Destroy();
 }
 
-void ARunDirector::OnDrop(int32 Slot)
+void ARunDirector::DropSlot(int32 Slot)
 {
 	if (Phase != ERunPhase::Playing || bBusy || !Pocket.IsValidIndex(Slot) || !RoomActor)
 	{
@@ -986,7 +1083,7 @@ void ARunDirector::OnDrop(int32 Slot)
 		return;
 	}
 	const int32 Item = Pocket[Slot];
-	Pocket.RemoveAt(Slot);
+	RemoveFromPocket(Slot);
 	// выброшенный предмет остаётся лежать там, где его выбросили (5.3)
 	FVector Loc = Pawn->GetActorLocation() + Pawn->GetActorForwardVector() * 70.f;
 	FCollisionQueryParams DropParams(FName(TEXT("RunDrop")), false, Pawn);
@@ -999,20 +1096,286 @@ void ARunDirector::OnDrop(int32 Slot)
 	{
 		Loc = Hit.ImpactPoint + FVector(0, 0, 11.f);
 	}
-	CurrentKeyState().Items.Add({ Item, true, Loc - RoomActor->GetActorLocation() });
-	SpawnItemActor(Item, -1, Loc);
+	FRunPlacedItem& P = AddPlaced(CurrentKeyState(), Item);
+	P.bHasPos = true;
+	P.LocalPos = Loc - RoomActor->GetActorLocation();
+	SpawnItemActor(Item, -1, Loc, P.Uid);
 }
 
-void ARunDirector::OnToggleJournal()
+void ARunDirector::RemoveFromPocket(int32 Slot)
 {
-	bShowJournal = !bShowJournal && Pocket.Contains(Notebook);
-	if (bShowJournal)
+	Pocket.RemoveAt(Slot);
+	if (HeldSlot == Slot)
 	{
+		HeldSlot = -1;
+		SetInspecting(false);
+	}
+	else if (HeldSlot > Slot)
+	{
+		--HeldSlot;   // слоты сдвинулись, в руке та же вещь
+	}
+}
+
+// 1–4: взять вещь этого слота в руку; та же клавиша ещё раз — убрать в карман.
+void ARunDirector::SelectSlot(int32 Slot)
+{
+	if (Phase != ERunPhase::Playing || !Pocket.IsValidIndex(Slot))
+	{
+		return;
+	}
+	HeldSlot = HeldSlot == Slot ? -1 : Slot;
+	SetInspecting(false);
+	if (GetHeldSlot() >= 0 && !bTipHeld)
+	{
+		bTipHeld = true;
+		ShowTip(TEXT("[RMB] look closer at what you hold   [G] drop it"), 7.f);
+	}
+}
+
+void ARunDirector::CycleHeld(int32 Step)
+{
+	if (Phase != ERunPhase::Playing || Pocket.Num() == 0)
+	{
+		return;
+	}
+	// по кругу через все слоты и «пустые руки»
+	const int32 N = Pocket.Num() + 1;
+	const int32 From = GetHeldSlot() < 0 ? Pocket.Num() : HeldSlot;
+	const int32 To = ((From + Step) % N + N) % N;
+	HeldSlot = To == Pocket.Num() ? -1 : To;
+	SetInspecting(false);
+}
+
+void ARunDirector::OnWheelUp()
+{
+	if (IsReading())
+	{
+		TurnPage(-1);
+	}
+	else if (!IsInspecting())
+	{
+		CycleHeld(-1);
+	}
+}
+
+void ARunDirector::OnWheelDown()
+{
+	if (IsReading())
+	{
+		TurnPage(1);
+	}
+	else if (!IsInspecting())
+	{
+		CycleHeld(1);
+	}
+}
+
+void ARunDirector::OnDropHeld()
+{
+	if (GetHeldSlot() < 0)
+	{
+		if (Phase == ERunPhase::Playing && Pocket.Num() > 0)
+		{
+			Say(TEXT("Your hands are empty. [1]-[4] takes an item in hand."), 3.f);
+		}
+		return;
+	}
+	DropSlot(HeldSlot);
+}
+
+// Левая кнопка: применить то, что в руке. Применить можно только аптечку; иначе — удар ключом, если он в кармане.
+void ARunDirector::OnUse()
+{
+	if (Phase != ERunPhase::Playing)
+	{
+		return;
+	}
+	if (GetHeldSlot() >= 0 && Pocket[HeldSlot] == Medkit)
+	{
+		UseMedkit(HeldSlot);
+		return;
+	}
+	OnAttack();
+}
+
+void ARunDirector::UseMedkit(int32 Slot)
+{
+	if (Health >= MaxHealth)
+	{
+		Say(TEXT("You are not hurt. Better keep the medkit."), 2.5f);
+		return;
+	}
+	const float Before = Health;
+	Health = FMath::Min(MaxHealth, Health + MedkitHeal);
+	HealAt = GetWorld()->GetTimeSeconds();
+	++MedkitsUsed;
+	RemoveFromPocket(Slot);
+	UE_LOG(LogRun, Display, TEXT("Run: medkit used health=%.0f -> %.0f"), Before, Health);
+	Say(TEXT("You patch yourself up. It helps."), 3.f);
+}
+
+// Правая кнопка: рассмотреть вещь в руке или убрать её от глаз. Блокнот при этом раскрывается для чтения.
+void ARunDirector::OnInspect()
+{
+	if (Phase != ERunPhase::Playing)
+	{
+		return;
+	}
+	if (GetHeldSlot() < 0)
+	{
+		if (Pocket.Num() > 0)
+		{
+			Say(TEXT("Your hands are empty. [1]-[4] takes an item in hand."), 3.f);
+		}
+		return;
+	}
+	SetInspecting(!bInspecting);
+}
+
+void ARunDirector::SetInspecting(bool bOn)
+{
+	bOn = bOn && GetHeldSlot() >= 0 && Phase == ERunPhase::Playing;
+	if (bOn && !bInspecting && Pocket[HeldSlot] == Notebook)
+	{
+		JournalPage = TNumericLimits<int32>::Max();   // раскрывается на последних записях; экран поправит номер
 		bJournalUnread = false;
 	}
-	if (!bShowJournal && !Pocket.Contains(Notebook))
+	bInspecting = bOn;
+	// мышь вертит вещь, а не камеру; ходить можно — блокнот и осмотр на время не влияют (решение автора 13.11)
+	const bool bLock = IsInspecting();
+	if (APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
+	{
+		if (bLock != bLookLocked)
+		{
+			PC->SetIgnoreLookInput(bLock);
+			bLookLocked = bLock;
+		}
+	}
+	if (bLock && InspectPivot)
+	{
+		InspectPivot->SetRelativeRotation(FRotator(-12.f, 25.f, 0.f));   // чуть сверху и сбоку: видно объём
+		InspectIdle = 0.f;
+	}
+}
+
+void ARunDirector::TurnPage(int32 Step)
+{
+	if (IsReading())
+	{
+		JournalPage = FMath::Max(0, JournalPage + Step);
+	}
+}
+
+// Tab — короткий путь к блокноту: взять его в руку и раскрыть; ещё раз — закрыть.
+void ARunDirector::OnToggleJournal()
+{
+	if (Phase != ERunPhase::Playing)
+	{
+		return;
+	}
+	if (IsReading())
+	{
+		SetInspecting(false);
+		return;
+	}
+	const int32 Slot = Pocket.IndexOfByKey(Notebook);
+	if (Slot == INDEX_NONE)
 	{
 		Say(TEXT("You need the notebook to read your notes."), 3.f);
+		return;
+	}
+	HeldSlot = Slot;
+	bInspecting = false;
+	SetInspecting(true);
+}
+
+void ARunDirector::ShowItemMesh(UStaticMeshComponent* Comp, int32 Item, float Fit, bool bHang)
+{
+	// в руке вещь стоит прямо (кейс — ручкой вверх), на осмотре повёрнута лицом (+Y у мешей Singula) к камере
+	const FRotator Pose = bHang ? FRotator::ZeroRotator : FRotator(0.f, 90.f, 0.f);
+	UStaticMesh* Mesh = ARunItem::FindModel(ItemName(Item));
+	float Scale = 1.f;
+	if (!Mesh)
+	{
+		// у вещи нет модели: оранжевый кубик, как на полу
+		Mesh = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cube.Cube"));
+		Comp->SetMaterial(0, LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/Game/Materials/MI_Gray_Door.MI_Gray_Door")));
+		Scale = Fit / 100.f;
+	}
+	else
+	{
+		Comp->EmptyOverrideMaterials();
+	}
+	Comp->SetStaticMesh(Mesh);
+	if (!Mesh)
+	{
+		return;
+	}
+	const FBox Box = Mesh->GetBoundingBox();
+	if (!bHang)
+	{
+		// на осмотре вещь вписана в размер Fit, крутится вокруг своей середины
+		Scale = Fit / FMath::Max(1.f, Box.GetSize().GetMax());
+	}
+	Comp->SetRelativeScale3D(FVector(Scale));
+	Comp->SetRelativeRotation(Pose);
+	const FVector Center = Pose.RotateVector(Box.GetCenter()) * Scale;
+	if (bHang)
+	{
+		// в руке вещь висит под кистью: её верх на 3 см ниже кости
+		const FBox Posed = Box.TransformBy(FTransform(Pose, FVector::ZeroVector, FVector(Scale)));
+		Comp->SetRelativeLocation(FVector(-Center.X, -Center.Y, -3.f - Posed.Max.Z));
+	}
+	else
+	{
+		Comp->SetRelativeLocation(-Center);
+	}
+}
+
+void ARunDirector::TickHeldItem(float DeltaSeconds)
+{
+	if (bLookLocked != IsInspecting())
+	{
+		SetInspecting(bInspecting);   // вещь пропала из руки не через SetInspecting: вернуть мышь камере
+	}
+	const int32 Held = GetHeldSlot() >= 0 ? Pocket[HeldSlot] : TNumericLimits<int32>::Min();
+	const ACharacter* Ch = Cast<ACharacter>(UGameplayStatics::GetPlayerPawn(this, 0));
+	if (HandMesh && HandPivot)
+	{
+		const bool bShow = Held != TNumericLimits<int32>::Min() && !IsInspecting() && Ch && !Ch->IsHidden() && Phase == ERunPhase::Playing;
+		if (bShow && Held != ShownHandItem)
+		{
+			ShowItemMesh(HandMesh, Held, 10.f, true);
+			ShownHandItem = Held;
+		}
+		HandMesh->SetVisibility(bShow);
+		if (Ch)
+		{
+			HandPivot->SetWorldRotation(FRotator(0.f, Ch->GetActorRotation().Yaw, 0.f));
+		}
+	}
+	if (InspectMesh && InspectPivot)
+	{
+		const bool bShow = IsInspecting();
+		if (bShow && Held != ShownInspectItem)
+		{
+			ShowItemMesh(InspectMesh, Held, 20.f, false);
+			ShownInspectItem = Held;
+		}
+		InspectMesh->SetVisibility(bShow);
+		if (bShow)
+		{
+			// мышь вертит вещь как шар под ладонью; если мышь не трогать, вещь медленно поворачивается сама
+			float DX = 0.f, DY = 0.f;
+			if (const APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
+			{
+				PC->GetInputMouseDelta(DX, DY);
+			}
+			InspectIdle = FMath::Abs(DX) + FMath::Abs(DY) > 0.01f ? 0.f : InspectIdle + DeltaSeconds;
+			const float Auto = InspectIdle > 1.5f ? 20.f * DeltaSeconds : 0.f;
+			const FQuat Turn = FQuat(FVector::UpVector, FMath::DegreesToRadians(-DX * 0.5f - Auto)) * FQuat(FVector::RightVector, FMath::DegreesToRadians(DY * 0.5f));
+			InspectPivot->SetRelativeRotation(Turn * InspectPivot->GetRelativeRotation().Quaternion());
+		}
 	}
 }
 
@@ -1051,9 +1414,9 @@ void ARunDirector::LogRoom(const TCHAR* Why) const
 	{
 		PocketNames += (PocketNames.IsEmpty() ? TEXT("") : TEXT(", ")) + ItemName(It);
 	}
-	UE_LOG(LogRun, Display, TEXT("Run: %s room=%d type=%s key=%d anomaly=%s notes=%d items=[%s] pocket=[%s] hits=%d doors=[%d,%d,%d,%d]"),
+	UE_LOG(LogRun, Display, TEXT("Run: %s room=%d type=%s key=%d anomaly=%s notes=%d items=[%s] pocket=[%s] health=%.0f doors=[%d,%d,%d,%d]"),
 		Why, CurrentRoom, RoomTypeName(K.Content.RoomType), S.Key, AnomalyName(K.Content.Anomaly),
-		K.Content.Notes.Num(), *Items, *PocketNames, Hits, S.Doors[0], S.Doors[1], S.Doors[2], S.Doors[3]);
+		K.Content.Notes.Num(), *Items, *PocketNames, Health, S.Doors[0], S.Doors[1], S.Doors[2], S.Doors[3]);
 }
 
 void ARunDirector::Tick(float DeltaSeconds)
@@ -1109,6 +1472,7 @@ void ARunDirector::Tick(float DeltaSeconds)
 		}
 	}
 	TickFollowers();
+	TickHeldItem(DeltaSeconds);
 	if (Now >= TipUntil && TipQueue.Num() > 0)
 	{
 		Tip = TipQueue[0];
@@ -1173,7 +1537,8 @@ void ARunDirector::TickSelfTest()
 	// 100 — подойти к блокноту, 101 — взять, 102 — подойти к проводнику, 103 — выбросить всё, 104 — конец,
 	// 105 — подойти к оружию, 110 — подойти к предмету-ловушке, 111 — отчёт об угрозах, 112 — ждать,
 	// 120 — встать вплотную к ближайшему противнику и ударить, −1 — встать в центр комнаты, 0..3 — войти в тамбур двери
-	static const int32 PathSteps[] = { 100, 101, -1, 0, -1, 0, 102, 101, -1, 0, -1, 1, 103, -1, 3, 104 };
+	// 130 — инвентарь: блокнот раскрыть и полистать, аптечку взять в руку и применить после ушиба
+	static const int32 PathSteps[] = { 100, 101, 130, -1, 0, -1, 0, 102, 101, -1, 0, -1, 1, 103, -1, 3, 104 };
 	static const int32 AnomalySteps[] = { 100, 101, 110, 101, -1, 0, -1, 111, 112, 112, 112, 1, -1, 111, 104 };
 	static const int32 EnemySteps[] = { 100, 101, 105, 101, 110, 101, -1, 0, -1, 111, 112, 112, 1, -1, 111,
 		112, 112, 112, 112, 112, 112, 112, 112, 112, 112, 111, 120, 120, 120, 120, 120, 111,
@@ -1182,9 +1547,18 @@ void ARunDirector::TickSelfTest()
 	// 220 — выбросить всё, кроме блокнота, 106 — отчёт о состоянии
 	static const int32 WinSteps[] = { 100, 101, 200, 101, -1, 0, -1, 201, 101, -1, 0, -1, 202, 101, -1, 0, -1,
 		210, 203, 101, -1, 0, -1, 106, 220, -1, 0, -1, 106, 104 };
+	// показ для снимков (-RunShow; в редакторе — ключ запуска самого редактора): прочитать записки рубки,
+	// аптечка в руке после ушиба, осмотр, раскрытый блокнот. 199 — пауза, каждое состояние держится несколько секунд
+	static const int32 ShowSteps[] = { 100, 101, 140, -1, 141, 199, 199, 199, 199, 199, 199, 199, 142, 199, 199, 199, 199, 199, 199, 199,
+		143, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199 };
 	const int32* Steps = PathSteps;
 	int32 NumSteps = UE_ARRAY_COUNT(PathSteps);
-	if (bWinTest)
+	if (bShowTest)
+	{
+		Steps = ShowSteps;
+		NumSteps = UE_ARRAY_COUNT(ShowSteps);
+	}
+	else if (bWinTest)
 	{
 		Steps = WinSteps;
 		NumSteps = UE_ARRAY_COUNT(WinSteps);
@@ -1216,19 +1590,19 @@ void ARunDirector::TickSelfTest()
 	case 100: GoToItem(Notebook); break;
 	case 101: OnInteract(); UE_LOG(LogRun, Display, TEXT("Run: test took, pocket=%d journal=%d key=%d"), Pocket.Num(), Journal.Num(), Layout->PocketKey(Pocket)); break;
 	case 102: GoToItem(Layout->RoleItem[RoleL]); break;
-	case 103: while (Pocket.Num() > 0) { OnDrop(0); } UE_LOG(LogRun, Display, TEXT("Run: test dropped all, pocket=%d key=%d"), Pocket.Num(), Layout->PocketKey(Pocket)); break;
-	case 104: UE_LOG(LogRun, Display, TEXT("Run: test done rooms=%d sets=%d hits=%d"), Rooms.Num(), Keys.Num(), Hits); break;
+	case 103: while (Pocket.Num() > 0) { DropSlot(0); } UE_LOG(LogRun, Display, TEXT("Run: test dropped all, pocket=%d key=%d"), Pocket.Num(), Layout->PocketKey(Pocket)); break;
+	case 104: UE_LOG(LogRun, Display, TEXT("Run: test done rooms=%d sets=%d health=%.0f damage=%.0f medkits=%d"), Rooms.Num(), Keys.Num(), Health, DamageTaken, MedkitsUsed); break;
 	case 105: GoToItem(Weapon); break;
 	case 106:
-		UE_LOG(LogRun, Display, TEXT("Run: test state room=%d type=%s engine=%d phase=%s pocket=%d journal=%d hits=%d"), CurrentRoom,
+		UE_LOG(LogRun, Display, TEXT("Run: test state room=%d type=%s engine=%d phase=%s pocket=%d journal=%d health=%.0f"), CurrentRoom,
 			RoomTypeName(CurrentContent().RoomType), bEngineFixed ? 1 : 0,
-			Phase == ERunPhase::Won ? TEXT("WON") : Phase == ERunPhase::Dead ? TEXT("DEAD") : TEXT("playing"), Pocket.Num(), Journal.Num(), Hits);
+			Phase == ERunPhase::Won ? TEXT("WON") : Phase == ERunPhase::Dead ? TEXT("DEAD") : TEXT("playing"), Pocket.Num(), Journal.Num(), Health);
 		break;
 	case 200: case 201: case 202: case 203: GoToItem(Layout->RoleItem[Step - 200]); break;
 	case 210:
 	{
 		const int32 Slot = Pocket.IndexOfByKey(Layout->RoleItem[RoleL]);
-		OnDrop(Slot);
+		DropSlot(Slot);
 		UE_LOG(LogRun, Display, TEXT("Run: test dropped the loop item, pocket=%d"), Pocket.Num());
 		break;
 	}
@@ -1237,21 +1611,61 @@ void ARunDirector::TickSelfTest()
 		{
 			if (Pocket[I] != Notebook)
 			{
-				OnDrop(I);
+				DropSlot(I);
 			}
 		}
 		UE_LOG(LogRun, Display, TEXT("Run: test dropped all but the notebook, pocket=%d key=%d"), Pocket.Num(), Layout->PocketKey(Pocket));
 		break;
 	case 110: GoToTrap(); break;
+	case 140:
+	{
+		const TArray<TObjectPtr<ARunItem>> Here = ItemActors;
+		for (ARunItem* A : Here)
+		{
+			if (A && A->IsNote())
+			{
+				MoveTo(A->GetActorLocation());
+				OnInteract();
+			}
+		}
+		UE_LOG(LogRun, Display, TEXT("Run: show notes read, journal=%d"), Journal.Num());
+		break;
+	}
+	case 141:
+		Pocket.Add(Medkit);
+		HeldSlot = Pocket.Num() - 1;
+		HurtPlayer(TEXT("Show bruise."), Pawn->GetActorLocation() + FVector(-100.f, 0.f, 0.f), 45.f);
+		break;
+	case 142: OnInspect(); UE_LOG(LogRun, Display, TEXT("Run: show inspecting=%d"), IsInspecting() ? 1 : 0); break;
+	case 143: OnToggleJournal(); UE_LOG(LogRun, Display, TEXT("Run: show reading=%d"), IsReading() ? 1 : 0); break;
+	case 199: break;
+	case 130:
+	{
+		OnToggleJournal();
+		const bool bRead = IsReading();
+		TurnPage(-1);
+		OnToggleJournal();
+		const int32 Was = Pocket.Num();
+		Pocket.Add(Medkit);   // аптечку из ниши заменяет выданная: в стартовой рубке её может не быть
+		SelectSlot(Pocket.Num() - 1);
+		OnInspect();
+		const bool bLook = IsInspecting();
+		HurtPlayer(TEXT("Test bruise."), Pawn->GetActorLocation() + FVector(100.f, 0.f, 0.f), 30.f);
+		const float Hurt = Health;
+		OnUse();
+		UE_LOG(LogRun, Display, TEXT("Run: test inventory reading=%d inspecting=%d health %.0f -> %.0f pocket %d -> %d held=%d looklock=%d"),
+			bRead ? 1 : 0, bLook ? 1 : 0, Hurt, Health, Was, Pocket.Num(), GetHeldSlot(), bLookLocked ? 1 : 0);
+		break;
+	}
 	case 111:
-		UE_LOG(LogRun, Display, TEXT("Run: test threats room=%d key=%d kind=%s anomaly=%d enemies_here=%d following=%d alive=%d hits=%d"),
+		UE_LOG(LogRun, Display, TEXT("Run: test threats room=%d key=%d kind=%s anomaly=%d enemies_here=%d following=%d alive=%d health=%.0f"),
 			CurrentRoom, Rooms[CurrentRoom].Key, AnomalyName(ThreatKindOf(Rooms[CurrentRoom].Key)), ThreatActor ? 1 : 0,
-			EnemyActors.Num(), GetFollowers(), Enemies.Num(), Hits);
+			EnemyActors.Num(), GetFollowers(), Enemies.Num(), Health);
 		break;
 	case 112:
 	{
 		const FVector Local = Pawn->GetActorLocation() - RoomActor->GetActorLocation();
-		UE_LOG(LogRun, Display, TEXT("Run: test wait, pawn at (%.0f, %.0f, %.0f) hits=%d"), Local.X, Local.Y, Local.Z, Hits);
+		UE_LOG(LogRun, Display, TEXT("Run: test wait, pawn at (%.0f, %.0f, %.0f) health=%.0f"), Local.X, Local.Y, Local.Z, Health);
 		for (const ARunEnemy* A : EnemyActors)
 		{
 			const FVector At = A->GetFloorPos() - RoomActor->GetActorLocation();

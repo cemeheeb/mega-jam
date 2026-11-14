@@ -233,7 +233,7 @@ void ARunEnemy::Tick(float DeltaSeconds)
 		Walk(Dir, RatSpeed, DeltaSeconds, Pawn);
 		if (Dist < RatReach)
 		{
-			Director->HurtPlayer(TEXT("A rat bites you."), Pos);
+			Director->HurtPlayer(TEXT("A rat bites you."), Pos, RatDamage);
 			Stun = RatScatter;
 			bFlee = true;
 			Dir = -To.GetSafeNormal2D();
@@ -249,7 +249,8 @@ void ARunEnemy::Tick(float DeltaSeconds)
 		Walk(Dir, bHuman ? HumanSpeed : RobotSpeed, DeltaSeconds, Pawn);
 		if (Dist < (bHuman ? HumanReach : RobotReach))
 		{
-			Director->HurtPlayer(bHuman ? TEXT("The other you gets its hands on you.") : TEXT("The maintenance robot slams into you."), Pos);
+			Director->HurtPlayer(bHuman ? TEXT("The other you gets its hands on you.") : TEXT("The maintenance robot slams into you."), Pos,
+				bHuman ? HumanDamage : RobotDamage);
 			Stun = bHuman ? HumanStun : RobotStun;
 		}
 	}

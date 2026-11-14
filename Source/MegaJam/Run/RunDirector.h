@@ -13,7 +13,9 @@ class ARunItem;
 class ARunRoom;
 class ARunThreat;
 class FRunLayout;
+class USceneComponent;
 class USkeletalMesh;
+class UStaticMeshComponent;
 
 /** Предмет, лежащий в комнате. Брошенный игроком помнит место. */
 struct FRunPlacedItem
@@ -22,6 +24,8 @@ struct FRunPlacedItem
 	bool bHasPos = false;
 	FVector LocalPos = FVector::ZeroVector;
 	int32 Spot = -1;   // номер метки в комнате: закреплён за вещью, чтобы остальные не переезжали, когда одну взяли
+	int32 Uid = 0;     // своя у каждой записи: по ней взятая вещь вычёркивается (аптечек в комнате может быть несколько)
+	int32 Niche = -1;  // >= 0: аптечка в аварийной нише, номер ниши по модулю их числа в комнате
 };
 
 /** Комната набора: вещи и записки. Одна на набор — через какую бы дверь в неё ни вошли,
@@ -73,8 +77,8 @@ public:
 	void BeginTransition(ARunRoom* Room, int32 Door);
 
 	// --- то, что вызывают аномалии и противники ---
-	/** Попадание. После него игрок недолго неуязвим; From — откуда пришёл удар, для отброса. */
-	void HurtPlayer(const FString& Text, const FVector& From);
+	/** Попадание: Damage из 100. После него игрок недолго неуязвим; From — откуда пришёл удар, для отброса. */
+	void HurtPlayer(const FString& Text, const FVector& From, float Damage);
 	/** Подпись и шкала угрозы на экране (счётчик радиации, направление гравитации). */
 	void SetThreatHint(const FString& Text, float Meter);
 	/** Замедлить игрока на этот кадр. */
@@ -86,11 +90,22 @@ public:
 
 	// --- то, что читает экранный интерфейс ---
 	const TArray<int32>& GetPocket() const { return Pocket; }
-	int32 GetHits() const { return Hits; }
-	int32 GetHealth() const;
+	/** Здоровье, от 0 до MaxHealth (решение автора 14.11: шкала 0–100 вместо счёта попаданий). */
+	float GetHealth() const { return Health; }
+	static constexpr float MaxHealth = 100.f;
+	float GetDamageTaken() const { return DamageTaken; }
+	int32 GetMedkitsUsed() const { return MedkitsUsed; }
+	/** Слот кармана, вещь из которого в руке; −1 — руки пусты. */
+	int32 GetHeldSlot() const { return Pocket.IsValidIndex(HeldSlot) ? HeldSlot : -1; }
+	/** Осмотр вещи в руке: она крупно перед камерой, мышь её вертит. У блокнота вместо этого — чтение. */
+	bool IsInspecting() const { return bInspecting && GetHeldSlot() >= 0 && !IsReading(); }
+	/** Блокнот раскрыт: разворот на весь экран, страницы листаются. */
+	bool IsReading() const { return bInspecting && GetHeldSlot() >= 0 && Pocket[HeldSlot] == RunGen::Notebook; }
+	/** Какой разворот блокнота открыт. Экран знает, сколько их, и сам поправляет номер (ClampJournalPage). */
+	int32 GetJournalPage() const { return JournalPage; }
+	void ClampJournalPage(int32 NumSpreads) { JournalPage = FMath::Clamp(JournalPage, 0, FMath::Max(0, NumSpreads - 1)); }
 	ERunPhase GetPhase() const { return Phase; }
 	bool IsEngineFixed() const { return bEngineFixed; }
-	bool IsJournalOpen() const { return bShowJournal; }
 	const TArray<FString>& GetJournal() const { return Journal; }
 	FString GetMessage() const;
 	FString GetPrompt() const;
@@ -130,6 +145,8 @@ public:
 	float GetThreatMeter() const { return ThreatMeter; }
 	/** 1 сразу после попадания, 0 через полсекунды: для красной вспышки. */
 	float GetHurtFlash() const;
+	/** 1 сразу после аптечки, 0 через 0,6 с: для зелёной вспышки. */
+	float GetHealFlash() const;
 
 	/** Сколько секунд после попадания игрок неуязвим. */
 	UPROPERTY(EditAnywhere, Category = "Run")
@@ -165,6 +182,14 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Run")
 	float WalkSpeed = 250.f;
 
+	/** Сколько здоровья возвращает аптечка (из 100). */
+	UPROPERTY(EditAnywhere, Category = "Run")
+	float MedkitHeal = 40.f;
+
+	/** В скольких комнатах наборов из ста в аварийной нише есть аптечка. Какие это комнаты — решает зерно. */
+	UPROPERTY(EditAnywhere, Category = "Run")
+	int32 MedkitChancePercent = 35;
+
 private:
 	TUniquePtr<FRunLayout> Layout;
 	uint32 Seed = 0;
@@ -173,7 +198,18 @@ private:
 	int32 CurrentRoom = 0;
 	TArray<int32> Pocket;
 	TArray<FString> Journal;
-	int32 Hits = 0;
+	float Health = MaxHealth;
+	float DamageTaken = 0.f;
+	int32 MedkitsUsed = 0;
+	float HealAt = -100.f;
+	int32 NextUid = 1;
+	// вещь в руке, осмотр и чтение
+	int32 HeldSlot = -1;
+	bool bInspecting = false;
+	bool bLookLocked = false;
+	int32 JournalPage = 0;
+	float InspectIdle = 0.f;
+	bool bTipHeld = false, bTipMedkit = false;
 	bool bEngineFixed = false;
 	bool bFirstNoteRead = false;
 	ERunPhase Phase = ERunPhase::Playing;
@@ -186,6 +222,19 @@ private:
 
 	UPROPERTY()
 	TObjectPtr<ARunThreat> ThreatActor;
+
+	/** Вещь в руке героя: держится за кисть (кость hand_r), висит под ней. */
+	UPROPERTY()
+	TObjectPtr<USceneComponent> HandPivot;
+	UPROPERTY()
+	TObjectPtr<UStaticMeshComponent> HandMesh;
+	/** Вещь на осмотре: перед камерой, крутится вокруг своей середины. */
+	UPROPERTY()
+	TObjectPtr<USceneComponent> InspectPivot;
+	UPROPERTY()
+	TObjectPtr<UStaticMeshComponent> InspectMesh;
+	int32 ShownHandItem = TNumericLimits<int32>::Min();
+	int32 ShownInspectItem = TNumericLimits<int32>::Min();
 
 	TArray<FRunEnemyState> Enemies;
 	int32 NextEnemyId = 1;
@@ -230,7 +279,6 @@ private:
 	float RestartAt = 0.f;
 	FString Message;
 	float MessageUntil = 0.f;
-	bool bShowJournal = false;
 	bool bShowDebug = false;
 
 	TArray<FString> Solution;
@@ -241,7 +289,11 @@ private:
 	void SetupPlayer();
 	void SpawnRoom(int32 RoomId, const FVector& Location, int32 ArrivalDoor);
 	void SpawnRoomContents();
-	ARunItem* SpawnItemActor(int32 Item, int32 NoteIndex, const FVector& Location);
+	ARunItem* SpawnItemActor(int32 Item, int32 NoteIndex, const FVector& Location, int32 Uid = 0);
+	/** Записать вещь в комнату набора. Аптечка в нише получает Niche, остальные — метку по порядку. */
+	FRunPlacedItem& AddPlaced(FRunKeyState& State, int32 Item);
+	/** Аптечка в нише: есть ли она в комнате набора, решают зерно и набор. */
+	void AddMedkit(FRunKeyState& State);
 	/** Вид угрозы комнаты набора: 0 — безопасно. Учитывает отладочную подмену ForceThreatKind. */
 	int32 ThreatKindOf(int32 Key);
 	void SpawnThreats(int32 ArrivalDoor);
@@ -264,16 +316,35 @@ private:
 	void OnQuitKey();
 	void OnConfirm();
 	void RestartRun();
-	void OnDrop(int32 Slot);
-	void OnDrop1() { OnDrop(0); }
-	void OnDrop2() { OnDrop(1); }
-	void OnDrop3() { OnDrop(2); }
-	void OnDrop4() { OnDrop(3); }
+	/** Выбросить вещь из слота: ложится перед игроком и остаётся в комнате (5.3). */
+	void DropSlot(int32 Slot);
+	/** Слот кармана опустел: поправить номер слота в руке. */
+	void RemoveFromPocket(int32 Slot);
+	void SelectSlot(int32 Slot);
+	void OnSelect1() { SelectSlot(0); }
+	void OnSelect2() { SelectSlot(1); }
+	void OnSelect3() { SelectSlot(2); }
+	void OnSelect4() { SelectSlot(3); }
+	void CycleHeld(int32 Step);
+	void OnWheelUp();
+	void OnWheelDown();
+	void OnDropHeld();
+	void OnUse();
+	void OnInspect();
+	void SetInspecting(bool bOn);
+	void TurnPage(int32 Step);
+	void OnPagePrev() { TurnPage(-1); }
+	void OnPageNext() { TurnPage(1); }
+	void UseMedkit(int32 Slot);
 	void OnToggleJournal();
+	/** Каждый кадр: вещь в руке и вещь на осмотре — какой меш показать, где и как повёрнут. */
+	void TickHeldItem(float DeltaSeconds);
+	void ShowItemMesh(UStaticMeshComponent* Comp, int32 Item, float Fit, bool bHang);
 	void OnToggleDebug();
 
 	// --- самопроверка без окна: ключ запуска -RunSelfTest ---
 	bool bSelfTest = false;
+	bool bShowTest = false;
 	int32 TestStep = 0;
 	float TestNextAt = 0.f;
 	void TickSelfTest();

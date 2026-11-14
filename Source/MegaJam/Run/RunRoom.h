@@ -14,8 +14,9 @@ class UTextRenderComponent;
 /** Размеры коробки комнаты. Должны совпадать с tools/ue/build_rooms.py. */
 namespace RunRoomGeo
 {
-	constexpr float HalfX = 450.f;        // пол-комнаты с юга на север
-	constexpr float HalfY = 375.f;        // пол-комнаты с запада на восток
+	constexpr float HalfX = 450.f;        // пол-комнаты с юга на север, до лица колонок у стен
+	constexpr float HalfY = 375.f;        // пол-комнаты с запада на восток, до лица колонок у стен
+	constexpr float Lining = 45.f;        // колонки-шкафы вдоль стен (environment/common/wall-columns): стена за ними
 	constexpr float Wall = 30.f;          // толщина стены
 	constexpr float DoorWidth = 150.f;
 	constexpr float VestibuleWidth = 450.f;
@@ -23,6 +24,7 @@ namespace RunRoomGeo
 
 	MEGAJAM_API FVector Dir(int32 Door);              // наружу из комнаты
 	MEGAJAM_API FVector Slide(int32 Door);            // куда уезжает створка
+	MEGAJAM_API float InnerFace(int32 Door);          // от центра до лица колонок: дальше только проём и тамбур
 	MEGAJAM_API float OuterFace(int32 Door);          // от центра до внешней грани стены
 	MEGAJAM_API int32 Opposite(int32 Door);
 	/** Где стоит соседняя комната: её тамбур противоположной двери совпадает с тамбуром этой. */
@@ -60,6 +62,10 @@ public:
 
 	/** Мировые координаты компонентов-меток, имя которых начинается с Prefix (ItemSpot, NoteSpot). */
 	TArray<FVector> GetSpots(const TCHAR* Prefix) const;
+
+	/** Кейсы первой помощи в аварийных нишах (меши *_FirstAid из build_rooms.py): где стоят, по порядку имён.
+	 *  Сами меши прячутся: аптечку, которую можно взять, ставит ведущий забега (решение автора 14.11). */
+	TArray<FTransform> TakeFirstAidCases();
 
 	bool AllLeavesClosed() const;
 

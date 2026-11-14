@@ -15,6 +15,15 @@
 Единицы — сантиметры. Начало координат комнаты — центр пола.
 Стороны света: север — +X, восток — +Y, юг — −X, запад — −Y.
 Правило локаций (DESIGN.md 5.2): в каждой комнате четыре двери, по одной в каждой стене.
+
+Вдоль стен стоят колонки-шкафы из набора Singula (SourceArt/environment/common/wall-columns, импорт —
+tools/ue/import_wall_columns.py): 75 см в ширину, 45 в глубину, от пола до потолка. Стены стоят за ними,
+поэтому LX × LY — комната до лица колонок, а коробка больше на LIN с каждой стороны. Раскладку колонок
+делает lining() по правилам ниже (PROGRAM, ORDER), мебель ставится как раньше — перед колонками.
+
+Реквизит из наборов Singula (tools/ue/import_singula.py) ставится через Room.mesh: аварийный пост в нишах колонок,
+кнопки и маркеры у проёмов (lining), светильники и решётки на потолке (fixtures), поручни в тамбурах (airlock),
+кресло и органы управления на консолях рубки, мелочи на пультах и столах — в функциях комнат.
 """
 
 import json
@@ -43,11 +52,13 @@ PLACES = {"Living": (0, 0, 0), "Bridge": (0, 3000, 0), "Lab": (0, 6000, 0),
 PLAYER_START = (-290, -225, 100)   # в жилой комнате, перед спальной капсулой
 
 # --- размеры коробки, общие для всех комнат ---
-LX, LY, H = 900, 750, 300      # комната внутри: с юга на север, с запада на восток, высота
+LX, LY, H = 900, 750, 300      # комната внутри до лица колонок: с юга на север, с запада на восток, высота
+LIN = 45                       # колонки-шкафы вдоль стен: стена стоит на столько дальше лица колонок
 T = 30                         # толщина стен
 DW, DH = 150, 225              # проём двери: ширина, высота
 VW, VD = 450, 300              # тамбур шлюза внутри: ширина вдоль стены, глубина наружу
 LEAF = 10                      # толщина створки
+ENV = "/Game/Environment"      # меши наборов (колонки, реквизит из Singula): import_wall_columns.py, import_singula.py
 
 # --- материалы: имя -> цвет поверхности (r, g, b) ---
 MATERIALS = {
@@ -72,6 +83,11 @@ class Room:
         self.cylinders = []  # (имя, радиус, высота, центр, материал, поворот (pitch, yaw, roll))
         self.lights = []     # (имя, положение, сила, радиус, цвет)
         self.spots = []      # (имя, положение): места для предметов и записок, высота — верх поверхности
+        self.meshes = []     # (имя, путь меша, положение, (pitch, yaw, roll)): колонки у стен и реквизит
+
+    def mesh(self, name, asset, center, yaw=0.0, rot=None):
+        """asset — путь от /Game/Environment, например Common/Lamps/SM_CagedCeilingLamp."""
+        self.meshes.append((name, f"{ENV}/{asset}", center, rot or (0, yaw, 0)))
 
     def box(self, name, size, center, mat, yaw=0.0):
         self.boxes.append((name, size, center, mat, yaw))
@@ -89,7 +105,30 @@ class Room:
 
     def names(self):
         return ([b[0] for b in self.boxes] + [c[0] for c in self.cylinders] + [l[0] for l in self.lights]
-                + [sp[0] for sp in self.spots])
+                + [sp[0] for sp in self.spots] + [m[0] for m in self.meshes])
+
+
+# ---------- повороты реквизита ----------
+
+UP = (0, 0, 1)
+# Поручень Singula смоделирован лёжа: длинная ось Y меша, стойки вниз к основанию z = 0 (ручка в 9,5 см над ним).
+GRAB_HANDLE = "Common/Handrails/SM_GrabHandle"
+
+
+def cross(a, b):
+    return (a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0])
+
+
+def rot_from_axes(x, y, z):
+    """Поворот Unreal (pitch, yaw, roll), который переводит оси меша X, Y, Z в данные направления (FMatrix::Rotator)."""
+    pitch = math.degrees(math.atan2(x[2], math.hypot(x[0], x[1])))
+    yaw = math.degrees(math.atan2(x[1], x[0]))
+    cp, sp, cy, sy = (math.cos(math.radians(pitch)), math.sin(math.radians(pitch)),
+                      math.cos(math.radians(yaw)), math.sin(math.radians(yaw)))
+    sy_axis = (-sy, cy, 0.0)        # ось Y поворота без крена
+    dot = lambda a, b: sum(p * q for p, q in zip(a, b))
+    roll = math.degrees(math.atan2(dot(z, sy_axis), dot(y, sy_axis)))
+    return (round(pitch, 3), round(yaw, 3), round(roll, 3))
 
 
 # ---------- коробка: пол, потолок, четыре стены с проёмами, четыре шлюза, свет ----------
@@ -112,17 +151,28 @@ def wall_with_door(room, prefix, axis, fixed, lo, hi, door_at):
 
 def airlock(room, side, door_at=0):
     """Тамбур шлюза снаружи стены. u — вдоль стены, v — наружу от её внешней грани."""
+    ox, oy = LX / 2 + LIN + T, LY / 2 + LIN + T     # внешние грани стен
+
     def place(name, su, sv, sz, u, v, z, mat):
         if side == "N":         # стена +X, наружу +X
-            room.box(name, (sv, su, sz), ((LX / 2 + T) + v, door_at + u, z), mat)
+            room.box(name, (sv, su, sz), (ox + v, door_at + u, z), mat)
         elif side == "S":       # стена −X, наружу −X
-            room.box(name, (sv, su, sz), (-(LX / 2 + T) - v, door_at + u, z), mat)
+            room.box(name, (sv, su, sz), (-ox - v, door_at + u, z), mat)
         elif side == "W":       # стена −Y, наружу −Y
-            room.box(name, (su, sv, sz), (door_at + u, -(LY / 2 + T) - v, z), mat)
+            room.box(name, (su, sv, sz), (door_at + u, -oy - v, z), mat)
         else:                   # "E": стена +Y, наружу +Y
-            room.box(name, (su, sv, sz), (door_at + u, (LY / 2 + T) + v, z), mat)
+            room.box(name, (su, sv, sz), (door_at + u, oy + v, z), mat)
 
     p = f"{side}_Airlock"
+    # вертикальные поручни (Singula handrails) на боковых стенах тамбура, посередине глубины, лицом внутрь
+    ux, uy = {"N": (0, 1), "S": (0, 1), "W": (1, 0), "E": (1, 0)}[side]          # направление u в осях комнаты
+    for sgn, tag in ((-1, "A"), (1, "B")):
+        c = {"N": (ox + VD / 2, door_at), "S": (-ox - VD / 2, door_at),
+             "W": (door_at, -oy - VD / 2), "E": (door_at, oy + VD / 2)}[side]
+        u = sgn * VW / 2
+        inward = (-sgn * ux, -sgn * uy, 0)
+        room.mesh(f"{p}_Handle{tag}", GRAB_HANDLE, (c[0] + u * ux, c[1] + u * uy, 120),
+                  rot=rot_from_axes(cross(UP, inward), UP, inward))
     place(f"{p}_Floor", VW + 2 * T, VD + T, 20, 0, (VD + T) / 2, -10, "Floor")
     place(f"{p}_Ceiling", VW + 2 * T, VD + T, 20, 0, (VD + T) / 2, H + 10, "Ceiling")
     for sgn, tag in ((-1, "SideA"), (1, "SideB")):
@@ -135,18 +185,19 @@ def airlock(room, side, door_at=0):
     # при переходе на её месте оказывается внутренняя створка соседней комнаты.
     place(f"{side}_DoorInner", DW, LEAF, DH, 0, LEAF / 2, DH / 2, "Door")
     place(f"{side}_DoorOuter", DW, LEAF, DH, 0, VD - LEAF / 2, DH / 2, "Door")
-    mid = {"N": ((LX / 2 + T) + VD / 2, door_at), "S": (-(LX / 2 + T) - VD / 2, door_at),
-           "W": (door_at, -(LY / 2 + T) - VD / 2), "E": (door_at, (LY / 2 + T) + VD / 2)}[side]
+    mid = {"N": (ox + VD / 2, door_at), "S": (-ox - VD / 2, door_at),
+           "W": (door_at, -oy - VD / 2), "E": (door_at, oy + VD / 2)}[side]
     room.light(f"{p}_Light", (mid[0], mid[1], H - 40), 600, 700, (1.0, 0.72, 0.45))
 
 
 def shell(room):
-    room.box("Floor", (LX + 2 * T, LY + 2 * T, 20), (0, 0, -10), "Floor")
-    room.box("Ceiling", (LX + 2 * T, LY + 2 * T, 20), (0, 0, H + 10), "Ceiling")
-    wall_with_door(room, "Wall_N", "y", LX / 2 + T / 2, -(LY / 2 + T), LY / 2 + T, 0)
-    wall_with_door(room, "Wall_S", "y", -(LX / 2 + T / 2), -(LY / 2 + T), LY / 2 + T, 0)
-    wall_with_door(room, "Wall_W", "x", -(LY / 2 + T / 2), -LX / 2, LX / 2, 0)
-    wall_with_door(room, "Wall_E", "x", LY / 2 + T / 2, -LX / 2, LX / 2, 0)
+    ix, iy = LX / 2 + LIN, LY / 2 + LIN             # внутренние грани стен, за колонками
+    room.box("Floor", (2 * (ix + T), 2 * (iy + T), 20), (0, 0, -10), "Floor")
+    room.box("Ceiling", (2 * (ix + T), 2 * (iy + T), 20), (0, 0, H + 10), "Ceiling")
+    wall_with_door(room, "Wall_N", "y", ix + T / 2, -(iy + T), iy + T, 0)
+    wall_with_door(room, "Wall_S", "y", -(ix + T / 2), -(iy + T), iy + T, 0)
+    wall_with_door(room, "Wall_W", "x", -(iy + T / 2), -ix, ix, 0)
+    wall_with_door(room, "Wall_E", "x", iy + T / 2, -ix, ix, 0)
     for side in "NSWE":
         airlock(room, side)
     for i, x in enumerate((-250, 100, 330)):
@@ -184,6 +235,7 @@ def living():
     r.box("Table_Leg", (20, 20, 72), (250, -230, 36), "Dark")
     r.box("Stool1", (36, 36, 45), (250, -300, 22.5), "Furniture")
     r.box("Stool2", (36, 36, 45), (250, -160, 22.5), "Furniture")
+    r.mesh("Table_DrinkPouch", "Bridge/CrewItems/SM_DrinkPouch", (292, -212, 78), yaw=20)   # в стороне от мест предметов
     # уборная: кабинка 1,6 × 1,6 м в северо-восточном углу, дверь смотрит на юг
     x0, y0, w = 285, 210, 8                     # южная и западная грани кабинки, толщина перегородки
     x1, y1 = LX / 2, LY / 2                     # северная и восточная стены комнаты
@@ -210,27 +262,50 @@ def living():
     return r
 
 
-# ---------- рубка: только центральный пост — кресло, панель управления, консоли по кругу ----------
+# ---------- рубка: только центральный пост — кресло на помосте и консоли навигаторов по кругу ----------
+#
+# Пометки автора на снимке 14.11: панель пилота перед креслом убрана; консоли кольца — консоли навигаторов
+# с мониторами; помост автор делает в Tripo (карточки environment/bridge/navigator-console и bridge-dais).
+# До моделей — серые коробки тех же размеров.
 
 def bridge():
     r = Room("Bridge")
     shell(r)
     r.cylinder("Post_Dais", 120, 12, (0, 0, 6), "Furniture")
-    # кресло в центре, лицом на север
-    r.box("Chair_Seat", (60, 60, 45), (0, 0, 12 + 22.5), "Furniture")
-    r.box("Chair_Back", (12, 60, 75), (-24, 0, 12 + 45 + 37.5), "Furniture")
-    for sgn, tag in ((-1, "W"), (1, "E")):
-        r.box(f"Chair_Arm{tag}", (50, 8, 20), (4, sgn * 34, 12 + 45 + 10), "Furniture")
-    # центральная панель управления перед креслом
-    r.box("Panel_Body", (36, 120, 78), (72, 0, 12 + 39), "Furniture")
-    r.box("Panel_Top", (40, 124, 6), (72, 0, 12 + 81), "Dark")
+    # противоперегрузочное кресло (Singula acceleration-couch) в центре, лицом на север: лицо меша +Y -> +X
+    r.mesh("Chair_Couch", "Bridge/AccelerationCouch/SM_AccelerationCouch", (0, 0, 12), yaw=-90)
     # кольцо консолей вокруг поста; на юге проход к креслу
     radius, depth, width = 215, 60, 150
+    # каждая консоль — свой пост: две пары органов по краям, середина свободна под предмет или записку;
+    # у дальнего края — два монитора лицом к посту
+    stations = {0: ("CommandConsoleParts/SM_TrackballPanel", "ControlConsoleParts/SM_Keypad"),      # навигация
+                45: ("ControlConsoleParts/SM_RotaryKnob", "ControlConsoleParts/SM_SwitchBlock"),    # связь
+                90: ("CommandConsoleParts/SM_BreakerPanel", "CommandConsoleParts/SM_KeySwitch"),    # питание
+                135: ("ControlConsoleParts/SM_SwitchBlock", "ControlConsoleParts/SM_RotaryKnob"),   # двигатель
+                225: ("CommandConsoleParts/SM_BreakerPanel", "ControlConsoleParts/SM_Keypad"),      # жизнеобеспечение
+                270: ("CommandConsoleParts/SM_TrackballPanel", "ControlConsoleParts/SM_RotaryKnob"),  # датчики
+                315: ("CommandConsoleParts/SM_KeySwitch", "CommandConsoleParts/SM_EmergencyButton")}  # шлюзы
     for i, deg in enumerate((0, 45, 90, 135, 225, 270, 315)):
         a = math.radians(deg)
         x, y = radius * math.cos(a), radius * math.sin(a)
         r.box(f"Ring_Console{i + 1}", (depth, width, 95), (x, y, 47.5), "Furniture", yaw=deg)
-        r.box(f"Ring_Screen{i + 1}", (depth - 14, width - 16, 6), (x, y, 98), "Dark", yaw=deg)
+        r.box(f"Ring_Desk{i + 1}", (depth - 14, width - 16, 6), (x, y, 98), "Dark", yaw=deg)
+
+        def at(rad, lat, z):
+            """Точка консоли: rad — от центра поста, lat — вдоль консоли (по часовой стрелке, если смотреть сверху)."""
+            return (rad * math.cos(a) - lat * math.sin(a), rad * math.sin(a) + lat * math.cos(a), z)
+
+        # органы — у ближнего к посту края, лицом к центру (лицо +Y -> −радиус: yaw = deg + 90)
+        for j, (sgn, asset) in enumerate(zip((-1, 1), stations[deg])):
+            r.mesh(f"Ring_Console{i + 1}_Part{j + 1}", f"Bridge/{asset}", at(radius - 12, sgn * 55, 101), yaw=deg + 90)
+        # мониторы: корпус 64 × 40 см на низкой ножке у дальнего края стола, экран — бирюзовый, лицом к посту;
+        # нижний край на 1,05 м — предмет в середине стола (до 25 см от ближнего края) их не задевает
+        back = radius + depth / 2 - 8
+        for j, sgn in enumerate((-1, 1)):
+            lat = sgn * 33
+            r.box(f"Ring_Console{i + 1}_MonitorStand{j + 1}", (10, 12, 4), at(back, lat, 103), "Dark", yaw=deg)
+            r.box(f"Ring_Console{i + 1}_Monitor{j + 1}", (4, 64, 40), at(back, lat, 125), "Dark", yaw=deg)
+            r.box(f"Ring_Console{i + 1}_Screen{j + 1}", (1, 58, 34), at(back - 2.5, lat, 125), "Glow", yaw=deg)
     r.light("Post_Light", (0, 0, 200), 500, 500, (0.45, 0.90, 0.95))
     d = radius * math.sqrt(0.5)
     r.spots_for("ItemSpot", [(d, d, 101), (-d, d, 101), (d, -d, 101), (-d, -d, 101), (0, radius, 101),
@@ -312,7 +387,7 @@ def life_support():
     r.box("Control_Screen", (4, 110, 60), (-LX / 2 + 3, -150, 150), "Dark")
     for i in range(4):
         r.cylinder(f"Oxygen{i + 1}", 14, 120, (-LX / 2 + 24, -260 - i * 34, 60), "Linen")
-    r.box("Oxygen_Rack", (36, 150, 10), (-LX / 2 + 24, -311, 95), "Dark")
+    r.box("Oxygen_Rack", (36, 140, 10), (-LX / 2 + 24, -305, 95), "Dark")
     # трубы под потолком вдоль западной и восточной стен, на каждой по вентилю
     for sgn, tag in ((-1, "W"), (1, "E")):
         y = sgn * (LY / 2 - 18)
@@ -348,6 +423,10 @@ def engine():
     for sgn, tag in ((-1, "W"), (1, "E")):
         r.box(f"Console{tag}", (60, 180, 100), (-LX / 2 + 30, sgn * 220, 50), "Furniture")
         r.box(f"Console{tag}_Screen", (4, 160, 70), (-LX / 2 + 3, sgn * 220, 160), "Dark")
+    # после ремонта на пультах остались сварочный пистолет (лежит на боку: толщина меша по Y -> вверх)
+    # и ремкомплект обшивки; середина пультов свободна под записки
+    r.mesh("ConsoleW_WeldingGun", "WeldingGun/SM_WeldingGun", (-LX / 2 + 30, -270, 100 + 2.1), rot=(0, 0, -90))
+    r.mesh("ConsoleE_PatchKit", "Common/SafetyEquipment/SM_HullPatchKit", (-LX / 2 + 30, 280, 100), yaw=-75)
     # баки охлаждения в северных углах с трубами к потолку
     for sgn, tag in ((-1, "W"), (1, "E")):
         r.cylinder(f"Coolant{tag}", 55, 220, (LX / 2 - 65, sgn * (LY / 2 - 65), 110), "Tank")
@@ -479,6 +558,9 @@ def mess():
         r.box(f"Tray{tag}1", (40, 30, 3), (200, y, 79.5), "Linen")
         r.box(f"Tray{tag}2", (40, 30, 3), (300, y + 8, 79.5), "Linen")
         r.cylinder(f"Cup{tag}", 5, 10, (220, y + 22, 83), "Door")
+        # пакет с питьём у края стола, в стороне от подносов и мест предметов
+        r.mesh(f"Table{tag}_DrinkPouch", "Bridge/CrewItems/SM_DrinkPouch", (162 if sgn < 0 else 338, y - sgn * 18, 78),
+               yaw=sgn * 15)
     # камбуз вдоль южной стены, юго-восточная четверть: стойка, плита, шкаф над ней
     r.box("Galley_Counter", (60, 260, 90), (-LX / 2 + 30, 240, 45), "Furniture")
     r.box("Galley_Top", (62, 262, 4), (-LX / 2 + 30, 240, 92), "Dark")
@@ -553,6 +635,232 @@ ROOMS = {"Living": living, "Bridge": bridge, "Lab": lab, "LifeSupport": life_sup
          "Medbay": medbay, "Cargo": cargo, "Mess": mess, "Computer": computer}
 
 
+# ---------- колонки-шкафы вдоль стен ----------
+#
+# Сетка (правила набора Singula, ADR-031): колонка 75 см, две колонки — проём двери. Над проёмом — перемычка
+# (Header). От края проёма к углу колонки идут вплотную; на внутреннем углу оба ряда отступают от угла на 45 см,
+# лица сходятся, щель за ними не видна. Комната до лица колонок 900 × 750, поэтому на короткой стене (N, S)
+# с каждой стороны двери ровно 4 колонки, на длинной (W, E) — 5. Доборы и боковины здесь не нужны.
+#
+# Какая колонка где — не случайно, а по месту:
+# 1. Портал двери: колонка с той стороны проёма, куда уезжает створка, — глухая панель (Blank, за ней привод);
+#    с другой стороны — аварийный пост (Emergency): огнетушитель и маски у каждого выхода.
+# 2. Остальные места — набор комнаты PROGRAM: что в ней хранят. Main — основной модуль, Side — второй,
+#    Corner — у угла. Порядок от двери к углу — ORDER: на длинных стенах основной модуль по обе стороны второго.
+# 3. Мебель ближе REACH к лицу колонки. До колонки дотянуться можно только через столешницу: коробку с верхом
+#    на рабочей высоте WORK_TOP, стоит на полу и не глубже WORK_DEPTH от лица колонки (кухонная стойка, стол,
+#    пульт, раковина). Модуль по набору остаётся, если ему столешница не мешает (глухая панель, ящики с 1 м,
+#    полка); шкаф, стойка, пост и вентиляция (BELOW_COUNTER) меняются на полку — ниша 0,98–1,52 м как раз над
+#    столешницей. Мелочь на столешнице (микроскоп, колбы, кастрюля) не в счёт.
+#    За любой другой мебелью — кровать, капсула, шкаф, ящики груза, бак, экран на стене — к колонке не подойти:
+#    глухая панель. Если мебель закрыла аварийный пост, он переходит на другую сторону той же двери.
+# Раскладка зависит только от типа комнаты и мебели в ней — одна и та же в каждом забеге.
+
+WALL_COLUMNS = "Common/WallColumns"
+COL = 75                       # ширина колонки
+REACH = 40                     # мебель ближе к лицу колонки закрывает дверцы
+REACH_Z = (25, 200)            # высоты, на которых до дверец достаёт рука
+WORK_TOP = (70, 110)           # рабочая высота столешницы
+WORK_DEPTH = 75                # через столешницу глубже этого до колонки не дотянуться
+ON_TOP = 140                   # вещь, которая стоит выше WORK_TOP[0] и не выше этого, — мелочь на столешнице
+# модули, которым нужен свободный пол перед колонкой: дверцы, ниша стойки и карман поста — от цоколя,
+# у вентиляции решётка внизу. За столешницей вместо них полка; глухая панель и ящики (с 1 м) остаются
+BELOW_COUNTER = ("Locker", "LockerTwoDoors", "Rack", "Emergency", "Vent")
+OVERHANG = 4                   # столешницы и лотки, которые выступают за лицо колонок не больше этого, — не ошибка
+
+# Аварийный пост в нише колонки Emergency (ниша 1,11–1,95 м, задняя стенка в 23 см от спинки колонки) —
+# раскладка из Singula (wall-columns/source/build_wall_columns.py): всё вынимается из ниши, ничто не мешает
+# другому. Огнетушитель висит низко в кольце кронштейна, коробка с маской стоит с запасом под откидную крышку,
+# аптечка — на дне ниши под ней, зажим фонаря — рядом с коробкой. Фонаря в зажиме нет: фонарь — предмет забега,
+# второй, которого нельзя взять, сбивал бы с толку; пустой зажим говорит, что его уже забрали.
+# Координаты — в осях колонки: x вдоль ряда, y от спинки к лицу, z от пола.
+SAFETY = "Common/SafetyEquipment/SM_"
+EMERGENCY_KIT = (
+    ("ExtinguisherBracket", "FireExtinguisherBracket", (-17, 23, 131)),
+    ("Extinguisher", "FireExtinguisher", (-17, 30.5, 116.7)),
+    ("MaskBox", "OxygenMaskBox", (13, 23, 151.5)),
+    ("FlashlightClip", "FlashlightClip", (28, 23, 155.5)),
+    ("FirstAid", "FirstAidCase", (17.5, 29, 112)),
+)
+# Кнопка двери — на откосе проёма (боковине колонки портала) с той стороны, куда закрывается створка, как пост
+# с пультом у двери Singula; лицом поперёк проёма, ближе к комнате, на высоте руки. Так она есть у каждой двери
+# и мебель перед колонками её не закрывает.
+DOOR_BUTTON = ("Common/DoorHatchControls/SM_DoorButton", LIN - 12, 120)
+FLOOR_MARKER = "Common/Lamps/SM_FloorMarker"
+
+PROGRAM = {   # (Main, Side, Corner)
+    "Living": ("LockerTwoDoors", "Drawers", "Shelf"),     # шкафы для одежды, комоды, открытая полка
+    "Bridge": ("Rack", "Drawers", "Vent"),                # стойки приборов, ящики для карт, вентиляция
+    "Lab": ("Shelf", "Drawers", "LockerTwoDoors"),        # полки с образцами, ящики инструментов, шкафы
+    "LifeSupport": ("Vent", "Blank", "Locker"),           # воздуховоды, сервисные панели, запасные фильтры
+    "Engine": ("Vent", "Rack", "Blank"),                  # вентиляция, щиты управления, сервисные панели
+    "Medbay": ("Drawers", "LockerTwoDoors", "Shelf"),     # ящики с лекарствами, шкафы, полки
+    "Cargo": ("Locker", "LockerTwoDoors", "Shelf"),       # шкафы для груза и инструмента
+    "Mess": ("Drawers", "Shelf", "Locker"),               # посуда, полки, кладовая
+    "Computer": ("Rack", "Vent", "Blank"),                # стойки, охлаждение, сервисные панели
+}
+ORDER = {"NS": ("portal", "side", "main", "corner"), "WE": ("portal", "main", "side", "main", "corner")}
+CODE = {"Blank": "B", "Emergency": "E", "Drawers": "D", "Locker": "L", "LockerTwoDoors": "T", "Shelf": "S",
+        "Rack": "R", "Vent": "V"}
+
+
+def wall_frame(side):
+    """Стена в своих координатах: точка(u, d) -> (x, y), поворот колонки, длина от двери до внутренней грани
+    поперечной стены, в какую сторону u уезжает створка двери (RunRoomGeo::Slide). u идёт вдоль стены вправо,
+    если смотреть на неё из комнаты, d — от внутренней грани стены в комнату. Лицо колонки (+Y меша) — в комнату."""
+    ix, iy = LX / 2 + LIN, LY / 2 + LIN
+    if side == "N":
+        return (lambda u, d: (ix - d, u)), 90, iy, 1        # створки N и S уезжают в +Y
+    if side == "S":
+        return (lambda u, d: (-ix + d, -u)), -90, iy, -1
+    if side == "W":
+        return (lambda u, d: (u, -iy + d)), 0, ix, 1        # створки W и E уезжают в +X
+    return (lambda u, d: (-u, iy - d)), 180, ix, -1
+
+
+def is_shell(name):
+    return (name in ("Floor", "Ceiling") or name[:7] in ("Wall_N_", "Wall_S_", "Wall_W_", "Wall_E_")
+            or "_Airlock_" in name or name.endswith(("_DoorInner", "_DoorOuter")))
+
+
+def footprints(room):
+    """Габариты мебели по осям: (имя, x0, x1, y0, y1, z0, z1, коробка ли)."""
+    out = []
+    for name, size, c, _mat, yaw in room.boxes:
+        if is_shell(name):
+            continue
+        a = math.radians(yaw)
+        ca, sa = abs(math.cos(a)), abs(math.sin(a))
+        ex, ey = size[0] / 2 * ca + size[1] / 2 * sa, size[0] / 2 * sa + size[1] / 2 * ca
+        out.append((name, c[0] - ex, c[0] + ex, c[1] - ey, c[1] + ey, c[2] - size[2] / 2, c[2] + size[2] / 2, True))
+    for name, r, h, c, _mat, rot in room.cylinders:
+        if rot[0] == 90:      # лежачий: вдоль X при yaw 0, вдоль Y при yaw 90
+            ex, ey, ez = (h / 2, r, r) if rot[1] == 0 else (r, h / 2, r)
+        else:
+            ex, ey, ez = r, r, h / 2
+        out.append((name, c[0] - ex, c[0] + ex, c[1] - ey, c[1] + ey, c[2] - ez, c[2] + ez, False))
+    return out
+
+
+def zone_hits(feet, point, u0, u1, d0, d1, z0, z1, min_along=10.0):
+    """Мебель в прямоугольнике стены u0..u1 × d0..d1 и по высоте z0..z1. На каждую — что это для колонки:
+    on_top — мелочь на столешнице, surface — столешница, block — всё остальное."""
+    (ax, ay), (bx, by) = point(u0, d0), point(u1, d1)
+    x0, x1, y0, y1 = min(ax, bx), max(ax, bx), min(ay, by), max(ay, by)
+    u_is_x = point(1, 0)[0] != point(0, 0)[0]     # стены W и E идут вдоль X, N и S — вдоль Y
+    (px, py), (qx, qy) = point(0, 0), point(0, 1)
+    nx, ny = qx - px, qy - py                     # в комнату
+    hits = []
+    for name, fx0, fx1, fy0, fy1, fz0, fz1, is_box in feet:
+        ox, oy = min(x1, fx1) - max(x0, fx0), min(y1, fy1) - max(y0, fy0)
+        if ox <= 0 or oy <= 0 or min(z1, fz1) <= max(z0, fz0):
+            continue
+        # перекрытие вдоль стены; перегородка до потолка упирается в колонку, даже если она тонкая
+        if (ox if u_is_x else oy) >= min_along or fz1 >= H - 50:
+            depth = max((cx - px) * nx + (cy - py) * ny for cx in (fx0, fx1) for cy in (fy0, fy1)) - LIN
+            if fz0 >= WORK_TOP[0] and fz1 <= ON_TOP:
+                kind = "on_top"
+            elif is_box and fz0 <= 10 and WORK_TOP[0] <= fz1 <= WORK_TOP[1] and depth <= WORK_DEPTH:   # стоит на полу
+                kind = "surface"
+            else:
+                kind = "block"
+            hits.append((name, kind))
+    return hits
+
+
+def lining(room):
+    """Колонки и перемычки по правилам выше. Возвращает раскладку для печати: сторона -> строка слева направо."""
+    main, side_mod, corner = PROGRAM[room.name]
+    by_role = {"main": main, "side": side_mod, "corner": corner}
+    feet = footprints(room)
+    rows = {}
+    for side in "NSWE":
+        point, yaw, span, slide = wall_frame(side)
+        order = ORDER["NS" if side in "NS" else "WE"]
+        n = round((span - LIN - DW / 2) / COL)
+        assert abs(DW / 2 + n * COL - (span - LIN)) < 0.01 and n == len(order), (side, n)
+        # мебель не должна заходить в колонки
+        for name, _kind in zone_hits(feet, point, -span, span, 0, LIN - OVERHANG, 0, H, min_along=1):
+            print(f"  ВНИМАНИЕ {room.name}: {name} заходит в колонки стены {side}")
+        slots = {}
+        for sgn in (-1, 1):
+            for k, role in enumerate(order):
+                a, b = DW / 2 + k * COL, DW / 2 + (k + 1) * COL
+                u0, u1 = (a, b) if sgn > 0 else (-b, -a)
+                if role == "portal":
+                    module = "Blank" if sgn == slide else "Emergency"
+                else:
+                    module = by_role[role]
+                hits = [h for h in zone_hits(feet, point, u0, u1, LIN - 1, LIN + REACH, *REACH_Z) if h[1] != "on_top"]
+                slots[(sgn, k)] = {"module": module, "hits": hits, "u": (u0 + u1) / 2}
+        for sgn in (-1, 1):
+            e, other = slots[(sgn, 0)], slots[(-sgn, 0)]
+            if e["module"] == "Emergency" and e["hits"] and not other["hits"]:
+                e["module"], other["module"] = "Blank", "Emergency"
+        for (sgn, k), s in slots.items():
+            if any(kind == "block" for _n, kind in s["hits"]):
+                s["module"] = "Blank"
+            elif s["hits"] and s["module"] in BELOW_COUNTER:
+                s["module"] = "Shelf"         # за столешницей: дверцы от цоколя упёрлись бы в неё
+            x, y = point(s["u"], 0)
+            tag = f"Lining_{side}_{'L' if sgn < 0 else 'R'}{k + 1}"
+            room.mesh(tag, f"{WALL_COLUMNS}/SM_WallColumn{s['module']}", (x, y, 0), yaw)
+            if s["module"] == "Emergency":
+                for part, asset, (lx, ly, lz) in EMERGENCY_KIT:
+                    px, py = point(s["u"] + lx, ly)
+                    room.mesh(f"{tag}_{part}", SAFETY + asset, (px, py, lz), yaw)
+        # кнопка на откосе со стороны −slide, лицом к середине проёма (в +slide по u)
+        asset, d, z = DOOR_BUTTON
+        (ax, ay), (bx, by) = point(0, 0), point(slide, 0)
+        px, py = point(-slide * DW / 2, d)
+        room.mesh(f"Lining_{side}_DoorButton", asset, (px, py, z), math.degrees(math.atan2(by - ay, bx - ax)) - 90)
+        # светящиеся маркеры пола по краям проёма, сразу перед лицом колонок: выход видно и в тёмной комнате
+        for sgn, tag in ((-1, "L"), (1, "R")):
+            px, py = point(sgn * (DW / 2 - 12), LIN + 12)
+            room.mesh(f"Lining_{side}_FloorMarker{tag}", FLOOR_MARKER, (px, py, 0), yaw)
+        x, y = point(0, 0)
+        room.mesh(f"Lining_{side}_Header", f"{WALL_COLUMNS}/SM_WallColumnHeader", (x, y, 0), yaw)
+        left = [slots[(-1, k)] for k in reversed(range(len(order)))]
+        right = [slots[(1, k)] for k in range(len(order))]
+        code = lambda s: CODE[s["module"]].lower() if s["hits"] else CODE[s["module"]]
+        blocked = sorted({f"{n}{'' if kind == 'block' else ' (столешница)'}" for s in left + right for n, kind in s["hits"]})
+        rows[side] = (" ".join(code(s) for s in left) + "  [ ]  " + " ".join(code(s) for s in right)
+                      + (f"   за мебелью: {', '.join(blocked)}" if blocked else ""))
+    return rows
+
+
+# ---------- потолок: светильники и решётки вентиляции (наборы Singula lamps, ventilation) ----------
+#
+# Светильник — там, где у комнаты общий свет (Room_Light*): плафон в клетке на потолке, источник под ним.
+# В тамбуре шлюза — проблесковый маячок у его оранжевого света. Между светильниками на оси комнаты — решётки
+# приточной вентиляции. Меши этих наборов смоделированы основанием вниз, на потолок они ставятся перевёрнутыми.
+# Где к потолку подходит мебель (кран-балка, лотки, перегородки), светильник или решётку не ставим.
+
+CEILING_LAMP = "Common/Lamps/SM_CagedCeilingLamp"
+AIRLOCK_BEACON = "Common/Lamps/SM_BeaconLight"
+DIFFUSER = "Common/Ventilation/SM_CeilingDiffuser"
+DIFFUSERS = ((-75, 0), (215, 0))   # между светильниками x = −250, 100, 330
+UPSIDE_DOWN = (0, 0, 180)
+CEILING_GAP = 25                   # мебель выше H − этого под местом светильника мешает ему
+
+
+def fixtures(room):
+    feet = footprints(room)
+
+    def free(x, y, r):
+        return not [n for n, x0, x1, y0, y1, _z0, z1, _b in feet
+                    if z1 > H - CEILING_GAP and x0 < x + r and x1 > x - r and y0 < y + r and y1 > y - r]
+
+    for name, (x, y, _z), *_ in room.lights:
+        if name.startswith("Room_Light") and free(x, y, 20):
+            room.mesh(name.replace("Room_Light", "Ceiling_Lamp"), CEILING_LAMP, (x, y, H), rot=UPSIDE_DOWN)
+        elif name.endswith("_Airlock_Light"):
+            room.mesh(name.replace("_Light", "_Beacon"), AIRLOCK_BEACON, (x, y, H), rot=UPSIDE_DOWN)
+    for i, (x, y) in enumerate(DIFFUSERS):
+        if free(x, y, 20):
+            room.mesh(f"Ceiling_Diffuser{i + 1}", DIFFUSER, (x, y, H), rot=UPSIDE_DOWN)
+
+
 # ---------- сборка в редакторе ----------
 
 def call(toolset, name, args):
@@ -560,6 +868,18 @@ def call(toolset, name, args):
     if "ERROR" in res[:12]:
         raise RuntimeError(f"{name}: {res[:400]}")
     return json.loads(res).get("returnValue") if res.strip() else None
+
+
+def ensure_not_playing():
+    """В режиме Play инструменты ассетов не работают, а отвечают без ошибки (exists — «нет»). Тогда сборка
+    просит создать уже существующий MI_Gray_*, и редактор встаёт на модальном окне «заменить?» (14.11)."""
+    res = tool("EditorToolset.EditorAppToolset", "IsPIERunning", {})
+    try:
+        playing = json.loads(res).get("returnValue")
+    except ValueError:
+        playing = None
+    if playing is not False:
+        sys.exit(f"Редактор в режиме Play (или не ответил: {res[:120]!r}). Остановите игру и запустите сборку снова.")
 
 
 def ensure_materials():
@@ -619,6 +939,13 @@ def build_blueprint(room, mats):
     for name, pos in room.spots:
         comp = call(AC, "add_component", {"owner": cdo, "component_type": {"refPath": "/Script/Engine.SceneComponent"}, "name": name})
         call(OB, "set_properties", {"instance": comp, "values": json.dumps({"RelativeLocation": dict(zip("xyz", pos))})})
+    for name, asset, center, (pitch, yaw, roll) in room.meshes:
+        comp = call(AC, "add_component", {"owner": cdo, "component_type": {"refPath": "/Script/Engine.StaticMeshComponent"}, "name": name})
+        call(OB, "set_properties", {"instance": comp, "values": json.dumps({
+            "StaticMesh": {"refPath": f"{asset}.{asset.rsplit('/', 1)[1]}"},
+            "RelativeLocation": dict(zip("xyz", center)),
+            "RelativeRotation": {"pitch": pitch, "yaw": yaw, "roll": roll},
+        })})
     call(BP, "compile_blueprint", {"blueprint": bp})
     call(AS, "save_assets", {"asset_paths": [path]})
     return path
@@ -672,11 +999,18 @@ def main():
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
     rooms = [ROOMS[n]() for n in (args or ROOMS)]
     for room in rooms:
+        rows = lining(room)
+        fixtures(room)
         names = room.names()
         assert len(names) == len(set(names)), f"{room.name}: имена компонентов повторяются"
-        print(f"{room.name}: {len(room.boxes)} коробок, {len(room.cylinders)} цилиндров, {len(room.lights)} источников света")
+        print(f"{room.name}: {len(room.boxes)} коробок, {len(room.cylinders)} цилиндров, {len(room.lights)} источников света, "
+              f"{len(room.meshes)} колонок и перемычек")
+        for side, row in rows.items():
+            print(f"  {side}: {row}")
     if "--dry" in sys.argv:
         return
+    ensure_not_playing()
+    start_level = call(SC, "get_current_level", {})
     mats = ensure_materials()
     ensure_level()
     built = {room.name: build_blueprint(room, mats) for room in rooms}
@@ -684,6 +1018,9 @@ def main():
     print("собрано и поставлено на уровень", LEVEL, "—", ", ".join(built.values()))
     ensure_game_level()
     print("уровень игры готов:", GAME_LEVEL)
+    # вернуть уровень, открытый до сборки (обычно главное меню: с него Play показывает меню)
+    if start_level and start_level != GAME_LEVEL:
+        call(SC, "load_level", {"level_path": start_level})
 
 
 if __name__ == "__main__":

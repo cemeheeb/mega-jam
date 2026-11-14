@@ -21,9 +21,14 @@ namespace RunRoomGeo
 		return Door < 2 ? FVector(0, 1, 0) : FVector(1, 0, 0);
 	}
 
+	float InnerFace(int32 Door)
+	{
+		return Door < 2 ? HalfX : HalfY;
+	}
+
 	float OuterFace(int32 Door)
 	{
-		return (Door < 2 ? HalfX : HalfY) + Wall;
+		return InnerFace(Door) + Lining + Wall;
 	}
 
 	int32 Opposite(int32 Door)
@@ -91,7 +96,8 @@ void ARunRoom::SetDoorSign(int32 Door, const FString& Text)
 		T->SetHorizontalAlignment(EHTA_Center);
 		T->SetVerticalAlignment(EVRTA_TextCenter);
 		T->SetWorldSize(30.f);
-		T->SetRelativeLocation(Dir(Door) * (OuterFace(Door) - Wall - 5.f) + FVector(0.f, 0.f, 262.f));
+		// на лице перемычки над проёмом (2,5–3 м), она стоит вровень с колонками
+		T->SetRelativeLocation(Dir(Door) * (InnerFace(Door) - 5.f) + FVector(0.f, 0.f, 275.f));
 		T->SetRelativeRotation((-Dir(Door)).Rotation());   // текст смотрит внутрь комнаты
 		Sign[Door] = T;
 		// тёмная плашка под текстом: стены светлые, без неё табло не читается
@@ -105,9 +111,9 @@ void ARunRoom::SetDoorSign(int32 Door, const FString& Text)
 		{
 			Plate->SetMaterial(0, Dark);
 		}
-		Plate->SetRelativeLocation(Dir(Door) * (OuterFace(Door) - Wall - 1.5f) + FVector(0.f, 0.f, 262.f));
+		Plate->SetRelativeLocation(Dir(Door) * (InnerFace(Door) - 1.5f) + FVector(0.f, 0.f, 275.f));
 		Plate->SetRelativeRotation((-Dir(Door)).Rotation());
-		Plate->SetRelativeScale3D(FVector(0.03f, 2.3f, 0.46f));
+		Plate->SetRelativeScale3D(FVector(0.03f, 2.3f, 0.42f));
 	}
 	bSignKnown[Door] = !Text.IsEmpty();
 	Sign[Door]->SetText(FText::FromString(bSignKnown[Door] ? Text : FString(TEXT("-  -  -"))));
@@ -142,6 +148,23 @@ TArray<FVector> ARunRoom::GetSpots(const TCHAR* Prefix) const
 	return Out;
 }
 
+TArray<FTransform> ARunRoom::TakeFirstAidCases()
+{
+	TArray<FTransform> Out;
+	TInlineComponentArray<UStaticMeshComponent*> Comps(this);
+	Comps.Sort([](const UStaticMeshComponent& A, const UStaticMeshComponent& B) { return A.GetName() < B.GetName(); });
+	for (UStaticMeshComponent* C : Comps)
+	{
+		if (C->GetName().EndsWith(TEXT("_FirstAid")))
+		{
+			Out.Add(C->GetComponentTransform());
+			C->SetVisibility(false);
+			C->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		}
+	}
+	return Out;
+}
+
 bool ARunRoom::AllLeavesClosed() const
 {
 	for (int32 D = 0; D < 4; ++D)
@@ -167,7 +190,7 @@ int32 ARunRoom::VestibuleOf(const FVector& WorldPos) const
 	const FVector Local = WorldPos - GetActorLocation();
 	for (int32 D = 0; D < 4; ++D)
 	{
-		if (FVector::DotProduct(Local, Dir(D)) > OuterFace(D) - Wall)   // за внутренней гранью стены есть только проём и тамбур
+		if (FVector::DotProduct(Local, Dir(D)) > InnerFace(D))   // за лицом колонок есть только проём и тамбур
 		{
 			return D;
 		}
@@ -288,7 +311,7 @@ FVector ARunRoom::SteerTarget(const FVector& From, const FVector& To)
 		const FVector Local = From - Origin;
 		const float Along = FVector::DotProduct(Local, Dir(D));
 		const float Lateral = FVector::DotProduct(Local, Slide(D));
-		const float Inner = OuterFace(D) - Wall;
+		const float Inner = InnerFace(D);
 		if (A >= 0)
 		{
 			// в тамбуре: встать на ось двери, потом пройти проём в комнату
@@ -367,7 +390,7 @@ void ARunRoom::Tick(float DeltaSeconds)
 		const float Along = FVector::DotProduct(Local, Dir(D));
 		const float Lateral = FMath::Abs(FVector::DotProduct(Local, Slide(D)));
 		const float Outer = OuterFace(D);
-		const float Inner = Outer - Wall;
+		const float Inner = InnerFace(D);
 		// у двери со стороны комнаты; в проёме и первых 90 см тамбура; в глубине тамбура
 		const bool bApproach = bPawnHere && Along > Inner - 220.f && Along <= Inner && Lateral < 150.f;
 		const bool bDoorway = bPawnHere && Along > Inner && Along <= Outer + 90.f && Lateral < VestibuleWidth * 0.5f;

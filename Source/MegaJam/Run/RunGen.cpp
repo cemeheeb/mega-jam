@@ -164,6 +164,10 @@ namespace RunGen
 		{
 			return FString(GRunNotebookName);
 		}
+		if (Item == Medkit)
+		{
+			return TEXT("Medkit");
+		}
 		return Item == Weapon ? FString(GRunWeaponName) : FString(GRunCatalog[Item].Name);
 	}
 

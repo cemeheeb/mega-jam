@@ -42,6 +42,13 @@ namespace RunThreatTune
 	constexpr float ArmDegPerSec = 40.f;
 	constexpr float ArmLength = 430.f;
 	constexpr float ArmInner = 70.f;   // у самого центра луч не бьёт
+	// урон по игроку, из 100 (решение автора 14.11: у каждой угрозы свой; числа — допущение).
+	// Среднее около 25 — как прежние четыре попадания на забег, под которые подбирался баланс
+	constexpr float EchoDamage = 20.f;
+	constexpr float BarDamage = 30.f;
+	constexpr float RadiationDamage = 20.f;   // за каждую набранную дозу
+	constexpr float GravityDamage = 30.f;
+	constexpr float BeamDamage = 25.f;
 }
 
 UCLASS()
@@ -115,7 +122,7 @@ private:
 	UStaticMeshComponent* AddShape(UStaticMesh* Mesh, UMaterialInterface* Mat, const FVector& SizeCm, const FVector& WorldPos);
 	float Random01();
 	FVector RandomFloorPoint(const FVector& Avoid, float AvoidRadius);
-	void Hurt(const TCHAR* Text, const FVector& From);
+	void Hurt(const TCHAR* Text, const FVector& From, float Damage);
 
 	void TickEcho(float Dt, const FVector& P);
 	void TickBars(const FVector& Local);

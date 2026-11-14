@@ -35,6 +35,11 @@ namespace RunEnemyTune
 	constexpr float RatReach = 55.f;
 	constexpr float RatScatter = 1.5f;
 	constexpr int32 RatHealth = 1;
+	// урон по игроку, из 100 (шкала 0–100 и свой урон у каждой угрозы — решение автора 14.11; числа — допущение).
+	// Робот медленный и бьёт сильнее всех, крыса кусает слабо, но их четыре
+	constexpr float HumanDamage = 25.f;
+	constexpr float RobotDamage = 35.f;
+	constexpr float RatDamage = 10.f;
 	// удар игрока
 	constexpr float AttackReach = 175.f;
 	constexpr float AttackCooldown = 0.55f;

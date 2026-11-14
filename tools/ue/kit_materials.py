@@ -2,9 +2,9 @@
 
     python3 tools/ue/kit_materials.py
 
-M_Kit — текстурный (BaseColor, ORM, Normal, Emissive), M_KitSolid — однотонный. Повторный запуск
-пересобирает граф на месте: ассеты не удаляются, экземпляры MI_ остаются привязанными.
-M_KitGlass не создаётся, пока он не нужен ни одному набору.
+M_Kit — текстурный (BaseColor, ORM, Normal, Emissive), M_KitSolid — однотонный, M_KitGlass — прозрачный
+(первым понадобился колонкам стены: оргстекло ниши и стойки). Скрипт создаёт только те мастер-материалы,
+которых ещё нет; готовые не трогает (см. main).
 Нужен открытый редактор с проектом MegaJam.
 """
 
@@ -138,14 +138,41 @@ def build_kit_solid():
     return m
 
 
+def build_kit_glass():
+    """Оргстекло и линзы (pipeline/unreal.md): прозрачный, без текстур. Nanite такие меши не рисует."""
+    m = fresh_material("M_KitGlass")
+    color = add(m, "VectorParameter", -700, -200, parameterName="Color",
+                defaultValue={"r": 0.8, "g": 0.86, "b": 0.88, "a": 1.0}, sortPriority=0)
+    opacity = add(m, "ScalarParameter", -700, 100, parameterName="Opacity", defaultValue=0.2, sortPriority=1)
+    rough = add(m, "ScalarParameter", -700, 250, parameterName="Roughness", defaultValue=0.05, sortPriority=2)
+    strength = add(m, "ScalarParameter", -700, 400, parameterName="EmissiveStrength", defaultValue=0.0, sortPriority=3)
+    mul = add(m, "Multiply", -300, 350)
+    out(color, "RGB", "MP_BaseColor")
+    out(opacity, "", "MP_Opacity")
+    out(rough, "", "MP_Roughness")
+    link(color, "RGB", mul, "A")
+    link(strength, "", mul, "B")
+    out(mul, "", "MP_EmissiveColor")
+    set_props(m, {"twoSided": True, "blendMode": "BLEND_Translucent",
+                  "translucencyLightingMode": "TLM_SurfacePerPixelLighting"})
+    call(MT, "recompile", {"material_or_function": m})
+    return m
+
+
 def main():
     call(AS, "create_folder", {"path": FOLDER})
     orm = ensure_default_orm()
-    build_kit(orm)
-    build_kit_solid()
-    for n in ("M_Kit", "M_KitSolid"):
+    # Только недостающие: пересборка графа загруженного материала (delete_expression) роняет редактор
+    # на проверке !IsRooted (14.11.2026, M_Kit со ссылками из экземпляров героя). Поменять граф готового
+    # мастера — удалить его в редакторе и запустить скрипт заново, затем переназначить родителя экземплярам.
+    for name, build in (("M_Kit", lambda: build_kit(orm)), ("M_KitSolid", build_kit_solid), ("M_KitGlass", build_kit_glass)):
+        if call(AS, "exists", {"path": f"{FOLDER}/{name}"}):
+            print("есть, не трогаю:", name)
+        else:
+            build()
+    for n in ("M_Kit", "M_KitSolid", "M_KitGlass"):
         call(MT, "layout_expressions", {"material_or_function": ref(f"{FOLDER}/{n}")})
-    paths = [f"{FOLDER}/{n}" for n in (DEFAULT_ORM, "M_Kit", "M_KitSolid")]
+    paths = [f"{FOLDER}/{n}" for n in (DEFAULT_ORM, "M_Kit", "M_KitSolid", "M_KitGlass")]
     print("saved", call(AS, "save_assets", {"asset_paths": paths}), paths)
 
 
