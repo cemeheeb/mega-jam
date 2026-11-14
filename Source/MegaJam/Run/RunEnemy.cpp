@@ -33,6 +33,7 @@ ARunEnemy::ARunEnemy()
 		M->SetupAttachment(RootComponent);
 		M->SetMobility(EComponentMobility::Movable);
 		M->SetCollisionProfileName(TEXT("NoCollision"));
+		M->SetReceivesDecals(false);
 		if (Cube.Succeeded())
 		{
 			M->SetStaticMesh(Cube.Object);

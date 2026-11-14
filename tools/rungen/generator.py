@@ -38,6 +38,7 @@ FINAL_MASK = RM_K1 | RM_K2 | RM_K3
 ANCHOR = 1 << MAX_SIG   # 4096: ключ «только блокнот»
 NOTEBOOK = -1           # id блокнота в кармане (вне каталога)
 WEAPON = -2             # id оружия: занимает слот, на комнату не влияет (5.3, вопрос 12.3)
+SUIT = -4               # id скафандра: надевается, слот не занимает, на комнату не влияет (5.3, 5.9). −3 — аптечка игры
 POCKET_SLOTS = 4
 
 # Типы отсеков, 5.1
@@ -51,11 +52,11 @@ ORDINARY_TYPES = (LIVING, LAB, LIFE_SUPPORT, MEDBAY, CARGO, MESS, COMPUTER)
 CLS_START, CLS_CHAIN, CLS_GUESS, CLS_ENGINE = 0, 1, 2, 3
 CLS_NAMES = ("start", "chain", "guess", "engine")
 
-# Аномалии ядра, 5.9
-# Угрозы неправильных наборов, 5.9: четыре аномалии ядра и три противника (добавлены 13.11).
-# В коде и данных всё это по-прежнему называется anomaly.
-NO_ANOMALY, FROZEN_MOMENT, RADIATION, GRAVITY_FAILURE, SLOW_TIME, ROBOT, RATS, ECHO, HUMAN = range(9)
-ANOMALY_NAMES = ("none", "FrozenMoment", "Radiation", "GravityFailure", "SlowTime", "Robot", "Rats", "Echo", "Human")
+# Угрозы неправильных наборов, 5.9: четыре аномалии (решение автора 15.11, вместо прежних четырёх и эха)
+# и три противника (добавлены 13.11). В коде и данных всё это по-прежнему называется anomaly.
+# Разгерметизация — не угроза догадки, а ворота правильного пути, её здесь нет.
+NO_ANOMALY, BLACK_HOLE, SMOKE, SLOW_TIME, FUNGUS, ROBOT, RATS, HUMAN = range(8)
+ANOMALY_NAMES = ("none", "BlackHole", "Smoke", "SlowTime", "Fungus", "Robot", "Rats", "Human")
 NUM_ANOMALIES = len(ANOMALY_NAMES) - 1
 
 # Записки
@@ -65,8 +66,9 @@ N_NOTEBOOK_FIRST, N_LOOP_EXIT, N_NEXT_KEY, N_USELESS, N_DANGER, N_ENGINE_SET, N_
 # В комнату входят через одну из них, остальные три не раскрыты. В стартовой рубке не раскрыты все четыре.
 DOORS_PER_ROOM = 4
 
-# Домены ГСЧ. Номера 2 и 6 свободны: раньше ими выбирались типы уровней цепочки и число дверей.
-D_ROLES, _D_FREE_2, D_ROOM_TYPE, D_SWITCH, D_ANOMALY, _D_FREE_6, D_ITEMS, D_NOTES, \
+# Домены ГСЧ. Номер 6 свободен: раньше им выбиралось число дверей. Номер 2 (раньше типы уровней цепочки) —
+# с 15.11 уровень разгерметизации.
+D_ROLES, D_DECOMP, D_ROOM_TYPE, D_SWITCH, D_ANOMALY, _D_FREE_6, D_ITEMS, D_NOTES, \
     D_GUARANTEE, D_COSMETIC, D_START, D_PLAYER = range(1, 13)
 
 # Цепочка: уровень петли -> роль предмета, который из неё выводит
@@ -199,6 +201,11 @@ class RunLayout:
 
         self.first_note = Note(N_NOTEBOOK_FIRST, (self.role_item[L],), 0)
 
+        # Разгерметизация (решение автора 15.11, схема ассистента в DESIGN 5.9): ворота правильного пути.
+        # Комнаты уровня 2 ({L,K1}, {K1} — там K2) или 3 ({L,K1,K2}, {K1,K2} — там K3) без скафандра не открываются;
+        # скафандр лежит в комнатах предыдущего уровня, рядом с предыдущим ключом, — его встречают раньше ворот.
+        self.decomp_level = 2 + (hash32(self.seed, D_DECOMP) & 1)
+
         # 5. Опасные пары для записок (решение автора 13.11: опасны не предметы, а сочетания).
         #    Пара значимых предметов опасна, если набор ровно из них двоих даёт комнату с аномалией.
         #    Порядок: по номерам ролей, меньшая первой.
@@ -246,11 +253,19 @@ class RunLayout:
                 sw |= 1 << perm[r]
         return t, sw
 
+    def needs_suit(self, key: int) -> bool:
+        """Комната набора — разгерметизация: дверь в неё без скафандра не открывается."""
+        return room_class(key) == CLS_CHAIN and chain_level(key) == self.decomp_level
+
+    def suit_lies_in(self, key: int) -> bool:
+        """Скафандр лежит в комнате этого набора: уровень цепочки перед разгерметизацией."""
+        return room_class(key) == CLS_CHAIN and chain_level(key) == self.decomp_level - 1
+
     def anomaly_of(self, key: int) -> int:
         """Аномалия набора (решение автора 13.11): зависит только от зерна и сигнатуры, поэтому
         один набор в забеге всегда даёт одну и ту же аномалию или её отсутствие, в любой копии.
         Правильный путь безопасен: у комнат цепочки и двигательного отсека аномалий нет.
-        У догадки аномалия есть с шансом p_guess, её вид — один из четырёх, поровну."""
+        У догадки аномалия есть с шансом p_guess, её вид — один из семи (ANOMALY_NAMES), поровну."""
         if room_class(key) != CLS_GUESS:
             return NO_ANOMALY
         rng = Rng(self.seed, D_ANOMALY, key)
@@ -341,6 +356,8 @@ class RunLayout:
         target = self.target_of(key)
         if target is not None:
             items.append(target)
+        if self.suit_lies_in(key):
+            items.append(SUIT)                     # ГСЧ не тратит: раскладка прочих предметов та же
         n_fill = cfg.filler_min + irng.below(cfg.filler_max - cfg.filler_min + 1)   # rng: сколько прочих
         items += self._draw_filler(irng, n_fill)                                    # rng: какие
         notes = self._chain_notes(key) if cls == CLS_CHAIN else self._guess_notes(key)
@@ -367,6 +384,7 @@ class RunLayout:
                 ("K1", RM_K1), ("L,K1,K2", RM_L | RM_K1 | RM_K2), ("K1,K2", RM_K1 | RM_K2),
                 ("K1,K2,K3", FINAL_MASK))},
             "notebook_first": self.first_note.text(),
+            "decompression_level": self.decomp_level,
         }
 
 
@@ -456,7 +474,7 @@ def validate_layout(layout: RunLayout) -> list[str]:
         for it in rc.items:
             if it in chain_items and it != target:
                 err.append(f"key {key}: right-path item {role_name(layout.role_of(it))} lies in a wrong room")
-            if layout.role_of(it) == NOT_IN_RUN:
+            if it != SUIT and layout.role_of(it) == NOT_IN_RUN:
                 err.append(f"key {key}: item not in this run")
         if target is not None and target not in rc.items:
             err.append(f"key {key}: right-path item is missing")
@@ -473,6 +491,13 @@ def validate_layout(layout: RunLayout) -> list[str]:
             want_kind, want_items = layout._ahead_note(lvl)
             if not any(n.kind == want_kind and n.items == want_items for n in rc.notes):
                 err.append(f"key {key}: room lacks the next-link note")
+    # Разгерметизация: уровень 2 или 3; скафандр лежит ровно в комнатах уровня перед ней, и больше нигде
+    if layout.decomp_level not in (2, 3):
+        err.append(f"decompression level {layout.decomp_level} out of 2..3")
+    for key in all_keys(layout.num_sig):
+        has_suit = SUIT in layout.room(key).items
+        if has_suit != (room_class(key) == CLS_CHAIN and chain_level(key) == layout.decomp_level - 1):
+            err.append(f"key {key}: suit {'misplaced' if has_suit else 'missing'}")
     start = layout.start_room()
     if start.items != (NOTEBOOK, WEAPON) + layout.room(ANCHOR).items or ri[L] not in start.items:
         err.append("start room is not the notebook-only room with the notebook and L in it")

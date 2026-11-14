@@ -22,13 +22,14 @@ tools/ue/import_wall_columns.py): 75 см в ширину, 45 в глубину,
 делает lining() по правилам ниже (PROGRAM, ORDER), мебель ставится как раньше — перед колонками.
 
 Реквизит из наборов Singula (tools/ue/import_singula.py) ставится через Room.mesh: аварийный пост в нишах колонок,
-кнопки и маркеры у проёмов (lining), светильники и решётки на потолке (fixtures), поручни в тамбурах (airlock),
+кнопки и маркеры у проёмов (lining), панели потолка и маячки шлюзов (fixtures), поручни в тамбурах (airlock),
 кресло и органы управления на консолях рубки, мелочи на пультах и столах — в функциях комнат.
 """
 
 import json
 import math
 import sys
+import zlib
 
 from uemcp import tool
 
@@ -74,6 +75,7 @@ MATERIALS = {
     "Plant": (0.18, 0.45, 0.16),
     "Tank": (0.72, 0.74, 0.76),
 }
+FLOOR_TILES = "/Game/Environment/Common/FloorTiles/MI_FloorTiles"   # вместо MI_Gray_Floor, если есть
 
 
 class Room:
@@ -84,10 +86,14 @@ class Room:
         self.lights = []     # (имя, положение, сила, радиус, цвет)
         self.spots = []      # (имя, положение): места для предметов и записок, высота — верх поверхности
         self.meshes = []     # (имя, путь меша, положение, (pitch, yaw, roll)): колонки у стен и реквизит
+        self.feet = []       # (имя, размер, центр): габариты мебели-мешей по осям комнаты, для раскладки колонок
 
-    def mesh(self, name, asset, center, yaw=0.0, rot=None):
-        """asset — путь от /Game/Environment, например Common/Lamps/SM_CagedCeilingLamp."""
+    def mesh(self, name, asset, center, yaw=0.0, rot=None, foot=None):
+        """asset — путь от /Game/Environment, например Common/Lamps/SM_CagedCeilingLamp. foot — (размер, центр)
+        по осям комнаты: габарит меша-мебели, который стоит у стены (коробки и цилиндры дают габарит сами)."""
         self.meshes.append((name, f"{ENV}/{asset}", center, rot or (0, yaw, 0)))
+        if foot:
+            self.feet.append((name, *foot))
 
     def box(self, name, size, center, mat, yaw=0.0):
         self.boxes.append((name, size, center, mat, yaw))
@@ -193,7 +199,7 @@ def airlock(room, side, door_at=0):
 def shell(room):
     ix, iy = LX / 2 + LIN, LY / 2 + LIN             # внутренние грани стен, за колонками
     room.box("Floor", (2 * (ix + T), 2 * (iy + T), 20), (0, 0, -10), "Floor")
-    room.box("Ceiling", (2 * (ix + T), 2 * (iy + T), 20), (0, 0, H + 10), "Ceiling")
+    room.box("Ceiling", (2 * (ix + T), 2 * (iy + T), 20), (0, 0, H + 15), "Ceiling")   # над панелями (fixtures)
     wall_with_door(room, "Wall_N", "y", ix + T / 2, -(iy + T), iy + T, 0)
     wall_with_door(room, "Wall_S", "y", -(ix + T / 2), -(iy + T), iy + T, 0)
     wall_with_door(room, "Wall_W", "x", -(iy + T / 2), -ix, ix, 0)
@@ -609,14 +615,12 @@ def computer():
         r.cylinder(f"Cooler{i + 1}_Band", 48, 14, (-LX / 2 + 60, y, 60), "Door")
         r.cylinder(f"Cooler{i + 1}_Pipe", 10, 90, (-LX / 2 + 60, y, 245), "Tank")
     r.box("Cooler_Panel", (30, 60, 110), (-250, LY / 2 - 30, 55), "Furniture")
-    # пульт оператора у южной стены, юго-западная четверть
-    r.box("Desk", (60, 220, 78), (-LX / 2 + 30, -230, 39), "Furniture")
-    r.box("Desk_Top", (64, 224, 4), (-LX / 2 + 30, -230, 80), "Dark")
-    for j, y in enumerate((-300, -230, -160)):
-        r.box(f"Desk_Screen{j + 1}", (4, 60, 40), (-LX / 2 + 4, y, 150), "Dark")
-    r.box("Desk_Keyboard", (20, 50, 3), (-LX / 2 + 40, -230, 83.5), "Linen")
-    r.box("Desk_Chair", (50, 50, 45), (-LX / 2 + 110, -230, 22.5), "Furniture")
-    r.box("Desk_ChairBack", (10, 50, 60), (-LX / 2 + 136, -230, 75), "Furniture")
+    # пульт оператора у южной стены, юго-западная четверть: консоль навигатора (автор, 14.11: в выгоревшей комнате
+    # она может сгореть, DESIGN.md §14). Спиной к колонкам, лицом на север: лицо меша +Y -> +X. Консоль на ногах
+    # стоящего оператора, кресла нет. Стол на 1,003 м; предметы — на коврике в 22 см от ближнего края
+    console_x = -LX / 2 + 46
+    r.mesh("Console", "Bridge/NavigatorConsole/SM_NavigatorConsole", (console_x, -230, 0), yaw=-90,
+           foot=((92, 150, 158), (console_x, -230, 79)))
     # ячейка с накопителями данных: стеллаж картриджей у западной стены
     r.box("Vault", (160, 40, 180), (-200, -LY / 2 + 20, 90), "Furniture")
     for row in range(3):
@@ -625,9 +629,9 @@ def computer():
     # кабельные лотки под потолком
     for sgn, tag in ((-1, "W"), (1, "E")):
         r.box(f"CableTray{tag}", (LX, 30, 8), (0, sgn * 250, 280), "Dark")
-    r.spots_for("ItemSpot", [(-LX / 2 + 30, -290, 82), (-LX / 2 + 30, -170, 82), (-250, LY / 2 - 30, 110), (265, -130, 0),
-                             (265, 130, 0), (-150, -150, 0), (-150, 130, 0), (120, 0, 0)])
-    r.spots_for("NoteSpot", [(-LX / 2 + 30, -230, 82), (265, -150, 0), (-220, 220, 0)])
+    r.spots_for("ItemSpot", [(console_x + 24, -270, 100), (console_x + 24, -190, 100), (-250, LY / 2 - 30, 110),
+                             (265, -130, 0), (265, 130, 0), (-150, -150, 0), (-150, 130, 0), (120, 0, 0)])
+    r.spots_for("NoteSpot", [(console_x + 24, -230, 100), (265, -150, 0), (-220, 220, 0)])
     return r
 
 
@@ -739,6 +743,9 @@ def footprints(room):
         else:
             ex, ey, ez = r, r, h / 2
         out.append((name, c[0] - ex, c[0] + ex, c[1] - ey, c[1] + ey, c[2] - ez, c[2] + ez, False))
+    for name, size, c in room.feet:
+        out.append((name, c[0] - size[0] / 2, c[0] + size[0] / 2, c[1] - size[1] / 2, c[1] + size[1] / 2,
+                    c[2] - size[2] / 2, c[2] + size[2] / 2, True))
     return out
 
 
@@ -829,19 +836,33 @@ def lining(room):
     return rows
 
 
-# ---------- потолок: светильники и решётки вентиляции (наборы Singula lamps, ventilation) ----------
+# ---------- потолок: панели 75 × 75 и маячки шлюзов ----------
 #
-# Светильник — там, где у комнаты общий свет (Room_Light*): плафон в клетке на потолке, источник под ним.
-# В тамбуре шлюза — проблесковый маячок у его оранжевого света. Между светильниками на оси комнаты — решётки
-# приточной вентиляции. Меши этих наборов смоделированы основанием вниз, на потолок они ставятся перевёрнутыми.
-# Где к потолку подходит мебель (кран-балка, лотки, перегородки), светильник или решётку не ставим.
+# Видимая часть потолка — между лицами колонок, LX × LY = 9 × 7,5 м: ровно 12 × 10 панелей (набор ceiling-tiles,
+# tools/ue/import_ceiling_tiles.py). Шаг панелей — шаг колонок, швы потолка продолжают швы колонок. Панели
+# смоделированы лицом вверх, на потолок ставятся перевёрнутыми: лицо на высоте H, панель уходит вверх на 5 см,
+# коробка потолка комнаты лежит над ними (shell).
+# Где у комнаты общий свет (Room_Light*), над источником две светящиеся панели поперёк оси комнаты (источник стоит
+# на шве между ними); между ними на оси — пары решёток приточной вентиляции; два люка обслуживания — по зерну
+# комнаты (crc32 имени), не рядом со светом, решётками и друг с другом. Где к потолку подходит мебель (кран-балка,
+# лотки, перегородки), свет и решётки не ставим: там глухие панели. В тамбуре шлюза — проблесковый маячок
+# у его оранжевого света (меш смоделирован основанием вниз, ставится перевёрнутым).
 
-CEILING_LAMP = "Common/Lamps/SM_CagedCeilingLamp"
 AIRLOCK_BEACON = "Common/Lamps/SM_BeaconLight"
-DIFFUSER = "Common/Ventilation/SM_CeilingDiffuser"
-DIFFUSERS = ((-75, 0), (215, 0))   # между светильниками x = −250, 100, 330
+TILE = 75
+TILES = "Common/CeilingTiles/SM_CeilingTile"      # + "", Light, Vent, Hatch
+VENTS = (-75, 215)                 # x пар решёток на оси, между источниками x = −250, 100, 330
 UPSIDE_DOWN = (0, 0, 180)
 CEILING_GAP = 25                   # мебель выше H − этого под местом светильника мешает ему
+NX, NY = LX // TILE, LY // TILE    # 12 × 10
+
+
+def tile_x(i):
+    return -LX / 2 + TILE / 2 + TILE * i
+
+
+def tile_y(j):
+    return -LY / 2 + TILE / 2 + TILE * j
 
 
 def fixtures(room):
@@ -851,14 +872,38 @@ def fixtures(room):
         return not [n for n, x0, x1, y0, y1, _z0, z1, _b in feet
                     if z1 > H - CEILING_GAP and x0 < x + r and x1 > x - r and y0 < y + r and y1 > y - r]
 
-    for name, (x, y, _z), *_ in room.lights:
-        if name.startswith("Room_Light") and free(x, y, 20):
-            room.mesh(name.replace("Room_Light", "Ceiling_Lamp"), CEILING_LAMP, (x, y, H), rot=UPSIDE_DOWN)
+    def column(x):
+        return min(NX - 1, max(0, math.floor((x + LX / 2) / TILE)))
+
+    axis = (NY // 2 - 1, NY // 2)          # два ряда панелей у оси комнаты y = 0
+    kind = {}
+    for k, (name, (x, y, z), *rest) in enumerate(room.lights):
+        if name.startswith("Room_Light"):
+            i = column(x)
+            if free(tile_x(i), 0, TILE):
+                kind.update({(i, j): "Light" for j in axis})
+            room.lights[k] = (name, (tile_x(i), y, z), *rest)     # источник — на шве под парой панелей
         elif name.endswith("_Airlock_Light"):
             room.mesh(name.replace("_Light", "_Beacon"), AIRLOCK_BEACON, (x, y, H), rot=UPSIDE_DOWN)
-    for i, (x, y) in enumerate(DIFFUSERS):
-        if free(x, y, 20):
-            room.mesh(f"Ceiling_Diffuser{i + 1}", DIFFUSER, (x, y, H), rot=UPSIDE_DOWN)
+    for x in VENTS:
+        i = column(x)
+        if free(tile_x(i), 0, TILE) and (i, axis[0]) not in kind:
+            kind.update({(i, j): "Vent" for j in axis})
+    taken = set(kind)
+    h = zlib.crc32(room.name.encode())
+    for n in range(2):
+        near = {(i + di, j + dj) for i, j in taken for di in (-1, 0, 1) for dj in (-1, 0, 1)}
+        spots = [(i, j) for i in range(NX) for j in range(NY) if (i, j) not in near and free(tile_x(i), tile_y(j), TILE / 2)]
+        if spots:
+            spot = spots[(h >> (8 * n)) % len(spots)]
+            kind[spot] = "Hatch"
+            taken.add(spot)
+    for i in range(NX):
+        for j in range(NY):
+            k = kind.get((i, j), "")
+            # глухие панели и люки повёрнуты по зерну на четверть оборота: одинаковые соседи не совпадают
+            yaw = 90 * ((h >> ((i * NY + j) % 31)) & 3) if k in ("", "Hatch") else 0
+            room.mesh(f"CeilingTile{k}_{i:02d}_{j:02d}", TILES + k, (tile_x(i), tile_y(j), H), rot=(0, yaw, 180))
 
 
 # ---------- сборка в редакторе ----------
@@ -896,6 +941,9 @@ def ensure_materials():
                                              "value": {"r": r * k, "g": g * k, "b": b * k, "a": 1.0}})
         call(AS, "save_assets", {"asset_paths": [path]})
         out[name] = ref
+    # плитка пола (import_floor_tiles.py): пол комнат и тамбуров — она, если уже импортирована
+    if call(AS, "exists", {"path": FLOOR_TILES}):
+        out["Floor"] = {"refPath": f"{FLOOR_TILES}.{FLOOR_TILES.rsplit('/', 1)[1]}"}
     return out
 
 

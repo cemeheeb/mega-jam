@@ -126,6 +126,7 @@ namespace
 		}
 		Desc->SetObjectField(TEXT("chain_room_types"), ChainTypes);
 		Desc->SetStringField(TEXT("notebook_first"), Layout.FirstNote.Text());
+		Desc->SetNumberField(TEXT("decompression_level"), Layout.DecompLevel);
 		Root->SetObjectField(TEXT("layout"), Desc);
 
 		Root->SetArrayField(TEXT("run_items"), Names(Layout.RunItems));

@@ -16,16 +16,17 @@ namespace RunGen
 	enum : int32 { NumSwitches = 6 };
 	// Блокнот, оружие и аптечка вне каталога: слот занимают, набор не меняют (у блокнота — только стартовая рубка, 5.4).
 	// Аптечки раскладывает ведущий забега, генератор и баланс о них не знают (решение автора 14.11)
-	enum : int32 { Notebook = -1, Weapon = -2, Medkit = -3, PocketSlots = 4, DoorsPerRoom = 4 };
+	// Suit — скафандр: надевается, слот не занимает, на комнату не влияет (DESIGN 5.3, 5.9)
+	enum : int32 { Notebook = -1, Weapon = -2, Medkit = -3, Suit = -4, PocketSlots = 4, DoorsPerRoom = 4 };
 	// Типы отсеков, DESIGN.md 5.1
 	enum : int32 { Bridge = 0, Living = 1, Lab = 2, LifeSupport = 3, Engine = 4, Medbay = 5, Cargo = 6, Mess = 7, Computer = 8, NumRoomTypes = 9 };
 	// Класс комнаты. ClsStart — только стартовая рубка (копия 0)
 	enum : int32 { ClsStart = 0, ClsChain = 1, ClsGuess = 2, ClsEngine = 3 };
 	// Угрозы неправильных наборов: четыре аномалии и три противника. 0 — угрозы нет
-	enum : int32 { ThreatNone = 0, ThreatFrozenMoment, ThreatRadiation, ThreatGravityFailure, ThreatSlowTime, ThreatRobot, ThreatRats, ThreatEcho, ThreatHuman, NumThreats = 8 };
+	enum : int32 { ThreatNone = 0, ThreatBlackHole, ThreatSmoke, ThreatSlowTime, ThreatFungus, ThreatRobot, ThreatRats, ThreatHuman, NumThreats = 7 };
 	enum : int32 { NoteNotebookFirst = 0, NoteLoopExit, NoteNextKey, NoteUseless, NoteDanger, NoteEngineSet, NoteFinale };
-	// Домены ГСЧ. Номера 2 и 6 свободны, как в эталоне
-	enum : uint32 { DRoles = 1, DRoomType = 3, DSwitch = 4, DAnomaly = 5, DItems = 7, DNotes = 8, DGuarantee = 9, DCosmetic = 10, DStart = 11 };
+	// Домены ГСЧ, как в эталоне: 6 свободен, 2 — уровень разгерметизации (с 15.11)
+	enum : uint32 { DRoles = 1, DDecomp = 2, DRoomType = 3, DSwitch = 4, DAnomaly = 5, DItems = 7, DNotes = 8, DGuarantee = 9, DCosmetic = 10, DStart = 11 };
 
 	MEGAJAM_API uint32 Mix32(uint32 X);
 	MEGAJAM_API uint32 Hash32(std::initializer_list<uint32> Values);
@@ -126,6 +127,8 @@ public:
 	int32 BridgeSwitches;
 	int32 EngineSwitches;
 	FRunNote FirstNote;
+	/** Уровень цепочки с разгерметизацией: 2 ({L,K1}, {K1}) или 3 ({L,K1,K2}, {K1,K2}). Скафандр — на уровне ниже. */
+	int32 DecompLevel = 2;
 	/** Опасные пары значимых предметов: набор ровно из этих двух даёт комнату с аномалией. Для записок. */
 	TArray<TPair<int32, int32>> DangerPairs;
 
@@ -135,6 +138,10 @@ public:
 	void Look(int32 Key, int32& OutType, int32& OutSwitches) const;
 	/** Аномалия набора: зависит только от зерна и сигнатуры. На правильном пути аномалий нет. */
 	int32 AnomalyOf(int32 Key) const;
+	/** Разгерметизация: дверь в комнату этого набора без скафандра не открывается. */
+	bool NeedsSuit(int32 Key) const;
+	/** Скафандр лежит в комнате этого набора (уровень цепочки перед разгерметизацией). */
+	bool SuitLiesIn(int32 Key) const;
 	/** Предмет правильного пути, который лежит в комнате этого набора. false — такого нет. */
 	bool TargetOf(int32 Key, int32& OutItem) const;
 	/** Комната набора: вид, аномалия, предметы, записки. */

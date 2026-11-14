@@ -24,6 +24,8 @@ GOLDEN_DIR = os.path.join(os.path.dirname(__file__), "golden")
 def item_name(i: int) -> str:
     if i == G.NOTEBOOK:
         return C.NOTEBOOK_NAME
+    if i == G.SUIT:
+        return C.SUIT_NAME
     return C.WEAPON_NAME if i == G.WEAPON else C.CATALOG[i].name
 
 

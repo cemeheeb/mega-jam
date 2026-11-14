@@ -21,6 +21,7 @@
 |---|---|---|
 | Статичный меш | `SM_<Объект>.fbx`, где `<Объект>` — имя объекта в Blender как есть | `SM_FireExtinguisherBracket.fbx` |
 | Подвижная деталь | тоже `SM_<Деталь>.fbx` по имени её объекта | `SM_ThrustLeverHandle.fbx` |
+| Сгоревшая версия меша (выгоревшая комната, DESIGN.md §14) | `SM_<Объект>_Burned.fbx` в той же папке, что и целый; вторая и дальше — `_Burned2`, `_Burned3`, генератор выбирает одну по зерну; материал `MI_<Объект>Burned<N>` со своими текстурами | `SM_NavigatorConsole_Burned.fbx`, `SM_WallColumnHeader_Burned2.fbx` |
 | Цвет | `T_<Набор>_BaseColor.png` | `T_SafetyEquipment_BaseColor.png` |
 | AO, шероховатость, металл | `T_<Набор>_ORM.png` | |
 | Нормали | `T_<Набор>_Normal.png` | |

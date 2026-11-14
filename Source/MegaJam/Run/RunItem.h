@@ -39,6 +39,9 @@ public:
 	/** Поставить ровно так, как стоял меш в комнате (аптечка в аварийной нише). */
 	void PlaceAt(const FTransform& Where);
 
+	/** Скафандр без модели: фигура в рост из базовых фигур движка. */
+	void SetupSuitPlaceholder(const FString& Caption);
+
 	virtual void Tick(float DeltaSeconds) override;
 
 	bool IsNote() const { return NoteIndex >= 0; }

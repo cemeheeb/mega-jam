@@ -49,13 +49,15 @@ class World:
     def __init__(self, layout: G.RunLayout):
         self.layout = layout
         start = layout.start_room()
-        self.items_of: dict[int, list] = {start.key: list(start.items)}   # вещи набора, общие для его комнат
+        # вещи набора, общие для его комнат. Скафандра здесь нет: он слот не занимает, а встречают его всегда раньше
+        # разгерметизации (рядом с предыдущим ключом) — модель считает, что игрок его надел (DESIGN 5.9)
+        self.items_of: dict[int, list] = {start.key: [i for i in start.items if i != G.SUIT]}
         self.rooms: list[Room] = [Room(0, start, self.items_of[start.key], -1)]
 
     def reveal(self, rid: int, door: int, key: int) -> int:
         rc = self.layout.room(key)
         if key not in self.items_of:
-            self.items_of[key] = list(rc.items)
+            self.items_of[key] = [i for i in rc.items if i != G.SUIT]
         room = Room(len(self.rooms), rc, self.items_of[key], rid)
         self.rooms.append(room)
         self.rooms[rid].doors[door] = room.id

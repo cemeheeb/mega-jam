@@ -168,6 +168,10 @@ namespace RunGen
 		{
 			return TEXT("Medkit");
 		}
+		if (Item == Suit)
+		{
+			return TEXT("Space Suit");
+		}
 		return Item == Weapon ? FString(GRunWeaponName) : FString(GRunCatalog[Item].Name);
 	}
 
@@ -245,8 +249,8 @@ namespace RunGen
 
 	const TCHAR* AnomalyName(int32 Anomaly)
 	{
-		static const TCHAR* const Names[] = { TEXT("none"), TEXT("FrozenMoment"), TEXT("Radiation"), TEXT("GravityFailure"), TEXT("SlowTime"),
-			TEXT("Robot"), TEXT("Rats"), TEXT("Echo"), TEXT("Human") };
+		static const TCHAR* const Names[] = { TEXT("none"), TEXT("BlackHole"), TEXT("Smoke"), TEXT("SlowTime"), TEXT("Fungus"),
+			TEXT("Robot"), TEXT("Rats"), TEXT("Human") };
 		return Names[Anomaly];
 	}
 
@@ -351,6 +355,9 @@ FRunLayout::FRunLayout(uint32 InSeed, const FRunConfig& InCfg)
 	FirstNote.Kind = NoteNotebookFirst;
 	FirstNote.Items = { RoleItem[RoleL] };
 	FirstNote.Tpl = 0;
+
+	// Разгерметизация (решение автора 15.11): ворота правильного пути на уровне 2 или 3, скафандр — уровнем ниже
+	DecompLevel = 2 + static_cast<int32>(Hash32({ Seed, DDecomp }) & 1U);
 
 	// 5. Опасные пары для записок: опасны не предметы, а сочетания
 	for (int32 A = 0; A < NumSig; ++A)
@@ -554,6 +561,16 @@ TArray<int32> FRunLayout::DrawFiller(FRng& Rng, int32 N) const
 	return Out;
 }
 
+bool FRunLayout::NeedsSuit(int32 Key) const
+{
+	return RoomClass(Key) == ClsChain && ChainLevel(Key) == DecompLevel;
+}
+
+bool FRunLayout::SuitLiesIn(int32 Key) const
+{
+	return RoomClass(Key) == ClsChain && ChainLevel(Key) == DecompLevel - 1;
+}
+
 bool FRunLayout::TargetOf(int32 Key, int32& OutItem) const
 {
 	if (Key == 0 || RoomClass(Key) != ClsChain)
@@ -584,6 +601,10 @@ FRunRoomContent FRunLayout::Room(int32 Key) const
 	if (TargetOf(Key, Target))
 	{
 		Out.Items.Add(Target);
+	}
+	if (SuitLiesIn(Key))
+	{
+		Out.Items.Add(Suit);   // ГСЧ не тратит: раскладка прочих предметов та же
 	}
 	const int32 NFill = Cfg.FillerMin + static_cast<int32>(IRng.Below(static_cast<uint32>(Cfg.FillerMax - Cfg.FillerMin + 1)));   // rng: сколько прочих
 	Out.Items.Append(DrawFiller(IRng, NFill));                                                                                  // rng: какие

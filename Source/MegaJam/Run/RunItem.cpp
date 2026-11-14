@@ -5,6 +5,7 @@
 #include "Engine/StaticMesh.h"
 #include "Kismet/GameplayStatics.h"
 #include "Materials/MaterialInterface.h"
+#include "RunGen.h"
 #include "UObject/ConstructorHelpers.h"
 
 namespace
@@ -36,6 +37,7 @@ ARunItem::ARunItem()
 	PrimaryActorTick.bCanEverTick = true;
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
 	SetRootComponent(Mesh);
+	Mesh->SetReceivesDecals(false);   // вещь на столе выгоревшей комнаты не покрывается копотью стола
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> Cube(TEXT("/Engine/BasicShapes/Cube.Cube"));
 	if (Cube.Succeeded())
 	{
@@ -100,6 +102,11 @@ void ARunItem::Setup(int32 InItemId, int32 InNoteIndex, const FString& Caption)
 		Label->SetWorldScale3D(FVector(1.f));
 		return;
 	}
+	if (ItemId == RunGen::Suit)
+	{
+		SetupSuitPlaceholder(Caption);
+		return;
+	}
 	// записка — плоский листок, предмет — кубик
 	Mesh->SetWorldScale3D(IsNote() ? FVector(0.22f, 0.16f, 0.01f) : FVector(0.22f, 0.22f, 0.22f));
 	if (UMaterialInterface* Mat = IsNote() ? NoteMaterial : ItemMaterial)
@@ -108,6 +115,41 @@ void ARunItem::Setup(int32 InItemId, int32 InNoteIndex, const FString& Caption)
 	}
 	Label->SetText(FText::FromString(Caption));
 	Label->SetRelativeLocation(FVector(0, 0, IsNote() ? 2600.f : 130.f));
+	Label->SetWorldScale3D(FVector(1.f));
+}
+
+void ARunItem::SetupSuitPlaceholder(const FString& Caption)
+{
+	// скафандр стоит в рост на полу (DESIGN 5.9): корпус, ноги, шлем с тёмным стеклом. Модели пока нет — базовые фигуры
+	UStaticMesh* Cyl = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cylinder.Cylinder"));
+	UStaticMesh* Ball = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Sphere.Sphere"));
+	UMaterialInterface* White = NoteMaterial;
+	UMaterialInterface* Dark = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/Game/Materials/MI_Gray_Dark.MI_Gray_Dark"));
+	const FVector Floor = GetActorLocation() - FVector(0, 0, CubeLift);
+	SetActorLocationAndRotation(Floor, FRotator::ZeroRotator);
+	Mesh->SetStaticMesh(nullptr);
+	auto Part = [&](UStaticMesh* Shape, UMaterialInterface* Mat, const FVector& SizeCm, const FVector& Local)
+	{
+		UStaticMeshComponent* C = NewObject<UStaticMeshComponent>(this);
+		C->SetStaticMesh(Shape);
+		C->SetMaterial(0, Mat);
+		C->SetCollisionProfileName(TEXT("NoCollision"));
+		C->SetReceivesDecals(false);
+		C->SetupAttachment(Mesh);
+		C->RegisterComponent();
+		C->SetRelativeLocation(Local);
+		C->SetWorldScale3D(SizeCm / 100.f);
+	};
+	Part(Cyl, White, FVector(50.f, 36.f, 70.f), FVector(0, 0, 112.f));       // корпус
+	Part(Cyl, ItemMaterial, FVector(40.f, 20.f, 50.f), FVector(-22.f, 0, 115.f));   // ранец, оранжевый
+	Part(Cyl, White, FVector(17.f, 17.f, 78.f), FVector(0, -11.f, 39.f));    // ноги
+	Part(Cyl, White, FVector(17.f, 17.f, 78.f), FVector(0, 11.f, 39.f));
+	Part(Cyl, White, FVector(14.f, 14.f, 60.f), FVector(0, -32.f, 115.f));   // руки
+	Part(Cyl, White, FVector(14.f, 14.f, 60.f), FVector(0, 32.f, 115.f));
+	Part(Ball, White, FVector(36.f), FVector(0, 0, 165.f));                   // шлем
+	Part(Ball, Dark, FVector(30.f, 30.f, 22.f), FVector(8.f, 0, 166.f));      // стекло
+	Label->SetText(FText::FromString(Caption));
+	Label->SetWorldLocation(Floor + FVector(0, 0, 200.f));
 	Label->SetWorldScale3D(FVector(1.f));
 }
 

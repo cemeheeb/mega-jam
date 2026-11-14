@@ -77,12 +77,27 @@ public:
 	void BeginTransition(ARunRoom* Room, int32 Door);
 
 	// --- то, что вызывают аномалии и противники ---
-	/** Попадание: Damage из 100. После него игрок недолго неуязвим; From — откуда пришёл удар, для отброса. */
-	void HurtPlayer(const FString& Text, const FVector& From, float Damage);
+	/** Попадание: Damage из 100. После него игрок недолго неуязвим; From — откуда пришёл удар, для отброса.
+	 *  bKnockback = false — урон без толчка (дым, споры: медленное отравление). */
+	void HurtPlayer(const FString& Text, const FVector& From, float Damage, bool bKnockback = true);
+	/** Смерть сразу, без неуязвимости после прошлого попадания (чёрная дыра). */
+	void KillPlayer(const FString& Text, const FVector& From);
+	/** Герой вприсядку (C — переключить, Ctrl — пока зажат): под дымом (решение автора 15.11). */
+	bool IsPlayerCrouched() const;
+	/** Скафандр надет: споры и разгерметизация не вредят (DESIGN.md 5.9). */
+	bool IsSuitOn() const { return bSuitOn; }
+	/** Надеть (подобрать с пола) и снять (ложится у ног, как выброшенная вещь; слот не нужен — решение автора 15.11).
+	 *  В комнате без воздуха снять нельзя: иначе скафандр останется там, а войти за ним без него не выйдет. */
+	void PutOnSuit();
+	void TakeOffSuit();
+	/** Комната, где игрок, — разгерметизация. */
+	bool IsInVacuum() const;
 	/** Подпись и шкала угрозы на экране (счётчик радиации, направление гравитации). */
 	void SetThreatHint(const FString& Text, float Meter);
 	/** Замедлить игрока на этот кадр. */
 	void RequestSpeedFactor(float Factor) { SpeedRequest = FMath::Min(SpeedRequest, Factor); }
+	/** На этот кадр: камера героя вприсядку не поднимается выше этой высоты (мир, см) — она под слоем дыма. */
+	void RequestCameraCeiling(float WorldZ) { CameraCeiling = FMath::Min(CameraCeiling, WorldZ); }
 	/** Куда противнику идти, чтобы добраться до игрока: с учётом стен тамбуров. */
 	FVector SteerTarget(const FVector& From, const FVector& To) const;
 	/** Игрок подошёл к двери: повод один раз сказать главное правило. */
@@ -97,13 +112,23 @@ public:
 	int32 GetMedkitsUsed() const { return MedkitsUsed; }
 	/** Слот кармана, вещь из которого в руке; −1 — руки пусты. */
 	int32 GetHeldSlot() const { return Pocket.IsValidIndex(HeldSlot) ? HeldSlot : -1; }
-	/** Осмотр вещи в руке: она крупно перед камерой, мышь её вертит. У блокнота вместо этого — чтение. */
+	/** Осмотр вещи в руке: она крупно перед камерой, мышь её вертит. Блокнот не осматривают — он раскрывается в меню. */
 	bool IsInspecting() const { return bInspecting && GetHeldSlot() >= 0 && !IsReading(); }
-	/** Блокнот раскрыт: разворот на весь экран, страницы листаются. */
-	bool IsReading() const { return bInspecting && GetHeldSlot() >= 0 && Pocket[HeldSlot] == RunGen::Notebook; }
+	/** Меню на Tab открыто (решение автора 15.11): блокнот с закладками записок, карман, скафандр. Время идёт. */
+	bool IsReading() const { return bMenuOpen && Phase == ERunPhase::Playing; }
+	bool HasNotebook() const { return Pocket.Contains(RunGen::Notebook); }
 	/** Какой разворот блокнота открыт. Экран знает, сколько их, и сам поправляет номер (ClampJournalPage). */
 	int32 GetJournalPage() const { return JournalPage; }
 	void ClampJournalPage(int32 NumSpreads) { JournalPage = FMath::Clamp(JournalPage, 0, FMath::Max(0, NumSpreads - 1)); }
+	void SetJournalPage(int32 Spread) { JournalPage = FMath::Max(0, Spread); }
+	/** Закладки блокнота: прочитанные записки по порядку (текст — как в блокноте). Записки слота не занимают. */
+	const TArray<FString>& GetBookmarks() const { return Bookmarks; }
+	/** Выбранная закладка; −1 — ни одной. */
+	int32 GetBookmark() const { return Bookmarks.IsValidIndex(Bookmark) ? Bookmark : -1; }
+	/** Закладку только что выбрали: экран один раз раскрывает блокнот на её развороте. */
+	bool ConsumeBookmarkJump() { const bool b = bBookmarkJump; bBookmarkJump = false; return b; }
+	/** Скафандр надевали хоть раз (снятый лежит там, где его сняли). */
+	bool WasSuitWorn() const { return bSuitWorn; }
 	ERunPhase GetPhase() const { return Phase; }
 	bool IsEngineFixed() const { return bEngineFixed; }
 	const TArray<FString>& GetJournal() const { return Journal; }
@@ -164,7 +189,7 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Run")
 	bool bAutoPlayTest = false;
 
-	/** Для отладки: какая угроза будет в любой опасной комнате (1–8, см. RunGen::Threat...). 0 — как решит набор.
+	/** Для отладки: какая угроза будет в любой опасной комнате (1–7, см. RunGen::Threat...). 0 — как решит набор.
 	 *  Ключ запуска -RunThreat=N делает то же. */
 	UPROPERTY(EditAnywhere, Category = "Run")
 	int32 ForceThreatKind = 0;
@@ -190,6 +215,39 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Run")
 	int32 MedkitChancePercent = 35;
 
+	/** Сколько опасных комнат из ста выгорели (DESIGN.md §14). Какие — чистый случай по зерну и набору;
+	 *  что в них сгорело — тоже по зерну и набору. Безопасные комнаты не горят. */
+	UPROPERTY(EditAnywhere, Category = "Run", meta = (ClampMin = "0", ClampMax = "100"))
+	int32 BurnedRoomPercent = 50;
+
+	/** Для отладки: 1 — выгорают все опасные комнаты, −1 — ни одна, 0 — по BurnedRoomPercent.
+	 *  Ключ запуска -RunBurned=N делает то же. */
+	UPROPERTY(EditAnywhere, Category = "Run")
+	int32 ForceBurned = 0;
+
+	/** Выгорела ли комната этого набора. */
+	bool IsBurned(int32 Key) const;
+
+	/** В скольких комнатах наборов из ста горит только аварийный свет (решение автора 15.11: 80). Какие — по зерну
+	 *  и набору. Стартовая рубка (она же финальная) и заросшая грибами комната — всегда с обычным светом. */
+	UPROPERTY(EditAnywhere, Category = "Run", meta = (ClampMin = "0", ClampMax = "100"))
+	int32 EmergencyLightPercent = 80;
+
+	/** Для отладки: 1 — аварийный свет везде (и в стартовой рубке), −1 — нигде, 0 — по EmergencyLightPercent.
+	 *  Ключ запуска -RunEmergency=N делает то же. */
+	UPROPERTY(EditAnywhere, Category = "Run")
+	int32 ForceEmergency = 0;
+
+	/** Экспозиция забега закреплена (ручная, как в меню): автоэкспозиция высветляла тёмное — чёрный дым становился
+	 *  серым, аварийная комната — светлой. 1,8 — при этом числе обычная комната выглядит как при автоэкспозиции.
+	 *  Ключ запуска -RunExposure=N — проба другого числа. */
+	UPROPERTY(EditAnywhere, Category = "Run")
+	float ExposureBias = 1.8f;
+
+	bool IsEmergency(int32 Key) const;
+	/** Фонарик из каталога вещей: в руке он светит туда, куда смотрит камера. */
+	static bool IsFlashlight(int32 Item);
+
 private:
 	TUniquePtr<FRunLayout> Layout;
 	uint32 Seed = 0;
@@ -199,6 +257,27 @@ private:
 	TArray<int32> Pocket;
 	TArray<FString> Journal;
 	float Health = MaxHealth;
+	bool bSuitOn = false;
+	bool bSuitWorn = false;
+	bool bTipSuit = false;
+	// меню на Tab и закладки записок
+	bool bMenuOpen = false;
+	TArray<FString> Bookmarks;
+	int32 Bookmark = -1;
+	bool bBookmarkJump = false;
+	void AddBookmark(const FString& Text);
+	void StepBookmark(int32 Step);
+	void OnBookmarkPrev() { StepBookmark(-1); }
+	void OnBookmarkNext() { StepBookmark(1); }
+	UPROPERTY() TObjectPtr<UStaticMeshComponent> Helmet;
+	UPROPERTY() TObjectPtr<class UPostProcessComponent> Post;
+	UPROPERTY() TObjectPtr<class USpotLightComponent> Flashlight;
+	// присед: C переключает, Ctrl держит; без анимаций приседа герой сжимается по высоте (UpdateCrouch)
+	bool bCrouchToggle = false;
+	bool bCrouchPose = false;
+	FVector MeshScaleStanding = FVector::OneVector;
+	void OnCrouchKey() { bCrouchToggle = !bCrouchToggle; }
+	void UpdateCrouch(class ACharacter* Ch, const class APlayerController* PC);
 	float DamageTaken = 0.f;
 	int32 MedkitsUsed = 0;
 	float HealAt = -100.f;
@@ -270,6 +349,8 @@ private:
 	FString ThreatHint;
 	float ThreatMeter = 0.f;
 	float SpeedRequest = 1.f;
+	float CameraCeiling = TNumericLimits<float>::Max();
+	static constexpr float BoomArm = 270.f, BoomRise = 45.f;   // камера за правым плечом: длина штанги и подъём
 	float BaseWalkSpeed = 0.f;
 
 	bool bPlayerReady = false;
@@ -336,7 +417,9 @@ private:
 	void OnPagePrev() { TurnPage(-1); }
 	void OnPageNext() { TurnPage(1); }
 	void UseMedkit(int32 Slot);
+	/** Tab: открыть или закрыть меню. */
 	void OnToggleJournal();
+	void SetMenuOpen(bool bOpen);
 	/** Каждый кадр: вещь в руке и вещь на осмотре — какой меш показать, где и как повёрнут. */
 	void TickHeldItem(float DeltaSeconds);
 	void ShowItemMesh(UStaticMeshComponent* Comp, int32 Item, float Fit, bool bHang);
@@ -347,6 +430,8 @@ private:
 	bool bShowTest = false;
 	int32 TestStep = 0;
 	float TestNextAt = 0.f;
+	int32 TestShot = 0;                       // кадр выгоревшей комнаты из угла (шаги 113–115)
+	TWeakObjectPtr<AActor> TestCam;
 	void TickSelfTest();
 	void LogRoom(const TCHAR* Why) const;
 };

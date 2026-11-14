@@ -21,6 +21,7 @@ namespace RunRoomGeo
 	constexpr float DoorWidth = 150.f;
 	constexpr float VestibuleWidth = 450.f;
 	constexpr float VestibuleDepth = 300.f;
+	constexpr float Height = 300.f;       // от пола до потолка
 
 	MEGAJAM_API FVector Dir(int32 Door);              // наружу из комнаты
 	MEGAJAM_API FVector Slide(int32 Door);            // куда уезжает створка
@@ -85,7 +86,36 @@ public:
 	 *  а между комнатой и тамбуром — через проём двери. */
 	FVector SteerTarget(const FVector& From, const FVector& To);
 
+	/** Выгоревшая комната (DESIGN.md §14, решение автора 14.11). Seed — от зерна забега и набора, поэтому один набор
+	 *  даёт одну и ту же картину. Элемент комнаты — компонент вместе с деталями по имени (Rack1 с Rack1_Strip1,
+	 *  колонка Lining_N_L1 с аварийным постом в нише). Часть элементов сгорает: меш заменяется на <меш>_Burned
+	 *  из той же папки (если версий несколько — _Burned2 и дальше, — одна из них по Seed). Остальное и то, у чего сгоревшей версии нет, покрывается декалями копоти, как пол и потолок.
+	 *  Вызывать сразу после появления комнаты: сетка пола строится позже, по коллизии сгоревших мешей.
+	 *  Возвращает (сгорело элементов, покрыто копотью, декалей). */
+	FIntVector ApplyBurn(uint32 Seed);
+
+	/** Комната, заражённая грибами (DESIGN.md 5.9, решение автора 15.11): мох декалями (маски копоти цветом мха) на стенах,
+	 *  полу, потолке и мебели, кучки грибов у колонок, на мебели и по полу, свет тусклее и зеленее. Seed — от зерна и
+	 *  набора. Возвращает (заросших элементов, грибов, декалей). */
+	FIntVector ApplyFungus(uint32 Seed);
+
+	/** Аварийное освещение (решение автора 15.11): общий свет и потолочные панели — тусклый красный, маячки тамбуров
+	 *  красные, остальные источники едва тлеют — видны только очертания. Красный свет медленно «дышит».
+	 *  Возвращает (красных источников, притушенных, панелей). */
+	FIntVector ApplyEmergency();
+	bool IsEmergency() const { return bEmergency; }
+
 private:
+	bool bEmergency = false;
+	struct FPulse
+	{
+		TWeakObjectPtr<class ULightComponent> Light;
+		float Base = 0.f;
+	};
+	TArray<FPulse> PulseLights;
+	UPROPERTY()
+	TArray<TObjectPtr<class UMaterialInstanceDynamic>> PulsePanels;
+
 	UPROPERTY()
 	TObjectPtr<UStaticMeshComponent> Leaf[4];
 
@@ -96,6 +126,17 @@ private:
 
 	UPROPERTY()
 	TObjectPtr<UTextRenderComponent> Sign[4];
+
+	int32 Decals = 0;
+	/** Цвет декалей AddSoot; A = 0 — свой цвет материала (чёрная копоть). */
+	FLinearColor DecalColor = FLinearColor(0.f, 0.f, 0.f, 0.f);
+	/** Элементы комнаты для пожара и грибов: компонент со всеми, чьё имя продолжает его имя через «_». Оболочка, створки,
+	 *  метки мест, панели потолка не входят. Names — по алфавиту, чтобы раскладка не зависела от порядка компонентов. */
+	void CollectElements(TArray<FString>& Names, TMap<FString, TArray<UStaticMeshComponent*>>& Groups) const;
+	/** Декаль копоти: Pos и Rot — центр и поворот коробки (проекция вдоль её оси X), HalfSize — половины сторон.
+	 *  Mask — имя экземпляра MI_Soot_<Mask>: A, B, C — пятна без верха и низа (поворачиваются как попало);
+	 *  D, Band<N>, Plume<N> — дымовые следы с верхом у потолка. Пустое имя — декали нет. */
+	void AddSoot(const FVector& Pos, const FRotator& Rot, const FVector& HalfSize, uint32 Hash, const FString& Mask, float Opacity);
 	bool bSignKnown[4] = { false, false, false, false };
 
 	// Сетка пола для обхода мебели: клетка 50 см, свободна та, где помещается противник.

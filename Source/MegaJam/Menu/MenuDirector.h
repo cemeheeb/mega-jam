@@ -37,6 +37,8 @@ public:
 	float GetFade() const;
 	/** Сколько секунд показывается меню: пункты проявляются не сразу. */
 	float GetClock() const { return Clock; }
+	/** Направление на чёрную дыру в мире (к ней летит пыль логотипа, AMenuHUD). */
+	FVector HoleDirection() const;
 	const FString& GetTitle() const { return GameTitle; }
 
 	/** Название игры над пунктами. Пока автор его не выбрал (DESIGN.md §12), строки нет. */
@@ -124,7 +126,6 @@ private:
 	/** Меши и материал по путям /Game/Game/Menu, параметры неба, свет и постобработка — из свойств выше. */
 	void ApplyLook();
 	void PlaceShip();
-	FVector HoleDirection() const;
 
 	void OnUp();
 	void OnDown();

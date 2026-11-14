@@ -2,16 +2,54 @@
 
 #include "Engine/Canvas.h"
 #include "Engine/Engine.h"
+#include "Engine/Font.h"
+#include "Fonts/CompositeFont.h"
+#include "Misc/Paths.h"
 #include "Engine/Texture2D.h"
 #include "EngineUtils.h"
 #include "RunDirector.h"
 #include "RunGen.h"
 
+// Шрифт из файла Content/Fonts: объект шрифта на время игры, буквы рисует кэш Slate — чёткие при любом масштабе.
+// Size — кегль при масштабе 1 (у Roboto движка, под который подобраны все масштабы экрана, он 9).
+static UFont* LoadFileFont(UObject* Outer, const TCHAR* File, int32 Size)
+{
+	const FString Path = FPaths::ProjectContentDir() / TEXT("Fonts") / File;
+	if (!FPaths::FileExists(Path))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Run: нет шрифта %s, остаётся шрифт движка"), *Path);
+		return nullptr;
+	}
+	UFont* Font = NewObject<UFont>(Outer);
+	Font->FontCacheType = EFontCacheType::Runtime;
+	Font->LegacyFontSize = Size;
+	Font->LegacyFontName = TEXT("Default");
+	Font->GetMutableInternalCompositeFont() = FCompositeFont(TEXT("Default"), Path, EFontHinting::Default, EFontLoadingPolicy::LazyLoad);
+	return Font;
+}
+
+UFont* ARunHUD::Hud()
+{
+	if (!bFontsLoaded)
+	{
+		bFontsLoaded = true;
+		HudFont = LoadFileFont(this, TEXT("ChakraPetch-Medium.ttf"), 9);
+		HandFont = LoadFileFont(this, TEXT("Kalam-Regular.ttf"), 10);
+	}
+	return HudFont ? HudFont.Get() : GEngine->GetMediumFont();
+}
+
+UFont* ARunHUD::Hand()
+{
+	Hud();
+	return HandFont ? HandFont.Get() : GEngine->GetMediumFont();
+}
+
 void ARunHUD::Centered(const FString& Text, float Y, const FLinearColor& Color, float Scale)
 {
 	float W = 0.f, H = 0.f;
-	GetTextSize(Text, W, H, GEngine->GetMediumFont(), Scale);
-	DrawText(Text, Color, (Canvas->SizeX - W) * 0.5f, Y, GEngine->GetMediumFont(), Scale);
+	GetTextSize(Text, W, H, Hud(), Scale);
+	DrawText(Text, Color, (Canvas->SizeX - W) * 0.5f, Y, Hud(), Scale);
 }
 
 // Разбивает текст на строки не шире MaxWidth: длинная записка не уезжает за край экрана.
@@ -44,24 +82,68 @@ static TArray<FString> WrapText(AHUD* Hud, const FString& Text, UFont* Font, flo
 	return Out;
 }
 
+// Цвета закладок: по кругу, у записки в блокноте полоска того же цвета.
+static FLinearColor BookmarkColor(int32 Index, float Alpha)
+{
+	static const FLinearColor Colors[] = { FLinearColor(0.85f, 0.25f, 0.2f), FLinearColor(0.95f, 0.7f, 0.15f), FLinearColor(0.3f, 0.65f, 0.35f),
+		FLinearColor(0.25f, 0.5f, 0.85f), FLinearColor(0.65f, 0.35f, 0.75f) };
+	FLinearColor C = Colors[((Index % 5) + 5) % 5];
+	C.A = Alpha;
+	return C;
+}
+
+// Обрезает строку до ширины, с многоточием.
+static FString FitText(AHUD* Hud, FString Text, UFont* Font, float Scale, float MaxWidth)
+{
+	float W = 0.f, H = 0.f;
+	Hud->GetTextSize(Text, W, H, Font, Scale);
+	if (W <= MaxWidth)
+	{
+		return Text;
+	}
+	while (Text.Len() > 1)
+	{
+		Text.LeftChopInline(1);
+		Hud->GetTextSize(Text + TEXT("..."), W, H, Font, Scale);
+		if (W <= MaxWidth)
+		{
+			break;
+		}
+	}
+	return Text.TrimEnd() + TEXT("...");
+}
+
 // Разворот блокнота: лист 4:3 из карточки ui/notebook-page, левая и правая страницы — его половины.
 // Записи по порядку, старые в начале; не влезшая на страницу запись целиком переносится на следующую.
-void ARunHUD::DrawNotebook(ARunDirector& D, float S)
+// Записки — закладки: ярлычки над правой страницей, у самой записки цветная полоска на полях.
+FString ARunHUD::DrawNotebook(ARunDirector& D, float S, float X0, float Y0, float W, float H)
 {
-	UFont* Font = GEngine->GetMediumFont();
-	const float SX = Canvas->SizeX, SY = Canvas->SizeY;
+	UFont* Font = Hand();   // в блокноте пишут от руки
 	if (!bPageLoaded)
 	{
 		PageTexture = LoadObject<UTexture2D>(nullptr, TEXT("/Game/UI/T_NotebookPage.T_NotebookPage"));
 		bPageLoaded = true;
 	}
-	float H = SY * 0.74f, W = H * 4.f / 3.f;
-	if (W > SX * 0.94f)
+	const float Pad = W * 0.05f, PageW = W * 0.5f - 2.f * Pad;
+	const TArray<FString>& Marks = D.GetBookmarks();
+	const int32 Chosen = D.GetBookmark();
+	// ярлычки закладок торчат над листом; выбранный выше остальных
+	if (Marks.Num() > 0)
 	{
-		W = SX * 0.94f;
-		H = W * 0.75f;
+		const float Gap = 4.f * S, TabW = FMath::Min(28.f * S, (W * 0.5f - Pad) / Marks.Num() - Gap);
+		for (int32 I = 0; I < Marks.Num(); ++I)
+		{
+			const float TH = (I == Chosen ? 30.f : 20.f) * S, TX = X0 + W * 0.5f + Pad * 0.5f + I * (TabW + Gap);
+			DrawRect(BookmarkColor(I, I == Chosen ? 1.f : 0.75f), TX, Y0 - TH + 4.f * S, TabW, TH);
+			const FString Num = FString::FromInt(I + 1);
+			float NW = 0.f, NH = 0.f;
+			GetTextSize(Num, NW, NH, Font, 0.8f * S);
+			if (NW < TabW)
+			{
+				DrawText(Num, FLinearColor::White, TX + (TabW - NW) * 0.5f, Y0 - TH + 6.f * S, Font, 0.8f * S);
+			}
+		}
 	}
-	const float X0 = (SX - W) * 0.5f, Y0 = SY * 0.06f;
 	DrawRect(FLinearColor(0.f, 0.f, 0.f, 0.45f), X0 + 8.f * S, Y0 + 10.f * S, W, H);   // тень под блокнотом
 	if (PageTexture)
 	{
@@ -75,7 +157,6 @@ void ARunHUD::DrawNotebook(ARunDirector& D, float S)
 	DrawRect(FLinearColor(0.f, 0.f, 0.f, 0.08f), X0 + W * 0.5f - 12.f * S, Y0, 24.f * S, H);
 	DrawRect(FLinearColor(0.f, 0.f, 0.f, 0.2f), X0 + W * 0.5f - 1.5f * S, Y0, 3.f * S, H);
 
-	const float Pad = W * 0.05f, PageW = W * 0.5f - 2.f * Pad;
 	const float Top = Y0 + Pad + 36.f * S, Bottom = Y0 + H - Pad - 22.f * S;
 	const float LineH = 21.f * S, Scale = 0.95f * S;
 	struct FLine
@@ -83,19 +164,26 @@ void ARunHUD::DrawNotebook(ARunDirector& D, float S)
 		FString Text;
 		bool bOwn;
 		float Y;
+		int32 Mark;   // номер закладки, если строка — из записки
 	};
 	TArray<TArray<FLine>> Pages;
 	Pages.AddDefaulted();
 	float Y = Top;
+	int32 ChosenPage = -1;
 	for (const FString& Entry : D.GetJournal())
 	{
 		// свои строки персонажа («+ …») — бирюзовыми чернилами, записки — тёмными
 		const bool bOwn = Entry.StartsWith(TEXT("+ "));
+		const int32 Mark = bOwn ? INDEX_NONE : Marks.IndexOfByKey(Entry);
 		const TArray<FString> Lines = WrapText(this, bOwn ? Entry.Mid(2) : Entry, Font, Scale, PageW);
 		if (Y + Lines.Num() * LineH > Bottom && Y > Top)
 		{
 			Pages.AddDefaulted();
 			Y = Top;
+		}
+		if (Mark != INDEX_NONE && Mark == Chosen)
+		{
+			ChosenPage = Pages.Num() - 1;
 		}
 		for (const FString& Line : Lines)
 		{
@@ -104,12 +192,16 @@ void ARunHUD::DrawNotebook(ARunDirector& D, float S)
 				Pages.AddDefaulted();   // запись длиннее страницы: продолжается на следующей
 				Y = Top;
 			}
-			Pages.Last().Add({ Line, bOwn, Y });
+			Pages.Last().Add({ Line, bOwn, Y, Mark });
 			Y += LineH;
 		}
 		Y += LineH * 0.7f;
 	}
 	const int32 NumSpreads = (Pages.Num() + 1) / 2;
+	if (D.ConsumeBookmarkJump() && ChosenPage >= 0)
+	{
+		D.SetJournalPage(ChosenPage / 2);
+	}
 	D.ClampJournalPage(NumSpreads);
 	const int32 Spread = D.GetJournalPage();
 	const FLinearColor Ink(0.12f, 0.15f, 0.21f), OwnInk(0.05f, 0.4f, 0.43f), Faint(0.12f, 0.15f, 0.21f, 0.5f);
@@ -127,6 +219,11 @@ void ARunHUD::DrawNotebook(ARunDirector& D, float S)
 		}
 		for (const FLine& L : Pages[Page])
 		{
+			if (L.Mark != INDEX_NONE)
+			{
+				const bool bChosen = L.Mark == Chosen;
+				DrawRect(BookmarkColor(L.Mark, bChosen ? 0.95f : 0.45f), PX - (bChosen ? 13.f : 11.f) * S, L.Y, (bChosen ? 6.f : 3.f) * S, LineH);
+			}
 			DrawText(L.Text, L.bOwn ? OwnInk : Ink, PX, L.Y, Font, Scale);
 		}
 		const FString Num = FString::FromInt(Page + 1);
@@ -134,12 +231,118 @@ void ARunHUD::DrawNotebook(ARunDirector& D, float S)
 		GetTextSize(Num, NW, NH, Font, 0.85f * S);
 		DrawText(Num, Faint, Side == 0 ? PX : PX + PageW - NW, Y0 + H - Pad - 4.f * S, Font, 0.85f * S);
 	}
-	const FString Help = NumSpreads > 1 ? FString::Printf(TEXT("Pages %d-%d of %d      [Wheel] or [Left] [Right] turn the page      [Tab] close"),
-		Spread * 2 + 1, FMath::Min(Spread * 2 + 2, Pages.Num()), Pages.Num()) : FString(TEXT("[Tab] close"));
+	return NumSpreads > 1 ? FString::Printf(TEXT("Pages %d-%d of %d      [Wheel] or [Left] [Right] turn the page      "),
+		Spread * 2 + 1, FMath::Min(Spread * 2 + 2, Pages.Num()), Pages.Num()) : FString();
+}
+
+// Меню на Tab (решение автора 15.11): блокнот с закладками записок, справа — список записок, скафандр, карман.
+// Игра под ним идёт: время не останавливается.
+void ARunHUD::DrawMenu(ARunDirector& D, float S)
+{
+	UFont* Font = Hud();
+	const float SX = Canvas->SizeX, SY = Canvas->SizeY;
+	const FLinearColor Teal(0.37f, 0.78f, 0.79f), Dim(1.f, 1.f, 1.f, 0.55f);
+	DrawRect(FLinearColor(0.f, 0.f, 0.f, 0.35f), 0.f, 0.f, SX, SY);
+
+	const float M = 18.f * S, PanelW = FMath::Min(300.f * S, SX * 0.26f);
+	float H = SY * 0.72f, W = H * 4.f / 3.f;
+	if (W > SX - PanelW - 3.f * M)
+	{
+		W = SX - PanelW - 3.f * M;
+		H = W * 0.75f;
+	}
+	const float X0 = (SX - W - M - PanelW) * 0.5f, Y0 = SY * 0.075f;
+	FString PagesHelp;
+	if (D.HasNotebook())
+	{
+		PagesHelp = DrawNotebook(D, S, X0, Y0, W, H);
+	}
+	else
+	{
+		DrawRect(FLinearColor(0.f, 0.f, 0.f, 0.6f), X0, Y0, W, H);
+		const TCHAR* Lines[] = { TEXT("The notebook is not with you."), TEXT("The notes you read are kept in it.") };
+		for (int32 I = 0; I < 2; ++I)
+		{
+			float TW = 0.f, TH = 0.f;
+			GetTextSize(Lines[I], TW, TH, Font, 1.2f * S);
+			DrawText(Lines[I], I == 0 ? FLinearColor::White : Dim, X0 + (W - TW) * 0.5f, Y0 + H * 0.45f + I * 30.f * S, Font, 1.2f * S);
+		}
+	}
+
+	// боковая панель
+	const float PX = X0 + W + M, In = 14.f * S, TextW = PanelW - 2.f * In, RowH = 24.f * S;
+	DrawRect(FLinearColor(0.f, 0.f, 0.f, 0.7f), PX, Y0, PanelW, H);
+	float Y = Y0 + In;
+	const auto Header = [&](const TCHAR* Text)
+	{
+		DrawText(Text, Teal, PX + In, Y, Font, 1.05f * S);
+		Y += RowH;
+		DrawRect(FLinearColor(0.37f, 0.78f, 0.79f, 0.5f), PX + In, Y - 3.f * S, TextW, 1.5f * S);
+		Y += 5.f * S;
+	};
+	const auto Row = [&](const FString& Text, const FLinearColor& Color)
+	{
+		for (const FString& Line : WrapText(this, Text, Font, 0.95f * S, TextW))
+		{
+			DrawText(Line, Color, PX + In, Y, Font, 0.95f * S);
+			Y += RowH * 0.9f;
+		}
+	};
+
+	// внизу панели — скафандр и карман; записки занимают всё, что выше
+	const float FootH = 9.6f * RowH;
+	const float NotesBottom = Y0 + H - FootH;
+	Header(TEXT("NOTES"));
+	const TArray<FString>& Marks = D.GetBookmarks();
+	const int32 Chosen = D.GetBookmark();
+	if (Marks.Num() == 0)
+	{
+		Row(TEXT("No notes read yet."), Dim);
+	}
+	else
+	{
+		const bool bBook = D.HasNotebook();
+		const int32 Fit = FMath::Max(1, FMath::FloorToInt32((NotesBottom - Y - RowH) / RowH));
+		const int32 First = FMath::Clamp(FMath::Max(Chosen, 0) - Fit / 2, 0, FMath::Max(0, Marks.Num() - Fit));
+		for (int32 I = First; I < Marks.Num() && I < First + Fit; ++I)
+		{
+			const bool bChosen = bBook && I == Chosen;
+			if (bChosen)
+			{
+				DrawRect(FLinearColor(0.37f, 0.78f, 0.79f, 0.25f), PX + In * 0.4f, Y - 2.f * S, PanelW - In * 0.8f, RowH - 2.f * S);
+			}
+			DrawRect(BookmarkColor(I, bBook ? 1.f : 0.4f), PX + In, Y + 2.f * S, 5.f * S, RowH - 10.f * S);
+			const FString Label = FString::Printf(TEXT("%d  %s"), I + 1, *Marks[I].Replace(TEXT("\n"), TEXT(" ")));
+			DrawText(FitText(this, Label, Font, 0.9f * S, TextW - 12.f * S), bChosen ? FLinearColor::White : (bBook ? FLinearColor(1.f, 1.f, 1.f, 0.8f) : Dim),
+				PX + In + 12.f * S, Y, Font, 0.9f * S);
+			Y += RowH;
+		}
+		Y += 2.f * S;
+		DrawText(bBook ? TEXT("[Up] [Down] open a bookmark") : TEXT("Bookmarks are in the notebook"), Teal, PX + In, Y, Font, 0.85f * S);
+	}
+
+	Y = NotesBottom;
+	Header(TEXT("SPACE SUIT"));
+	if (D.IsSuitOn())
+	{
+		Row(TEXT("You are wearing it."), FLinearColor::White);
+		Row(D.IsInVacuum() ? TEXT("No air here - keep it on") : TEXT("[T] take it off"), Teal);
+	}
+	else
+	{
+		Row(D.WasSuitWorn() ? TEXT("Left where you took it off.") : TEXT("You have no suit."), Dim);
+		Row(TEXT("[E] next to it - put it on"), Teal);
+	}
+	Y += RowH * 0.5f;
+	Header(TEXT("POCKET"));
+	Row(TEXT("[1]-[4] look closer at an item"), Teal);
+	Row(TEXT("[G] drop what is in your hand"), Teal);
+
+	const FString Help = PagesHelp + TEXT("[Tab] close");
 	float HW = 0.f, HH = 0.f;
 	GetTextSize(Help, HW, HH, Font, 1.0f * S);
-	DrawRect(FLinearColor(0.f, 0.f, 0.f, 0.6f), (SX - HW) * 0.5f - 12.f * S, Y0 + H + 14.f * S, HW + 24.f * S, HH + 10.f * S);
-	Centered(Help, Y0 + H + 19.f * S, FLinearColor(0.37f, 0.78f, 0.79f), 1.0f * S);
+	DrawRect(FLinearColor(0.f, 0.f, 0.f, 0.6f), (SX - HW) * 0.5f - 12.f * S, Y0 + H + 12.f * S, HW + 24.f * S, HH + 10.f * S);
+	Centered(Help, Y0 + H + 17.f * S, Teal, 1.0f * S);
 }
 
 void ARunHUD::DrawHUD()
@@ -162,7 +365,7 @@ void ARunHUD::DrawHUD()
 		}
 	}
 	const ARunDirector& D = *Director;
-	UFont* Font = GEngine->GetMediumFont();
+	UFont* Font = Hud();
 	const float SX = Canvas->SizeX, SY = Canvas->SizeY;
 	const float S = FMath::Max(1.f, SY / 720.f);   // масштаб под высоту экрана
 
@@ -363,7 +566,7 @@ void ARunHUD::DrawHUD()
 
 	if (D.IsReading())
 	{
-		DrawNotebook(*Director, S);
+		DrawMenu(*Director, S);
 	}
 	else if (D.IsInspecting())
 	{

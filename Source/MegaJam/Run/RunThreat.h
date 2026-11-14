@@ -1,6 +1,6 @@
-// Аномалия опасной комнаты: разряды, радиация, сбой гравитации, замедление времени или эхо (DESIGN.md 5.9).
-// Пока всё схематично, из блоков. Аномалия живёт в своей комнате; двери при ней открыты, вернуться можно
-// всегда (решение автора 13.11). Противники — отдельно, в RunEnemy.
+// Аномалия опасной комнаты (DESIGN.md 5.9, решение автора 15.11): мини чёрная дыра, дым, замедление времени,
+// заражение грибами. Аномалия живёт в своей комнате; двери при ней открыты, вернуться можно всегда (решение 13.11).
+// Противники — отдельно, в RunEnemy. Разгерметизация — не угроза догадки, а ворота правильного пути (ведущий забега).
 
 #pragma once
 
@@ -9,6 +9,8 @@
 #include "RunThreat.generated.h"
 
 class ARunDirector;
+class ARunRoom;
+class UInstancedStaticMeshComponent;
 class UMaterialInterface;
 class UStaticMesh;
 class UStaticMeshComponent;
@@ -16,39 +18,36 @@ class UStaticMeshComponent;
 /** Числа угроз. Правятся здесь, пока идёт подбор ощущений. */
 namespace RunThreatTune
 {
-	// эхо: повторяет путь игрока с задержкой
-	constexpr float EchoDelay = 3.5f;
-	constexpr float EchoReach = 60.f;
-	// первые секунды в комнате разряды и луч не бьют: игрок должен успеть оглядеться
-	constexpr float EntryGrace = 2.0f;
-	// застывший момент: разряды включаются по циклу
-	constexpr float BarCycle = 2.8f;
-	constexpr float BarOn = 0.9f;
-	constexpr float BarWarn = 0.7f;
-	constexpr float BarHalfWidth = 30.f;
-	// радиация: урон, если простоять в зонах в сумме столько секунд
-	constexpr float RadiationDose = 1.3f;
-	constexpr float RadiationRadius = 130.f;
-	constexpr int32 RadiationZones = 5;
-	// сбой гравитации: тянет к стене, у стены бьёт
-	constexpr float GravityCycle = 5.f;
-	constexpr float GravityWarn = 1.2f;
-	constexpr float GravityPull = 270.f;
-	constexpr float GravityWallReach = 70.f;
-	// замедление времени: в зонах игрок медленный, а луч вращается вокруг центра комнаты с обычной скоростью
-	constexpr float SlowFactor = 0.3f;
-	constexpr float SlowRadius = 180.f;
-	constexpr int32 SlowZones = 3;
-	constexpr float ArmDegPerSec = 40.f;
-	constexpr float ArmLength = 430.f;
-	constexpr float ArmInner = 70.f;   // у самого центра луч не бьёт
-	// урон по игроку, из 100 (решение автора 14.11: у каждой угрозы свой; числа — допущение).
-	// Среднее около 25 — как прежние четыре попадания на забег, под которые подбирался баланс
-	constexpr float EchoDamage = 20.f;
-	constexpr float BarDamage = 30.f;
-	constexpr float RadiationDamage = 20.f;   // за каждую набранную дозу
-	constexpr float GravityDamage = 30.f;
-	constexpr float BeamDamage = 25.f;
+	// чёрная дыра: шар-линза в углу комнаты, подошёл близко — смерть (решение автора 15.11)
+	constexpr float HoleRadius = 85.f;        // шар-линза: искажение плавно сходит на нет к его краю
+	constexpr float HoleHeight = 140.f;       // центр над полом
+	constexpr float HoleInset = 140.f;        // от лица колонок обеих стен угла до центра
+	constexpr float HoleKill = 120.f;         // от центра дыры до середины капсулы: ближе — затянуло
+	constexpr float HoleKillMin = 80.f;       // если рядом место предмета, радиус ужимается, но не меньше
+	constexpr float HoleClearance = 70.f;     // столько остаётся от края смерти до ближайшего места предмета
+	constexpr float HoleWarn = 360.f;         // отсюда подсказка на экране
+	constexpr float SpaghettiTime = 1.4f;     // вытягивание и падение в дыру
+	constexpr int32 HoleDust = 14;            // соринки на орбитах вокруг дыры: по ним её замечают
+	// дым: слой от груди до потолка в комнате и в тамбурах; стоя — урон, вприсядку — нет (решение автора 15.11).
+	// Нижняя кромка ниже головы стоящего героя (замечание автора 15.11: «ниже головы, ещё ниже»)
+	constexpr float SmokeBottom = 110.f;
+	constexpr float SmokeCameraGap = 8.f;     // камера героя вприсядку держится на столько ниже кромки
+
+	constexpr int32 SmokeLayers = 7;
+	constexpr float SmokeTick = 2.f;          // стоя в дыму: урон каждые столько секунд
+	constexpr float SmokeDamage = 6.f;
+	// замедление времени: урона нет, у середины комнаты время почти стоит (не ниже SlowMin, DESIGN 5.9)
+	constexpr float SlowMin = 0.1f;
+	constexpr float SlowCore = 60.f;          // ближе к середине — SlowMin
+	constexpr float SlowRadius = 420.f;       // дальше — обычное время
+	constexpr int32 SlowDebris = 18;          // обломки на орбитах: по их скорости видно, где время гуще
+	// разгерметизация: без скафандра душит быстро (снять его там нельзя, но шлюз мог открыться при другом раскладе)
+	constexpr float VacuumTick = 1.f;
+	constexpr float VacuumDamage = 8.f;
+	// грибы: без скафандра, если ходить долго, — урон (решение автора 15.11)
+	constexpr float SporeGrace = 6.f;         // первые секунды в комнате без урона
+	constexpr float SporeTick = 3.f;
+	constexpr float SporeDamage = 5.f;
 }
 
 UCLASS()
@@ -59,40 +58,29 @@ class MEGAJAM_API ARunThreat : public AActor
 public:
 	ARunThreat();
 
-	/** Kind — номер аномалии из RunGen. Origin — центр пола комнаты. */
-	void Setup(int32 InKind, ARunDirector* InDirector, const FVector& InOrigin, int32 ArrivalDoor, uint32 Seed);
+	/** Kind — номер угрозы из RunGen. Room — комната, в которой она живёт (центр пола — её положение). */
+	void Setup(int32 InKind, ARunDirector* InDirector, ARunRoom* InRoom, int32 ArrivalDoor, uint32 Seed);
 
-	/** Аномалии и эхо остаются в комнате; человек, робот и крысы — противники (RunEnemy). */
+	/** Аномалии остаются в комнате; человек, робот и крысы — противники (RunEnemy). */
 	static bool IsAnomaly(int32 InKind);
+	/** Разгерметизация: не из RunGen (там её нет — это ворота правильного пути), ставит ведущий забега. */
+	static constexpr int32 Decompression = 100;
 
 	virtual void Tick(float DeltaSeconds) override;
+	virtual void EndPlay(const EEndPlayReason::Type Reason) override;
 
 	static const TCHAR* DisplayName(int32 Kind);
 
 private:
-	struct FBody
+	struct FDebris
 	{
 		UStaticMeshComponent* Mesh = nullptr;
-		FVector Pos = FVector::ZeroVector;
-		FVector Dir = FVector(1, 0, 0);
-		float Stun = 0.f;
-		float Radius = 30.f;
-		float HalfHeight = 50.f;
-	};
-
-	struct FZone
-	{
-		FVector Center = FVector::ZeroVector;
 		float Radius = 100.f;
-		UStaticMeshComponent* Mesh = nullptr;
-	};
-
-	struct FBar
-	{
-		bool bSpansY = true;   // true: полоса тянется вдоль Y и стоит на координате X = Coord
-		float Coord = 0.f;
-		float Phase = 0.f;
-		UStaticMeshComponent* Mesh = nullptr;
+		float Angle = 0.f;
+		float Height = 100.f;
+		float Spin = 0.f;
+		float Speed = 45.f;                    // градусов в секунду
+		FRotator Tilt = FRotator::ZeroRotator; // наклон орбиты (у дыры)
 	};
 
 	int32 Kind = 0;
@@ -100,33 +88,39 @@ private:
 	float Age = 0.f;
 	uint32 Rand = 1;
 	TWeakObjectPtr<ARunDirector> Director;
-
-	TArray<FBody> Bodies;
-	TArray<FZone> Zones;
-	TArray<FBar> Bars;
-	TArray<TPair<float, FVector>> Trail;   // путь игрока для эха: время, место
+	TWeakObjectPtr<ARunRoom> Room;
 	float Exposure = 0.f;
-	float ArmAngle = 0.f;
-	int32 GravityDir = 0;
-	int32 GravityStep = -1;
+	float Ticker = 0.f;
+
+	// чёрная дыра
+	FVector HolePos = FVector::ZeroVector;
+	float KillRadius = RunThreatTune::HoleKill;
+	float SwallowT = -1.f;                 // ≥ 0 — героя затягивает
+	FVector SwallowFeet = FVector::ZeroVector;
+	FTransform MeshRelative;
+
+	TArray<FDebris> Debris;
 
 	UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> Shapes;
 	UPROPERTY() TObjectPtr<UStaticMesh> Cube;
-	UPROPERTY() TObjectPtr<UStaticMesh> Cylinder;
-	UPROPERTY() TObjectPtr<UMaterialInterface> MatHot;
+	UPROPERTY() TObjectPtr<UStaticMesh> Sphere;
+	UPROPERTY() TObjectPtr<UStaticMesh> Plane;
 	UPROPERTY() TObjectPtr<UMaterialInterface> MatDark;
-	UPROPERTY() TObjectPtr<UMaterialInterface> MatGlow;
-	UPROPERTY() TObjectPtr<UMaterialInterface> MatGreen;
 	UPROPERTY() TObjectPtr<UMaterialInterface> MatLight;
 
 	UStaticMeshComponent* AddShape(UStaticMesh* Mesh, UMaterialInterface* Mat, const FVector& SizeCm, const FVector& WorldPos);
 	float Random01();
-	FVector RandomFloorPoint(const FVector& Avoid, float AvoidRadius);
-	void Hurt(const TCHAR* Text, const FVector& From, float Damage);
+	void Hurt(const TCHAR* Text, const FVector& From, float Damage, bool bKnockback);
+	/** Игрок в этой комнате или в одном из её тамбуров. */
+	bool PlayerHere(const FVector& P) const;
 
-	void TickEcho(float Dt, const FVector& P);
-	void TickBars(const FVector& Local);
-	void TickRadiation(float Dt, const FVector& P);
-	void TickGravity(float Dt, APawn* Pawn, const FVector& Local);
-	void TickSlowTime(float Dt, const FVector& P, const FVector& Local);
+	void SetupBlackHole();
+	void SetupSmoke();
+	void SetupSlowTime();
+	void TickBlackHole(float Dt, APawn* Pawn);
+	void TickSmoke(float Dt, const FVector& P);
+	void TickSlowTime(float Dt, APawn* Pawn, const FVector& P);
+	void TickFungus(float Dt, const FVector& P);
+	void SetupVacuum();
+	void TickVacuum(float Dt, const FVector& P);
 };

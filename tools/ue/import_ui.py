@@ -1,4 +1,4 @@
-"""Импорт картинок интерфейса в /Game/UI: лист блокнота для режима чтения.
+"""Импорт картинок интерфейса в /Game/UI: лист блокнота для режима чтения, логотип главного меню.
 
     python3 tools/ue/import_ui.py
 
@@ -18,10 +18,13 @@ TX = "editor_toolset.toolsets.texture.TextureTools"
 
 PROJECT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 FOLDER = "/Game/UI"
-TEXTURES = {"T_NotebookPage": "SourceArt/ui/notebook-page/T_NotebookPage.png"}
+TEXTURES = {"T_NotebookPage": "SourceArt/ui/notebook-page/T_NotebookPage.png",
+            "T_Logo": "SourceArt/ui/logo/T_Logo.png"}   # логотип главного меню (AMenuHUD)
 # картинка экрана: без мипов и стриминга (размер не степень двойки), группа UI
 PROPS = {"SRGB": True, "CompressionSettings": "TC_Default", "LODGroup": "TEXTUREGROUP_UI",
          "MipGenSettings": "TMGS_NoMipmaps", "NeverStream": True}
+# у логотипа тонкие края букв в альфе: без сжатия (UserInterface2D), иначе края ступенями
+OVERRIDE = {"T_Logo": {"CompressionSettings": "TC_EditorIcon"}}
 
 
 def call(toolset, name, args):
@@ -38,7 +41,8 @@ def main():
         path = f"{FOLDER}/{name}"
         if not call(AS, "exists", {"path": path}):
             call(TX, "import_file", {"folder_path": FOLDER, "asset_name": name, "source_file": os.path.join(PROJECT, src)})
-        call(OB, "set_properties", {"instance": {"refPath": f"{path}.{name}"}, "values": json.dumps(PROPS)})
+        call(OB, "set_properties", {"instance": {"refPath": f"{path}.{name}"},
+                                    "values": json.dumps({**PROPS, **OVERRIDE.get(name, {})})})
         saved.append(path)
     call(AS, "save_assets", {"asset_paths": saved})
     print("импортировано:", ", ".join(saved))

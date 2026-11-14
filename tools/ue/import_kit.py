@@ -28,10 +28,11 @@ TX = "editor_toolset.toolsets.texture.TextureTools"
 PROJECT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 SRC = os.path.join(PROJECT, "SourceArt", "environment")
 
-# ассет -> сила свечения карты Emissive (None — не задаётся). С автоэкспозицией свечение 1 почти не видно,
-# экраны консоли — как огоньки наборов Singula.
+# ассет -> {материал: сила свечения карты Emissive}. Материал — префикс текстур T_<материал>_*.png в папке ассета,
+# экземпляр — MI_<материал>; без записи свечение не задаётся. С автоэкспозицией свечение 1 почти не видно,
+# экраны консоли — как огоньки наборов Singula. Сгоревшая консоль (SM_NavigatorConsole_Burned) — свой материал.
 SETS = {
-    "bridge/navigator-console": 3.0,
+    "bridge/navigator-console": {"NavigatorConsole": 3.0},
 }
 TEXTURE = {   # суффикс -> (параметр M_Kit, свойства текстуры)
     "BaseColor": ("BaseColor", {"SRGB": True, "CompressionSettings": "TC_Default"}),
@@ -64,13 +65,8 @@ def folder_of(set_path):
     return "/Game/Environment/" + "/".join(camel(p) for p in set_path.split("/"))
 
 
-def import_set(set_path, glow):
-    src = os.path.join(SRC, set_path)
-    folder = folder_of(set_path)
-    name = camel(os.path.basename(set_path))
-    call(AS, "create_folder", {"path": folder})
-    saved = []
-
+def material(src, folder, name, glow, saved):
+    """MI_<name> из M_Kit с текстурами T_<name>_*.png, которые есть в папке ассета."""
     mi = f"{folder}/MI_{name}"
     if not exists(mi):
         call(MI, "create", {"folder_path": folder, "asset_name": f"MI_{name}", "parent": ref("/Game/Materials/M_Kit")})
@@ -90,6 +86,16 @@ def import_set(set_path, glow):
     if glow is not None:
         call(MI, "set_scalar_parameter", {"instance": ref(mi), "name": "EmissiveStrength", "value": glow})
     saved.append(mi)
+    return mi
+
+
+def import_set(set_path, glows):
+    src = os.path.join(SRC, set_path)
+    folder = folder_of(set_path)
+    call(AS, "create_folder", {"path": folder})
+    saved = []
+    names = sorted(os.path.basename(p)[2:-len("_BaseColor.png")] for p in glob.glob(os.path.join(src, "T_*_BaseColor.png")))
+    mis = {f"MI_{n}": material(src, folder, n, glows.get(n), saved) for n in names}
 
     files = sorted(glob.glob(os.path.join(src, "SM_*.fbx")))
     assert files, src
@@ -103,8 +109,9 @@ def import_set(set_path, glow):
                                      "import_materials": False, "import_textures": False, "combine_meshes": True})
         mesh = ref(mesh_path)
         slots = call(SM, "get_material_slots", {"mesh": mesh})
-        assert slots == [f"MI_{name}"], (mesh_name, slots)
-        call(SM, "set_material", {"mesh": mesh, "slot_name": slots[0], "material": ref(mi)})
+        assert slots and all(s in mis for s in slots), (mesh_name, slots, list(mis))
+        for slot in slots:
+            call(SM, "set_material", {"mesh": mesh, "slot_name": slot, "material": ref(mis[slot])})
         b = call(SM, "get_bounds", {"mesh": mesh})
         lo, hi = (tuple(round(b[k][a], 1) for a in "xyz") for k in ("min", "max"))
         print(f"  {mesh_name}: от {lo} до {hi} см, треугольников {call(SM, 'get_triangle_count', {'mesh': mesh})}, "

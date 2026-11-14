@@ -1,9 +1,12 @@
-"""Импорт колонок-шкафов стены в /Game/Environment/Common/WallColumns: текстуры, экземпляры материалов, 13 мешей.
+"""Импорт колонок-шкафов стены в /Game/Environment/Common/WallColumns: текстуры, экземпляры материалов, 13 мешей
+и сгоревшие версии части из них (SM_WallColumn<Модуль>_Burned).
 
     python3 tools/ue/import_wall_columns.py          # импортировать то, чего ещё нет; материалы и слоты — всегда
     python3 tools/ue/import_wall_columns.py --mesh   # после новой выгрузки: удалить меши и импортировать заново
 
-Файлы готовит SourceArt/environment/common/wall-columns/source/export_wall_columns.py (из glb набора Singula).
+Файлы готовит SourceArt/environment/common/wall-columns/source/export_wall_columns.py (из glb набора Singula),
+сгоревшие — export_wall_columns_burned.py (модели Tripo автора): у каждой свой MI_WallColumn<Модуль>Burned из M_Kit
+с T_WallColumn<Модуль>Burned_BaseColor/ORM; вторая версия того же модуля — _Burned2, MI_...Burned2. Подменяет целые на них ARunRoom::ApplyBurn (DESIGN.md §14).
 Мастер-материалы — kit_materials.py (нужны M_Kit, M_KitSolid, M_KitGlass). Расставляет колонки по комнатам
 tools/ue/build_rooms.py. Удаление при --mesh обнуляет меши в блюпринтах комнат: после него пересобрать комнаты.
 Нужен открытый редактор с проектом MegaJam.
@@ -12,8 +15,10 @@ tools/ue/build_rooms.py. Удаление при --mesh обнуляет меш�
 import glob
 import json
 import os
+import re
 import sys
 
+from import_kit import material
 from uemcp import tool
 
 AS = "editor_toolset.toolsets.asset.AssetTools"
@@ -107,7 +112,11 @@ def main():
         call(OB, "set_properties", {"instance": {"refPath": cdo}, "values": defaults})
 
     files = sorted(glob.glob(os.path.join(SRC, "SM_*.fbx")))
-    assert len(files) == 13, files
+    burned = [f for f in files if re.search(r"_Burned\d*\.fbx$", f)]
+    assert len(files) - len(burned) == 13, files
+    for fbx in burned:
+        name = os.path.basename(fbx)[3:-4].replace("_Burned", "Burned")     # SM_WallColumnHeader_Burned2 -> WallColumnHeaderBurned2
+        mats["MI_" + name] = material(SRC, FOLDER, name, None, saved)
     for fbx in files:
         name = os.path.splitext(os.path.basename(fbx))[0]
         mesh_path = f"{FOLDER}/{name}"
