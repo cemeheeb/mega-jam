@@ -1,0 +1,10 @@
+title: Tableware
+kind: model
+style: interior-kit
+idea: "Food tray, mug and cooking pot."
+prompt: "Three separate pieces of ship canteen tableware in a row: a rectangular off-white food tray forty by thirty centimetres with four shallow empty compartments and rounded corners; a squat international orange mug ten centimetres tall with a chunky handle and a graphite lid; and a brushed aluminium cooking pot about thirty centimetres across with two side handles and a flat lid."
+avoid: food, liquid, cutlery, steam
+later: true
+notes: |
+  Приоритет 3. Столовая: подносы TrayW1–2 и TrayE1–2 40 × 30 × 3 см, кружки CupW и CupE r5 h10 см, кастрюля Galley_Pot r14 h18 см.
+  Сборка: SM_FoodTray, SM_Mug, SM_Pot. Мелочь: делать последней.

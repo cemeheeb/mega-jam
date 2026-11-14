@@ -1,0 +1,11 @@
+title: Floating Debris
+kind: model
+style: interior-kit
+idea: "Small pieces of wreckage that float in the anomaly rooms."
+prompt: "Six separate small pieces of spaceship wreckage in a row, each between ten and thirty centimetres: a bent and torn corner of an off-white wall panel with a graphite back; a twisted length of light-grey aluminium tube; a large hexagonal bolt with a washer; a cracked piece of graphite floor grating; a crumpled international orange warning plate with no markings; and a short snapped bracket with two rivet holes."
+avoid: dust clouds, sparks, fire, motion blur, body parts
+later: true
+notes: |
+  Приоритет 3. Обломки на орбитах вокруг чёрной дыры, в пузыре замедления времени и в комнате без воздуха.
+  Сейчас — серые кубики (ARunThreat, FDebris), от 14 до 18 штук в комнате.
+  Сборка: SM_Debris1–6, привязка — центр объёма (обломки вращаются вокруг себя); до 300 треугольников каждый.

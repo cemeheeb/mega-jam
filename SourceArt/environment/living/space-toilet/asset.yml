@@ -1,0 +1,10 @@
+title: Space Toilet
+kind: model
+style: interior
+idea: "Vacuum toilet of the lavatory cabin."
+prompt: "A compact spaceship vacuum toilet: a low rounded off-white painted metal pedestal about forty centimetres tall with a closed flat graphite lid, a boxy tank unit behind it with a muted teal flush indicator and an international orange lever, and two short folding light-grey aluminium thigh restraint bars at the sides."
+avoid: open lid, water, toilet paper, dirt
+later: true
+notes: |
+  Приоритет 3. Жилая комната, кабинка уборной: Lavatory_Toilet 55 × 38 × 40 см с крышкой и бачок Lavatory_Tank 18 × 40 × 42 см.
+  Стенки кабинки, дверь и зеркало остаются коробками. Привязка — центр дна, лицо меша в +Y, как у наборов Singula.

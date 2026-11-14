@@ -1,0 +1,12 @@
+title: Space Suit
+kind: model
+style: interior
+idea: "Empty spacesuit on a storage stand. The suit the player finds and puts on before the decompressed room."
+prompt: "An empty spacesuit standing upright on a low storage stand, about one metre ninety tall: a bulky off-white fabric pressure suit with thick ribbed graphite rubber joints at the shoulders, elbows and knees, international orange stripes on the upper arms and thighs, chunky light-grey boots and gloves, a brushed aluminium neck ring with latches, a boxy life-support backpack with two short hoses to a chest unit, and a round white helmet with a wide dark tinted visor closed over the face opening. A small chest control panel with muted teal indicator windows. The suit hangs from a slim light-grey aluminium frame behind the shoulders, its arms slightly away from the body, over a low graphite base plate."
+avoid: person inside, visible face, floating in space, flag patches, action pose
+notes: |
+  Приоритет 1. Скафандр как вещь в комнате (RunGen::Suit). Сейчас — фигура из цилиндров и шаров с подписью
+  (ARunItem::SetupSuitPlaceholder). Стоит на полу там, где его нашли или сняли.
+  Размер: высота 1,9 м вместе с подставкой, 0,7 × 0,5 м в плане. Привязка — центр дна, лицом в +Y.
+  В шаблоне стиля в Avoid есть «a base or plinth»: перед копированием в Nano Banana эти слова вычеркнуть,
+  иначе картинка выйдет без подставки (как у bridge-dais).

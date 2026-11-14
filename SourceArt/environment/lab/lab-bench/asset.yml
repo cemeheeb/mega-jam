@@ -1,0 +1,12 @@
+title: Lab Bench Set
+kind: model
+style: interior-kit
+idea: "Laboratory bench with a microscope, a centrifuge, flasks and a stool."
+prompt: "Five separate pieces of laboratory equipment in a row: a long lab bench two metres forty by seventy centimetres and waist high, an off-white painted metal cabinet with drawers and a flat graphite work top; a compact binocular microscope with a light-grey aluminium body about forty centimetres tall; a squat round bench centrifuge with a domed graphite lid and a muted teal display; a small rack holding three conical flasks of milky frosted muted teal glass; and a round swivel stool with a graphite seat on a single aluminium post."
+avoid: spilled liquids, papers, bubbles
+later: true
+notes: |
+  Приоритет 3. Лаборатория: BenchW 240 × 70 × 90 см со столешницей; на нём Microscope 22 × 22 × 38, Centrifuge 44 × 44 × 30,
+  три колбы Flask r6 h22; табурет Stool 36 × 36 × 55 см. Стол-остров Island 80 × 200 × 90 см — тот же стол,
+  на нём монитор 50 × 36 и лоток образцов 30 × 60 × 14 см.
+  Сборка: SM_LabBench, SM_Microscope, SM_Centrifuge, SM_FlaskRack, SM_LabStool.

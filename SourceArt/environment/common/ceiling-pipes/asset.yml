@@ -1,0 +1,11 @@
+title: Ceiling Pipes
+kind: model
+style: interior-kit
+idea: "Modular pipe run, valve section and cable tray under the ceiling."
+prompt: "Three separate straight modular sections of ship utilities, each one and a half metres long, lying in a row: a pair of parallel pipes on two shared graphite brackets, a thick light-grey aluminium pipe and a thinner international orange one below it; the same pair of pipes with a round orange handwheel valve on the thin pipe in the middle; and a shallow open cable tray thirty centimetres wide of perforated light-grey aluminium holding a neat flat bundle of graphite cables."
+avoid: bent pipes, elbows, dripping, loose cable ends
+later: true
+notes: |
+  Приоритет 3. Жизнеобеспечение: трубы PipeW и PipeE — r10 и r7 длиной 9 м под потолком (2,65 и 2,38 м), вентиль Valve r16.
+  Вычислительный центр: кабельные лотки CableTrayW и E 900 × 30 × 8 см на высоте 2,8 м.
+  Секции по 1,5 м ставятся встык шесть раз. Сборка: SM_PipeRun, SM_PipeRunValve, SM_CableTray; торцы ровные.

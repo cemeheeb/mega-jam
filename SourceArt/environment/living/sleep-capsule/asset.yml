@@ -1,0 +1,10 @@
+title: Sleep Capsule
+kind: model
+style: interior
+idea: "Crew sleeping pod: bunk, end walls, canopy and a privacy visor."
+prompt: "A crew sleeping pod of a spaceship, two metres thirty-six long, one metre wide and two metres twenty tall: a solid off-white painted metal bunk base at knee height with a long low step in front, a muted teal mattress with a white pillow and a folded light blanket, full-height solid end walls at the head and at the foot, a flat roof canopy joining them, and a narrow dark graphite privacy visor panel hanging from the front edge of the canopy. A small reading lamp and a muted teal control strip on the inside of the head wall, an international orange stripe along the base."
+avoid: sleeping person, curtains, clutter, photographs
+notes: |
+  Приоритет 2. Жилая комната: Sleep_Base 100 × 220 × 45, Mattress, Pillow, Blanket, стенки HeadWall и FootWall 100 × 8 × 170,
+  крыша Canopy на 2,19 м, козырёк Visor 8 × 220 × 40, ступень Step 30 × 120 × 20 см.
+  Открытая длинная сторона смотрит в комнату. Привязка — центр дна, открытая сторона в +Y.

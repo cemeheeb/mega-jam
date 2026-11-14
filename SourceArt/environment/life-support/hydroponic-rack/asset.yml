@@ -1,0 +1,9 @@
+title: Hydroponic Rack
+kind: model
+style: prop
+idea: "Three-shelf hydroponic rack with leafy plants."
+prompt: "A hydroponic growing rack two metres forty long, two metres tall and half a metre deep: an open frame of light-grey aluminium posts with three long shallow off-white trays at knee, waist and head height, each tray filled with dense low leafy green plants, lettuce and herbs, growing from dark graphite substrate, a slim lamp bar under each shelf above, thin feed pipes along the back and a small international orange valve at one end."
+avoid: flowers, fruit, tall plants, spilled soil, watering can
+notes: |
+  Приоритет 2. Жизнеобеспечение: HydroS и HydroE — Frame 50 × 240 × 200 см, поддоны Tray1–3 на высоте 45, 110 и 175 см.
+  Две штуки вдоль стен. Стиль prop, а не interior: зелень вне палитры корабля. Привязка — центр дна, лицо меша в +Y, как у наборов Singula.

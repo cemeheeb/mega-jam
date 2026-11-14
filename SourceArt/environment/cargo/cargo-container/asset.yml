@@ -1,0 +1,11 @@
+title: Cargo Container and Cart
+kind: model
+style: interior-kit
+idea: "Long cargo container and a hand cart."
+prompt: "Two separate pieces of cargo handling equipment side by side: a long low shipping container two metres forty long, one metre ten wide and one metre thirty tall of off-white ribbed painted metal with corner castings, a small square access door with a lever latch on one end and a wide international orange stripe around its upper edge; and a flat hand cart with a graphite deck ninety by sixty centimetres on four small wheels with a tall light-grey aluminium push handle at one end."
+avoid: open container, cargo on the cart, straps
+later: true
+notes: |
+  Приоритет 3. Грузовой отсек: Container 110 × 240 × 130 см с дверцей на торце и полосой на 1,18 м; тележка Cart_Deck
+  90 × 60 см на высоте 25 см с ручкой высотой 90 см, на ней ящик 60 × 50 × 50 см (взять SM_CrateSmall из cargo-crates).
+  Сборка: SM_CargoContainer, SM_HandCart.

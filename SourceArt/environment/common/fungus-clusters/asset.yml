@@ -1,0 +1,13 @@
+title: Fungus Clusters
+kind: model
+style: prop-kit
+idea: "Clusters of infected fungus for the fungal room: five separate pieces to scatter by the seed."
+prompt: "Five separate clusters of infected fungus, each growing from its own small flat patch of dark olive swamp moss: a tight bunch of tall thin pale stems with small drooping ochre-brown caps, about forty centimetres high; a stack of three flat bracket shelf fungi in dirty tan and rust brown; a group of round pale grey puffballs with cracked skin; a low carpet of tiny sprouts with pinhead caps; and one large single mushroom with a wide sagging torn dirty brown cap and a thick pale stem. Damp, slimy and unhealthy, with dark spots and frayed gills."
+avoid: bright red caps, white dots, cute look, glowing, spore clouds, insects, flowers, grass
+notes: |
+  Приоритет 1. Грибы заражённой комнаты. Сейчас — цилиндры и шары (ARunRoom::ApplyFungus, MI_MushroomStem и MI_MushroomCap),
+  около 250 штук на комнату: у колонок, на мебели, по полу.
+  Сборка: разрезать на пять мешей SM_Fungus1–5, привязка каждого — центр дна, высота 15–40 см.
+  Игра ставит их инстансами с поворотом и масштабом по зерну, поэтому каждая кучка — до 1,5 тыс. треугольников.
+  Настроение — заражённые места; формы свои, без заимствований (DESIGN.md 5.9).
+  Стиль prop-kit: набор без палитры корабля.

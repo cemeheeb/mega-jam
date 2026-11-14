@@ -1,0 +1,10 @@
+title: Cargo Crates
+kind: model
+style: interior-kit
+idea: "Three crates and a drum for the cargo bay, one picture, four separate meshes."
+prompt: "Four separate cargo containers in a row: a large cube shipping crate one metre twenty on a side of off-white painted metal with corner castings, recessed handles and a wide international orange band around its upper part; a medium light-grey aluminium cube crate one metre on a side with ribbed walls and latches; a small cube crate eighty centimetres on a side of the same kind; and a steel drum ninety centimetres tall with two rolled hoops and a body painted international orange."
+avoid: pallets, straps, spilled contents, labels
+notes: |
+  Приоритет 2. Грузовой отсек: CrateA и B 120 см с поясом Band, CrateC 100 см (стоит на штабеле), CrateD 80 см,
+  бочки Barrel1–6 и Barrel_Top r32 h90 см (серые и оранжевые через одну — второй цвет сделать материалом).
+  Сборка: разрезать на SM_CrateLarge, SM_CrateMedium, SM_CrateSmall, SM_Barrel; привязка каждого — центр дна.

@@ -1,0 +1,14 @@
+title: Space Suit Helmet
+kind: model
+style: interior
+idea: "Helmet of the spacesuit alone. Sits on the hero's head while the suit is on."
+prompt: "A single spacesuit helmet about thirty-six centimetres across: a round off-white hard shell with a wide dark smoky tinted visor covering the front, an international orange stripe running over the crown from front to back, a brushed aluminium neck ring with four latches at the bottom, a small boxy lamp housing on each side at temple height, and a short graphite rubber air hose stub at the back of the neck ring."
+avoid: head, face, person, body, shoulders, reflections of scenery, cracks
+notes: |
+  Приоритет 1. Надет на голову героя, пока скафандр на нём. Сейчас — прозрачный шар 36 см (ARunDirector::PutOnSuit),
+  стоит на сокете head с подъёмом 9 см.
+  Внутри должно быть пусто, низ открыт, внутренний диаметр не меньше 26 см — голова героя помещается.
+  Забрало тёмное и непрозрачное: прозрачность Tripo не делает. Если захочется видеть лицо — вырезать забрало
+  и поставить на него M_KitGlass.
+  [Допущение ассистента] Полный костюм на теле героя не делаем: нужен перенос весов на скелет, до сдачи не успеть.
+  Шлем — единственный признак надетого скафандра.

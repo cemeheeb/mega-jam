@@ -1,7 +1,7 @@
 title: Command Console Parts
 kind: model
 style: interior
-idea: Console controls: thrust lever, trackball panel, emergency button, key switch, breaker panel.
+idea: "Console controls: thrust lever, trackball panel, emergency button, key switch, breaker panel."
 prompt: ""
 notes: |
   Набор из Singula (environment/bridge/command-console-parts): модели и текстуры сделаны для Singula, glb от 10 ноября 2026

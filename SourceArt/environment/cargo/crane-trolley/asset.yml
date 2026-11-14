@@ -1,0 +1,11 @@
+title: Crane Trolley
+kind: model
+style: interior
+idea: "Trolley of the overhead crane with a hook on a cable."
+prompt: "The trolley of an overhead beam crane seen alone: a compact boxy light-grey aluminium carriage half a metre long with four small flanged wheels on top that would ride on a rail, an international orange motor housing on one side, and a short steel cable hanging straight down from its centre to a heavy graphite hook block with a safety latch, about one metre below the carriage."
+avoid: rail, beam, load on the hook, chains
+later: true
+notes: |
+  Приоритет 3. Грузовой отсек: тележка Crane_Trolley 50 × 40 × 24 см на высоте 2,64 м, трос Crane_Cable длиной 60 см,
+  крюк Crane_Hook на 1,82 м. Балка Crane_Rail 900 × 20 × 16 см остаётся коробкой: это простая форма.
+  Привязка — верх тележки.

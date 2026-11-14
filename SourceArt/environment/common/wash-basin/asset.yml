@@ -1,0 +1,10 @@
+title: Wash Basin
+kind: model
+style: interior
+idea: "Compact wash basin on a cabinet. Sickbay and lavatory."
+prompt: "A compact ship wash basin unit eighty-five centimetres tall, sixty wide and forty deep: an off-white painted metal cabinet with rounded corners and one door, a round recessed brushed aluminium bowl in its top, a short curved tap with a single lever, a graphite splash guard along the back and an international orange stripe along the base."
+avoid: water, soap, towels, mirror
+later: true
+notes: |
+  Приоритет 3. Медотсек: Sink_Stand 40 × 60 × 85 см и чаша Sink_Bowl r20. Уборная жилой комнаты: Lavatory_Sink 42 × 32 см
+  на стойке высотой 80 см — тот же меш с масштабом 0,6 по ширине. Привязка — центр дна, лицо меша в +Y, как у наборов Singula.

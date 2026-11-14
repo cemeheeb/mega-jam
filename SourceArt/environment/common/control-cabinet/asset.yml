@@ -1,0 +1,10 @@
+title: Control Cabinet
+kind: model
+style: interior
+idea: "Standing operator console: desk cabinet with an empty top and a wide screen above."
+prompt: "A standing operator console one metre eighty wide: a waist-high off-white painted metal desk cabinet sixty centimetres deep with a flat, completely empty graphite rubber work top at one metre height, an international orange stripe along its base and two closed service doors on the front; rising from its back edge on two short aluminium posts, a wide flat screen panel one metre sixty by seventy centimetres with a dark graphite bezel and a muted teal display, tilted slightly towards the operator."
+avoid: keyboard, objects on the desk, chair
+notes: |
+  Приоритет 2. Двигательный отсек: ConsoleW и E 60 × 180 × 100 см, экран Screen 160 × 70 см на высоте 1,6 м.
+  Жизнеобеспечение: Control 60 × 130 × 100 см, экран 110 × 60 см — тот же меш с масштабом 0,72 по ширине.
+  Верх стола пустой и ровный на высоте 1,0 м: на нём лежат записки, сварочный пистолет и ремкомплект. Привязка — центр дна, лицо меша в +Y, как у наборов Singula.

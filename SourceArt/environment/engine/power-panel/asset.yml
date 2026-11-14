@@ -1,0 +1,11 @@
+title: Power Panel
+kind: model
+style: interior
+idea: "Wall power board with sockets for power cells and fuses."
+prompt: "A wall-mounted power distribution board one and a half metres square and ten centimetres thick: an off-white painted metal panel with a graphite frame, in its upper half three round horizontal sockets each holding a thick cylindrical power cell of milky frosted muted teal glass with aluminium end caps, in its lower half a row of four upright fuse holders with clear caps and international orange levers, small muted teal indicator windows beside every socket and a large orange main breaker handle on the right."
+avoid: sparks, burn marks, loose wires
+later: true
+notes: |
+  Приоритет 3. Двигательный отсек, западная стена: Power_Board 150 × 10 × 150 см на высоте 1,3 м, три гнезда с батареями
+  Power_Cell r14 длиной 40 см на 1,5 м, четыре предохранителя Power_Fuse 16 × 8 × 34 см на 0,92 м.
+  Связка с предметами items/power-cell и items/fuse. Привязка — центр задней плоскости.

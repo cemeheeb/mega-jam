@@ -1,0 +1,11 @@
+title: Galley Counter
+kind: model
+style: interior
+idea: "Galley counter with a hob and a wall cabinet above."
+prompt: "A ship galley unit two metres sixty long: a waist-high off-white painted metal counter cabinet sixty centimetres deep with a row of flush doors and drawers, a flat graphite work top with a two-ring induction hob at one end and a single lidded brushed aluminium pot on it, an international orange stripe along the base, and above it at head height, joined to the counter by a plain off-white back panel, a long shallow wall cabinet with sliding doors."
+avoid: food, dishes, knives, sink, steam
+later: true
+notes: |
+  Приоритет 3. Столовая: Galley_Counter 60 × 260 × 90 см со столешницей, плита Galley_Hob 40 × 60 см, кастрюля Galley_Pot
+  r14 h18, шкаф Galley_Cabinet 35 × 260 × 60 см на высоте 1,9 м.
+  Жилая комната: такой же уголок длиной 2,2 м без плиты — тот же меш с масштабом 0,85 по длине. Привязка — центр дна, лицо меша в +Y, как у наборов Singula.

@@ -1,0 +1,16 @@
+title: Maintenance Robot
+kind: model
+style: interior
+idea: "Mad maintenance robot on crawler tracks with a gripper and a welding torch. An enemy (DESIGN.md 5.9)."
+prompt: "A squat tracked maintenance robot about one metre thirty tall: a wide low chassis on two graphite rubber crawler tracks, a boxy off-white painted metal torso with rounded corners and bolted service hatches, one of them missing and showing dark machinery inside, a short neck with a flat sensor head carrying one large round muted teal camera lens and two small side lamps, and two jointed light-grey aluminium manipulator arms held forward and apart: the left one ends in a three-finger gripper claw, the right one in a stubby welding torch with a scorched nozzle. International orange hazard stripes on the chassis and shoulders, scratches and dents on the edges, soot around the torch."
+avoid: humanoid legs, human face, guns, blades, saw, sparks, flame, whip antennas
+notes: |
+  Приоритет 1. Противник «Mad maintenance robot» (RunEnemy: скорость 3 м/с, бьёт с 0,9 м, 35 урона, здоровье 4).
+  Сейчас — два серых куба с подписью.
+  Гусеницы вместо ног: не нужны скелет и цикл шага. Модель едет целиком; чтобы игра могла качать корпус и махать
+  руками, при сборке разрезать на четыре объекта с опорами в шее и плечах: корпус с гусеницами, голова, левая рука,
+  правая рука.
+  Размер: высота 1,3 м, ширина 0,8 м, длина 1,0 м. Привязка — центр дна, лицом в +Y.
+  Объектив бирюзовый; красным в ярости его сделает игра (отдельный материал линзы).
+  [Допущение ассистента] стиль interior (полуреалистичный, палитра корабля): робот — оборудование корабля.
+  Если нужен живописный, как у крыс, — поменять style на creature и переписать позу.

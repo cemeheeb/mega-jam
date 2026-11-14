@@ -1,7 +1,7 @@
 title: Door Hatch Controls
 kind: model
 style: interior
-idea: Door button and hatch wheel (lift panels of the set are not taken: no lifts in the game).
+idea: "Door button and hatch wheel (lift panels of the set are not taken: no lifts in the game)."
 prompt: ""
 notes: |
   Набор из Singula (environment/common/door-hatch-controls): модели и текстуры сделаны для Singula, glb от 11 ноября 2026

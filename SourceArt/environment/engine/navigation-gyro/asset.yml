@@ -1,0 +1,10 @@
+title: Navigation Gyro
+kind: model
+style: interior
+idea: "Navigation gyroscope on a stand."
+prompt: "A navigation gyroscope unit about one metre sixty tall: a round off-white painted metal pedestal ninety centimetres high with a graphite base and an international orange band, carrying a vertical light-grey aluminium gimbal ring eighty-five centimetres across with a heavy international orange rotor disc held on an axle in its centre, and a small muted teal readout window on the front of the pedestal."
+avoid: motion blur, glow, cables
+later: true
+notes: |
+  Приоритет 3. Двигательный отсек: Gyro_Stand r30 h90, кольцо Gyro_Ring r42, ротор Gyro_Rotor r22 на высоте 1,22 м.
+  Связка с предметом items/gyroscope. Привязка — центр дна.

@@ -1,0 +1,8 @@
+title: Crew Locker
+kind: model
+style: interior
+idea: "Tall narrow personal locker; three stand in a row."
+prompt: "A tall narrow crew locker two metres tall, seventy-six centimetres wide and half a metre deep: an off-white painted metal cabinet with rounded corners, a single full-height door with three ventilation slots near the top and three near the bottom, a vertical graphite pull handle with a small latch, an empty light-grey aluminium name plate holder at eye level, and an international orange stripe across the top."
+avoid: open door, clothes, stickers, names
+notes: |
+  Приоритет 2. Жилая комната: Locker1–3 50 × 76 × 200 см с ручкой Handle 4 × 6 × 30 см на высоте 1,1 м. Три в ряд. Привязка — центр дна, лицо меша в +Y, как у наборов Singula.

@@ -1,0 +1,9 @@
+title: Food Dispenser
+kind: model
+style: interior
+idea: "Canteen food dispenser machine with a screen and a delivery slot."
+prompt: "A food dispenser machine of a spaceship canteen, two metres tall, one metre twenty wide and half a metre deep: an off-white painted metal cabinet with rounded corners, a muted teal touch screen at eye level, a row of six round selection buttons under it, a wide recessed delivery slot at waist height with a graphite rubber flap and a small tray shelf, a column of ventilation slots on one side and an international orange stripe along the bottom."
+avoid: food, cups, brand names, coins
+notes: |
+  Приоритет 2. Столовая: Dispenser 120 × 50 × 200 см, экран Dispenser_Screen 60 × 40 на 1,5 м, окно выдачи Dispenser_Slot
+  70 × 26 на 0,95 м. Привязка — центр дна, лицо меша в +Y, как у наборов Singula.

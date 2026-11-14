@@ -1,0 +1,9 @@
+title: Paper Note
+kind: model
+idea: "Page torn out of a squared notebook. The notes found in the rooms."
+prompt: "A single page torn out of a squared-paper notebook, about ten by fifteen centimetres, lying flat: off-white grid paper with a ragged torn left edge with punch-hole remains, one soft fold across the middle, a slightly curled corner, a strip of international orange tape stuck over the top edge, and several rows of small wavy dark blue pen scribbles that suggest hurried handwriting without forming any real letters."
+avoid: readable words, printed text, envelope, pen, stack of papers
+notes: |
+  Приоритет 1. Записки в комнатах. Сейчас — светлые кубики (ARunItem, NoteMaterial).
+  Хватит плоской карточки 10 × 15 см с этой картинкой как текстурой: меш из Tripo не обязателен.
+  Бумага — в клетку, как лист блокнота (ui/notebook-page): записки потом «лежат» в нём закладками.

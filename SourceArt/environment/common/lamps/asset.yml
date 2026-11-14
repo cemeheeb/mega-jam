@@ -1,7 +1,7 @@
 title: Lamps
 kind: model
 style: interior
-idea: Ship lamps: caged ceiling lamp, linear light, beacon, spot lamp, floor marker.
+idea: "Ship lamps: caged ceiling lamp, linear light, beacon, spot lamp, floor marker."
 prompt: ""
 notes: |
   Набор из Singula (environment/common/lamps): модели и текстуры сделаны для Singula, glb от 10 ноября 2026

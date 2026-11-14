@@ -1,0 +1,10 @@
+title: Examination Chair
+kind: model
+style: interior
+idea: "Reclining examination chair of the sickbay."
+prompt: "A reclining medical examination chair about one and a half metres long: a thick padded seat, a tilted backrest with a small headrest and a raised leg rest, all upholstered in smooth muted teal, on a single massive off-white painted metal pedestal with a graphite foot plate and an international orange band, with two short folding light-grey aluminium armrests."
+avoid: patient, straps hanging, instruments, wheels
+later: true
+notes: |
+  Приоритет 3. Медотсек: Chair_Seat 70 × 60 × 50, спинка Chair_Back 16 × 60 × 80, подножка Chair_Leg 70 × 56 × 12 см.
+  Стоит под хирургической лампой. Привязка — центр дна, лицо меша в +Y, как у наборов Singula.

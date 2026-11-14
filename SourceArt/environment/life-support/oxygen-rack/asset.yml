@@ -1,0 +1,10 @@
+title: Oxygen Rack
+kind: model
+style: interior
+idea: "Wall rack with four oxygen cylinders."
+prompt: "A rack of four tall oxygen cylinders standing side by side, each one metre twenty tall and about thirty centimetres across: off-white painted steel bottles with rounded shoulders and international orange top caps, light-grey aluminium valves with small round gauges, held upright by a low graphite floor cradle and one horizontal light-grey aluminium retaining bar with a strap across their upper part."
+avoid: hoses on the floor, masks, flames
+later: true
+notes: |
+  Приоритет 3. Жизнеобеспечение: баллоны Oxygen1–4 r14 h120 см с шагом 34 см, планка Oxygen_Rack 36 × 140 × 10 см
+  на высоте 0,95 м. Привязка — центр дна, лицо меша в +Y, как у наборов Singula.

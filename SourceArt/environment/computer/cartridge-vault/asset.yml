@@ -1,0 +1,9 @@
+title: Cartridge Vault
+kind: model
+style: interior
+idea: "Cabinet of data cartridges, three rows of four slots."
+prompt: "A data storage vault cabinet one metre sixty wide, one metre eighty tall and forty centimetres deep: an off-white painted metal cabinet with a graphite front divided into three rows of four upright slots, each slot holding a flat data cartridge with a light-grey aluminium handle and a small muted teal status window; two of the twelve slots are empty dark openings. An international orange stripe across the top and a small keypad on the right side."
+avoid: loose cartridges on the floor, monitors
+notes: |
+  Приоритет 2. Вычислительный центр: Vault 160 × 40 × 180 см, двенадцать гнёзд Vault_Slot 30 × 40 см в три ряда.
+  Картриджи — как предмет items/data-cartridge. Привязка — центр дна, лицо меша в +Y, как у наборов Singula.

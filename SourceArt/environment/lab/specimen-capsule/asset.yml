@@ -1,0 +1,9 @@
+title: Specimen Capsule
+kind: model
+style: interior
+idea: "Upright containment capsule with a control pedestal in the laboratory."
+prompt: "A laboratory specimen containment capsule two and a half metres tall: a round off-white painted metal base one and a half metres across and knee high with an international orange stripe and vent slots, a tall upright cylinder one metre twenty across of milky frosted muted teal glass with nothing visible inside, slim light-grey aluminium vertical guard rails around the glass, and a round top cap matching the base with thick ribbed hoses running into it. Beside it, as part of the same unit, a waist-high slanted control pedestal with a small muted teal screen."
+avoid: visible creature, monster, human body, bubbles, cracks, broken glass
+notes: |
+  Приоритет 2. Лаборатория: Specimen_Base r75 h30, Specimen_Tube r60 h190, Specimen_Cap r75 h24 и пульт Specimen_Panel
+  30 × 44 × 100 см. Свечение стекла — в Unreal. Привязка — центр дна капсулы, пульт справа.

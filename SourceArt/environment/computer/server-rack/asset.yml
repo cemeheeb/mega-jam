@@ -1,0 +1,10 @@
+title: Server Rack
+kind: model
+style: interior
+idea: "Double-width server rack with indicator strips."
+prompt: "A double-width server rack cabinet two metres wide, two metres forty tall and seventy centimetres deep: an off-white painted metal frame with rounded corners and a slightly overhanging top cover, a front of four rows of graphite perforated server drawers with small handles, a thin horizontal muted teal indicator light strip under each row, an international orange stripe along the base and a block of ventilation slots on each side."
+avoid: open doors, monitors, keyboard
+notes: |
+  Приоритет 2. Вычислительный центр: Rack1–4 70 × 200 × 240 см, полосы Rack_Strip на высоте 0,5, 1,0, 1,5 и 2,0 м,
+  крышка Rack_Top. Четыре штуки, лицом друг к другу. Полосы светятся в Unreal.
+  Для выгоревшей комнаты позже понадобится сгоревшая версия, как у колонок стен. Привязка — центр дна, лицо меша в +Y, как у наборов Singula.

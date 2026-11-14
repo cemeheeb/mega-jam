@@ -1,7 +1,7 @@
 title: Ventilation
 kind: model
 style: interior
-idea: Ventilation parts: ceiling diffuser, fan unit, ventilation box, duct elbow and damper.
+idea: "Ventilation parts: ceiling diffuser, fan unit, ventilation box, duct elbow and damper."
 prompt: ""
 notes: |
   Набор из Singula (environment/common/ventilation): модели и текстуры сделаны для Singula, glb от 10 ноября 2026

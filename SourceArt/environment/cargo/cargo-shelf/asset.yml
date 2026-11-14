@@ -1,0 +1,9 @@
+title: Cargo Shelf
+kind: model
+style: interior
+idea: "Heavy storage rack with boxes along the wall of the cargo bay."
+prompt: "A heavy storage rack two metres sixty wide, two metres thirty tall and sixty centimetres deep: two wide flat end posts of light-grey aluminium with rows of slots, three thick off-white shelf boards at knee, chest and above-head height, and six closed graphite storage boxes with orange latches standing on the shelves with gaps between them, two on each shelf."
+avoid: loose items, tools, straps
+notes: |
+  Приоритет 2. Грузовой отсек: Shelf_Post 60 × 8 × 230, полки Shelf_Board на высоте 70, 145 и 220 см, коробки Shelf_Box
+  46 × 60 × 50 см по две на полке. Промежутки между коробками нужны: туда игра кладёт вещи. Привязка — центр дна, лицо меша в +Y, как у наборов Singula.

@@ -1,0 +1,8 @@
+title: Pipe Wrench
+kind: model
+idea: "Heavy red pipe wrench. The weapon."
+prompt: "A heavy adjustable pipe wrench about forty-five centimetres long: a long I-beam handle of red painted cast steel worn to bare grey metal on the edges and at the grip, a fixed lower jaw and a sliding hooked upper jaw with coarse serrated teeth, and a knurled round adjusting nut between them. Oil stains and scratches, a hanging hole at the end of the handle."
+avoid: blood, several tools, toolbox
+notes: |
+  Приоритет 1. Оружие (GRunWeaponName = «Pipe Wrench»). Сейчас — оранжевый кубик на полу и в руке героя.
+  Длина 45 см. Привязка — середина рукояти: в руке держится за неё, на полу лежит плашмя.

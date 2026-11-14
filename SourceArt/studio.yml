@@ -103,6 +103,30 @@ styles:
 
       Avoid: a grid of repeated copies, side view, perspective, horizon, objects, text, logos, directional shadows, specular highlights, vignette, borders{avoid}.
 
+  # Набор предметов одной картинкой, без палитры корабля: несколько отдельных предметов в ряд, не касаются
+  # друг друга — Tripo даёт один меш, при сборке он делится на детали (как interior-kit, но цвета задаёт описание).
+  # Для того, что не красится в цвета корабля: грибы заражённой комнаты. Задаётся в карточке полем style: prop-kit.
+  prop-kit:
+    title: Предметы, набор
+    model: |
+      3D render of a set of game-ready props with semi-realistic PBR materials for a third-person sci-fi game set aboard a bright NASA-punk spaceship. Separate objects in a loose row on a plain seamless light-grey studio background, with clear empty space between them so that no two objects touch; each has only a soft shadow under it.
+
+      {prompt}
+
+      View: three-quarter view from above, all objects at the same scale and fully visible.
+
+      Style: realistic proportions and materials; subtle surface variation and a little dirt in the crevices; soft physically based studio lighting.
+
+      Avoid: text, logos, table or visible floor, scenery, objects touching or overlapping, stacked objects, a shared base or plinth, cropped parts, glow, transparency{avoid}.
+    texture: |
+      PBR albedo texture for a third-person sci-fi video game: a square swatch of the surface seen straight from above, filling the whole frame edge to edge. One continuous image, not a grid of repeated copies.
+
+      {prompt}
+
+      Style: semi-realistic material at real-world scale; subtle surface variation and light wear; flat even diffuse lighting with no shadows, highlights or reflections.
+
+      Avoid: a grid of repeated copies, side view, perspective, horizon, objects, text, logos, directional shadows, specular highlights, vignette, borders{avoid}.
+
   # Персонажи: фигура целиком в А-позе спереди — так её проще превратить в модель и поставить на скелет.
   # Одежда в оранжевой теме корабля; кожа и волосы — естественных цветов.
   character:

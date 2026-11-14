@@ -1,0 +1,11 @@
+title: Dining Set
+kind: model
+style: interior-kit
+idea: "Canteen table and bench, small table and stool: furniture of the mess and of the living quarters."
+prompt: "Four separate pieces of spaceship crew furniture in a row: a long canteen table two metres by eighty centimetres with an off-white top with rounded corners and an orange edge strip on two flat graphite panel legs; a long backless bench two metres long and thirty centimetres wide with a light-grey seat on two panel legs; a small table one metre twenty by eighty centimetres on a single thick central graphite pedestal; and a round-cornered cube stool about forty centimetres on a side with a graphite rubber top pad."
+avoid: chairs with backs, tablecloth, dishes, food
+notes: |
+  Приоритет 2. Столовая: TableW и E 200 × 80 × 78 см, лавки BenchW1–2 и BenchE1–2 200 × 30 × 45 см.
+  Жилая комната: Table 120 × 80 × 78 см, Stool1 и 2 36 × 36 × 45 см.
+  Верх столов ровный и пустой, на высоте 78 см: на нём лежат вещи и записки.
+  Сборка: разрезать на SM_MessTable, SM_MessBench, SM_CrewTable, SM_Stool; привязка — центр дна.

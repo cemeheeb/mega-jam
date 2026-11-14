@@ -1,7 +1,7 @@
 title: Control Console Parts
 kind: model
 style: interior
-idea: Console controls: joystick, keypad, rotary knob, switch block, grip, tee handle.
+idea: "Console controls: joystick, keypad, rotary knob, switch block, grip, tee handle."
 prompt: ""
 notes: |
   Набор из Singula (environment/bridge/control-console-parts): модели и текстуры сделаны для Singula, glb от 12 ноября 2026

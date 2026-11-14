@@ -1,0 +1,11 @@
+title: Warp Core
+kind: model
+style: interior
+idea: "Floor-to-ceiling core of the warp engine in the middle of the engine room."
+prompt: "The core of a spaceship warp engine, a floor-to-ceiling column three metres tall: a wide round base ring three metres across and a hand tall of off-white painted metal with an international orange hazard stripe, a thick central cylinder one metre seventy across of milky frosted muted teal glass with slim vertical aluminium ribs, held by two heavy graphite clamp rings with bolted segments, one below the middle and one above it, and a top cap ring identical to the base. Short stubs of thick power conduits on the clamp rings point outwards in four directions."
+avoid: energy beam, lightning, floating parts, people, railing
+notes: |
+  Приоритет 2. Двигательный отсек, центр комнаты (build_rooms.py engine): Core_Base r150 h20, Core_Column r85 h260,
+  Core_RingLow и Core_RingHigh r115 h16 на высоте 0,8 и 2,2 м, Core_Top r150 h20. От пола до потолка ровно 3,0 м.
+  Свечение колонны — в Unreal (эмиссия). Четыре патрубка смотрят на пилоны, по диагоналям комнаты (45°).
+  Привязка — центр дна.
