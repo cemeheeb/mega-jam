@@ -1,0 +1,16 @@
+title: Soot Wall Decal
+kind: texture
+style: raw
+idea: One big soot decal over a whole wall of a burned room, floor to ceiling, so no locker next to a burnt column stays clean.
+prompt: "A straight-on, flat photograph of a long white painted wall after a room fire, in a wide 21:9 frame filled edge to edge with smoke damage, from the top edge to the bottom edge. Along the whole top edge deep matte black soot, thick and continuous, rolls down in heavy billowing smoke clouds with soft feathered edges. Along the whole bottom edge the wall is scorched black where the fire burned at floor level: a heavy uneven band of matte black soot rising from the bottom edge in ragged tongues and smoky patches, up to about a third of the frame, taller in some places and lower in others. Between the two bands the wall is smudged unevenly: grey smoky haze, darker patches, faint vertical streaks and drips, and a fine grainy dusting of soot. No part of the wall is clean white. Even shadowless lighting, no perspective, no wall texture, no panel seams, no objects, no ceiling, no floor, only black and grey soot on white."
+avoid: flames, fire, embers, colour, brown, orange, wall panels, seams, objects, perspective, shadows, text, frame border, vignette, clean white areas
+notes: |
+  15.11, замечание автора к выгоревшей комнате: шкафы рядом со сгоревшими колонками чистые, так при пожаре не бывает;
+  текстура сгоревших моделей Tripo плохо смотрится рядом с целыми. Решение: копоть кладётся одной большой декалью на всю
+  стену от пола до потолка (плотная под потолком и у пола, посередине дымка, чистых мест нет;
+  15.11 автор: «копоть получилась сверху, надо и снизу» — в промпт добавлена полоса у пола), а текстура сгоревших моделей
+  осветляется — на них остаются повреждения, грязь даёт декаль.
+  Картинки: Nano Banana, формат 21:9, 3–4 штуки (стена 9 × 3 м и 7,5 × 3 м: на стену одна картинка, разные стены —
+  разные картинки и зеркальные копии). Маску из картинки делает
+  ../soot/source/make_soot_from_images.py (вид wall: белый берётся по самым светлым пикселям, а не по низу картинки —
+  низ здесь тоже в копоти). В Unreal — MI_Soot_Wall<N> рядом с остальными масками копоти (tools/ue/import_soot.py).

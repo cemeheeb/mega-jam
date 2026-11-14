@@ -1,0 +1,9 @@
+title: Dead Man Head
+kind: model
+style: head
+idea: Head of a dead old crew member with long grey hair and a beard. Separate model, so the face gets all the detail.
+prompt: ""
+notes: |
+  Модель Tripo от автора (архив dead_man_head.zip, 15.11): source/tripo/dead_man_head.fbx, из текстур только цвет
+  (dead_man_head.fbm/dead_man_head_basecolor.jpg). Промт не записан.
+  Собирается вместе с телом в карточке characters/dead-man. Цвет кожи головы — эталон для тела.

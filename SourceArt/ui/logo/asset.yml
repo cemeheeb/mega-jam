@@ -1,0 +1,10 @@
+title: Logo
+kind: texture
+idea: Game logo PERIBOTHRON for the main menu.
+prompt: ""
+image: logo-1.png
+notes: |
+  Логотип от автора (14.11): белые буквы PERIBOTHRON на чёрном, images/logo-1.png.
+  source/make_logo.py делает T_Logo.png: белые буквы на прозрачном, альфа по яркости с уровнями 120..235 (серые
+  треугольники генерации в углах фасок уходят), обрезка по буквам с полем 12 px.
+  В Unreal: /Game/UI/T_Logo без сжатия (tools/ue/import_ui.py). Рисует AMenuHUD справа от пунктов меню.

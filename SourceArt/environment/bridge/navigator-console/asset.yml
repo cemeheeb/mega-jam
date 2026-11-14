@@ -29,3 +29,8 @@ notes: |
   с мониторами, чтобы над столом с предметами не было стены) и T_NavigatorConsole_BaseColor/ORM/Normal/Emissive.png.
   Текстуры 2048, а не 1024 по kit.md: на 1024 пропадут мелкие царапины панели, которые просил автор.
   Импорт — tools/ue/import_kit.py в /Game/Environment/Bridge/NavigatorConsole, EmissiveStrength 3.
+  Сгоревшая версия (Tripo автора, 14.11): source/tripo-burned/, выгрузка source/export_navigator_console_burned.py
+  -> SM_NavigatorConsole_Burned.fbx и T_NavigatorConsoleBurned_BaseColor/ORM.png (ORM однотонная: у Tripo её нет).
+  Подогнана под целую: ширина 1,5 м одним масштабом, спина там же; обломки высыпаются вперёд до +93 см (Unreal +Y),
+  коллизия — те же две коробки. В выгоревшей комнате ARunRoom::ApplyBurn меняет целую на неё (DESIGN.md §14).
+  Целая консоль стоит и в вычислительном центре — пультом оператора у южной стены (build_rooms.py computer).

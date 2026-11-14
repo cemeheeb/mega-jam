@@ -1,0 +1,9 @@
+title: Dead Man Body
+kind: model
+style: body
+idea: Body of a dead crew member in a dirty orange coverall, without the head. Lies about the level as a corpse.
+prompt: ""
+notes: |
+  Модель Tripo от автора (архив dead_man_body.zip, 15.11): source/tripo/dead_man_body.fbx, из текстур только цвет
+  (dead_man_body.fbm/dead_man_body_basecolor.jpg). Промт не записан.
+  Собирается вместе с головой в карточке characters/dead-man.

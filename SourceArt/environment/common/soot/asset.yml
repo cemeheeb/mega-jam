@@ -1,0 +1,23 @@
+title: Soot Decals
+kind: texture
+style: raw
+idea: Soot masks for the decals of burned rooms.
+prompt: "A straight-on, flat photograph of a soot stain left by a fire on a clean white painted wall, filling a wide 2:1 frame edge to edge. The smoke damage hangs from the top edge of the frame: deep matte black soot all along the top across the full width, breaking downward into billowing, cloud-like smoke shapes with soft feathered edges, uneven depth, deeper in some places and shallower in others, a few darker tongues, faint thin vertical streaks, and a fine grainy dusting of soot fading into the white. The bottom third of the frame is clean pure white. Even shadowless lighting, no perspective, no wall texture, no panel seams, no objects, no ceiling, only black soot on pure white."
+avoid: flames, fire, embers, colour, brown, orange, wall panels, seams, objects, perspective, shadows, text, frame border, vignette
+notes: |
+  Маски копоти для выгоревших комнат (DESIGN.md §14, «выгоревшие комнаты»): T_Soot_A — пятно, B — потёки,
+  C — клочья с крапинками. Серая маска в RGB, 1 — сплошная копоть; к краю квадрата уходит в 0. Верха и низа
+  у форм нет: декаль можно поворачивать и зеркалить. Делает source/make_soot.py (Blender фоном, зерно постоянное).
+  T_Soot_D (14.11) — дымовой след под потолком, у него есть верх: сверху сплошь на всю ширину, ниже рваный край
+  и потёки. Кладётся на колонки у стен; в декали поворот на 90° вокруг оси проекции, иначе след ложится набок.
+  15.11, по просьбе автора «красивых декалей для копоти под потолком, несколько штук»: дымовые следы из картинок
+  Nano Banana. Полоса под потолком (Band) — промпт выше, 3–4 картинки; язык дыма над сгоревшей колонкой (Plume) —
+  промпт ниже, 2–3 картинки, тот же avoid. Маски из картинок делает source/make_soot_from_images.py
+  (band|plume и пути картинок), исходники — source/images/<вид>-<N>.png.
+  Промпт Plume: "A straight-on, flat photograph of a classic V-shaped fire burn pattern on a clean white painted wall,
+  in a tall 1:2 frame. Black soot rises from a narrow scorched base in the lower middle of the frame and widens upward
+  into a broad, billowing smoke plume that reaches the top edge, deep matte black in the core, soft feathered smoky
+  edges, a few faint vertical streaks and a fine grainy dusting of soot fading into the white. The sides and the
+  bottom edge of the frame are clean pure white. Even shadowless lighting, no perspective, no wall texture, no panel
+  seams, no objects, no flames, only black soot on pure white."
+  В Unreal: /Game/Environment/Common/Soot, материал декали M_SootDecal (/Game/Materials) — tools/ue/import_soot.py.

@@ -1,0 +1,32 @@
+title: Floor Tiles
+kind: texture
+style: raw
+idea: Square graphite rubber floor panels on a 75 cm grid that cover the floor of every room; one panel per texture tile.
+prompt: |
+  PBR albedo texture for a third-person sci-fi video game set aboard a bright NASA-punk spaceship: a square swatch of the surface seen straight from above, filling the whole frame edge to edge. One continuous image, not a grid of repeated copies.
+
+  One square spaceship floor panel, 75 × 75 cm, fills the frame exactly, its outer edges lying on the edges of the frame. The panel is covered with graphite matte rubber #2E3236 with a faint fine anti-slip grain; along all four edges runs a narrow brushed warm light-grey aluminium #B9BCC0 rim about 1 cm wide, with the thin dark gap of the panel seam right at the frame edge; a small flush countersunk screw sits in each corner. Fine scuffs on the rubber and a little dust along the rim.
+
+  Colors: only the ship palette, as named in the description: off-white paint #ECEAE4, warm light-grey aluminium #B9BCC0, graphite rubber and plastic #2E3236, international orange #F26A21, muted teal #5FC6C9. No other colors.
+
+  Style: semi-realistic material at real-world scale; subtle surface variation, light wear and a little dust in the crevices; flat even diffuse lighting with no shadows, highlights or reflections; low contrast so it reads as one calm surface from a distance.
+avoid: large distinct elements, high contrast, a grid of repeated copies, side view, perspective, horizon, objects, text, logos, directional shadows, specular highlights, vignette, a margin or picture frame around the image, heavy rust, heavy grime, several panels, a handle or latch in the middle, hatch, holes, grating, raised ribs or studs, hazard stripes, markings
+notes: |
+  15.11, по просьбе автора: текстура плитки пола в стиле Singula. Плитка 75 × 75 см, как колонки стен и кассеты
+  потолка: швы пола продолжают швы колонок, видимая часть пола комнаты (9 × 7,5 м) — ровно 12 × 10 плиток.
+  Одна панель на всю картинку, шов — по краю кадра: при повторе половинки шва соседних плиток сходятся в один.
+  Графитовая резина с алюминиевой рамкой — по образцу утверждённой картинки rubber-floor из Студии Singula
+  (там Nano Banana нарисовала панель с рамкой и защёлкой вместо рифлёной резины, автор утвердил).
+  Защёлки в центре нет: на 120 плитках одинаковые защёлки выстроятся в обои. Люк — отдельной плиткой, если понадобится.
+  Стиль raw, а не interior: в запретах шаблона interior стоит «borders», а рамка панели и есть шов плитки.
+  Промт — это шаблон interior/texture из studio.yml, «borders» заменён на «a margin or picture frame around the image».
+  Nano Banana, формат 1:1, 3–4 варианта. Перегенерировать, если вышла сетка 2 × 2 или поле вокруг панели.
+  Дальше:
+  1. Карта высоты — Nano Banana по выбранной картинке (image-to-image), промт из гайда Singula:
+     "Using the attached texture as the exact reference, make its grayscale height map: the same framing, with every
+     element in exactly the same place. White is the most raised parts, black the deepest recesses and holes, flat
+     surfaces mid-grey. No colors, no lighting, no shadows, no wear or dust: only the shape of the surface."
+  2. Бесшовность — pipeline/seamless-texture.md, режим поверхности; окно — точно по панели, если у краёв поле.
+     Скрипта в игре ещё нет (tools/blender/texture_seamless.py).
+  3. Нормаль из высоты в Blender; ORM: резина roughness 0,85 metallic 0, рамка и винты — алюминий 0,35 / 1.
+  4. Unreal: T_FloorTiles_BaseColor/Normal/ORM 1024, повтор текстуры на полу — 75 см.

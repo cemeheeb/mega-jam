@@ -1,0 +1,35 @@
+title: Ceiling Tiles
+kind: model
+style: interior-kit
+idea: Square ceiling panels on a 75 cm grid that cover the ceiling of every room; plain, light, ventilation and access hatch.
+prompt: "Four square spaceship ceiling panels, each lying flat face up, side by side in a row: 75 × 75 cm and only 5 cm thick, satin off-white painted metal with plain softly chamfered edges and a small recessed screw in each corner. The first is plain, with a shallow pressed square inset; the second is a light panel with a recessed frosted diffuser, unlit; the third is a ventilation panel with a square of straight parallel graphite louvres; the fourth is an access hatch with a flush quarter-turn latch, a thin international orange border stripe and a small blank graphite label plate."
+avoid: standing upright, panels propped against each other, a 2 × 2 block, slots or vents in the panel edges, thick boxes, suspended T-bar office ceiling, metal grid frame, round lamp, pipes
+notes: |
+  Выбор автора 14.11: потолок — кассеты 75 × 75 (варианты: кассеты, рёбра корпуса, хребет коммуникаций,
+  световой короб). Шаг совпадает с колонками стен, поэтому швы потолка продолжают швы колонок.
+  Видимая часть потолка комнаты — между лицами колонок, 9 × 7,5 м: ровно 12 × 10 панелей.
+  Стиль промта — interior-kit (SourceArt/studio.yml): четыре отдельные панели в ряд, не касаются друг друга.
+  Первая попытка 15.11 (короткий промт без шаблона стиля, 2 × 2 вплотную): панели встали ширмой или легли
+  на бетонный пол, на торцах появились прорези. Четыре модуля одной картинкой, чтобы стиль совпал;
+  Tripo даст один меш, при сборке он делится на четыре:
+  CeilingTile (глухая), CeilingTileLight (свет, зона glass/emissive), CeilingTileVent (решётка),
+  CeilingTileHatch (люк обслуживания).
+  Панели на картинке лежат лицом вверх: так проще Nano Banana и Tripo. В игре лицо смотрит вниз,
+  точка привязки — середина лица, низ панели на высоте потолка.
+  Раскладку задаст build_rooms.py: свет над общими светильниками комнаты, решётки на месте нынешних
+  решёток вентиляции, люки — по зерну комнаты. Плафоны в клетке и решётки Singula тогда уйдут или останутся
+  поверх панелей — решить при сборке. Сгоревшие версии (провисшая панель, дыра с кабелями) — потом,
+  по рендерам панелей, как у колонок стен.
+  15.11: модель по картинке автора (source/ceiling-tiles-1.png) без меша Tripo — размеры из рецепта
+  (750 × 750 × 50 мм), пропорции деталей сняты с картинки. Скрипт tools/blender/kit/ceiling_tiles_build.py,
+  blend — source/ceiling-tiles.blend (коллекция CeilingTiles, картинка — скрытый Reference в коллекции Source).
+  В Blender лицо смотрит вверх (+Z), как на картинке; начало — середина лица, панель уходит вниз до −50 мм.
+  В игре панель ставится перевёрнутой, как светильники потолка в build_rooms.py.
+  Общая рамка: углы в плане R 8, верхняя кромка скруглена R 5, нижняя R 3, по торцу два шва (три пластины,
+  как на картинке), в каждом углу винт в гнезде Ø32 (центр в 38 мм от краёв, головка Ø23 с шестигранником).
+  CeilingTile — квадрат 550 мм вдавлен на 2 мм со стенками 45°. CeilingTileLight — проём 590 мм, графитовый
+  уплотнитель шириной 17 мм, рассеиватель (зона frosted) утоплен на 5 мм. CeilingTileVent — тот же проём,
+  короб глубиной 40 мм, 13 графитовых ламелей 30 × 3 мм с наклоном 40° на среднем ребре.
+  CeilingTileHatch — оранжевый шов 8 мм (канавка 1,5 мм) в 56 мм от краёв, защёлка: алюминиевый ободок Ø148,
+  графитовая чашка глубиной 25 мм, ручка 124 × 26 мм (под руку в перчатке), табличка 180 × 60 мм в гнезде.
+  Задник и торцы на потолке не видны — плотность развёртки × 0,25.
