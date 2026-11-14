@@ -160,11 +160,19 @@ namespace RunGen
 
 	FString ItemName(int32 Item)
 	{
-		return Item == Notebook ? FString(GRunNotebookName) : FString(GRunCatalog[Item].Name);
+		if (Item == Notebook)
+		{
+			return FString(GRunNotebookName);
+		}
+		return Item == Weapon ? FString(GRunWeaponName) : FString(GRunCatalog[Item].Name);
 	}
 
 	FString ItemNoun(int32 Item)
 	{
+		if (Item < 0)
+		{
+			return TEXT("the ") + ItemName(Item).ToLower();
+		}
 		return FString(GRunCatalog[Item].Noun);
 	}
 
@@ -233,7 +241,8 @@ namespace RunGen
 
 	const TCHAR* AnomalyName(int32 Anomaly)
 	{
-		static const TCHAR* const Names[] = { TEXT("none"), TEXT("FrozenMoment"), TEXT("Radiation"), TEXT("GravityFailure"), TEXT("SlowTime") };
+		static const TCHAR* const Names[] = { TEXT("none"), TEXT("FrozenMoment"), TEXT("Radiation"), TEXT("GravityFailure"), TEXT("SlowTime"),
+			TEXT("Robot"), TEXT("Rats"), TEXT("Echo"), TEXT("Human") };
 		return Names[Anomaly];
 	}
 
@@ -369,7 +378,7 @@ void FRunLayout::DangerNote(FRng& Rng, int32& OutKind, TArray<int32>& OutItems) 
 
 int32 FRunLayout::RoleOf(int32 Item) const
 {
-	return Item == Notebook ? RoleNotInRun : ItemRole[Item];
+	return Item < 0 ? RoleNotInRun : ItemRole[Item];   // блокнот и оружие вне каталога
 }
 
 int32 FRunLayout::RoleMask(const TArray<int32>& Pocket) const
@@ -433,7 +442,7 @@ int32 FRunLayout::AnomalyOf(int32 Key) const
 	{
 		return 0;
 	}
-	return 1 + static_cast<int32>(Rng.Below(4));                     // rng: вид
+	return 1 + static_cast<int32>(Rng.Below(NumThreats));            // rng: вид
 }
 
 void FRunLayout::AheadNote(int32 Level, int32& OutKind, TArray<int32>& OutItems) const
@@ -582,6 +591,7 @@ FRunRoomContent FRunLayout::Room(int32 Key) const
 FRunRoomContent FRunLayout::StartRoom() const
 {
 	FRunRoomContent Out = Room(Anchor);
+	Out.Items.Insert(Weapon, 0);
 	Out.Items.Insert(Notebook, 0);
 	return Out;
 }

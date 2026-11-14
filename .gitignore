@@ -11,6 +11,7 @@ __pycache__/
 
 # Unreal Engine: то, что движок и IDE создают сами
 Binaries/
+Build/
 DerivedDataCache/
 Intermediate/
 Saved/

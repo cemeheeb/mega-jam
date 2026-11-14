@@ -14,11 +14,14 @@ namespace RunGen
 	enum : int32 { RoleL = 0, RoleK1 = 1, RoleK2 = 2, RoleK3 = 3, NumChain = 4, MaxSig = 12, RoleDummy = 99, RoleNotInRun = -1 };
 	enum : int32 { MaskL = 1, MaskK1 = 2, MaskK2 = 4, MaskK3 = 8, FinalMask = 14, Anchor = 1 << MaxSig };
 	enum : int32 { NumSwitches = 6 };
-	enum : int32 { Notebook = -1, PocketSlots = 4, DoorsPerRoom = 4 };
+	// Блокнот и оружие вне каталога: слот занимают, на комнату не влияют
+	enum : int32 { Notebook = -1, Weapon = -2, PocketSlots = 4, DoorsPerRoom = 4 };
 	// Типы отсеков, DESIGN.md 5.1
 	enum : int32 { Bridge = 0, Living = 1, Lab = 2, LifeSupport = 3, Engine = 4, Medbay = 5, Cargo = 6, Mess = 7, Computer = 8, NumRoomTypes = 9 };
 	// Класс комнаты. ClsStart — только стартовая рубка (копия 0)
 	enum : int32 { ClsStart = 0, ClsChain = 1, ClsGuess = 2, ClsEngine = 3 };
+	// Угрозы неправильных наборов: четыре аномалии и три противника. 0 — угрозы нет
+	enum : int32 { ThreatNone = 0, ThreatFrozenMoment, ThreatRadiation, ThreatGravityFailure, ThreatSlowTime, ThreatRobot, ThreatRats, ThreatEcho, ThreatHuman, NumThreats = 8 };
 	enum : int32 { NoteNotebookFirst = 0, NoteLoopExit, NoteNextKey, NoteUseless, NoteDanger, NoteEngineSet, NoteFinale };
 	// Домены ГСЧ. Номера 2 и 6 свободны, как в эталоне
 	enum : uint32 { DRoles = 1, DRoomType = 3, DSwitch = 4, DAnomaly = 5, DItems = 7, DNotes = 8, DGuarantee = 9, DCosmetic = 10, DStart = 11 };

@@ -31,7 +31,8 @@ def main():
     lines += ["", "static const FRunItemDef GRunCatalog[] = {"]
     for it in C.CATALOG:
         lines.append(f"\t{{ {cstr(it.name)}, {cstr(it.noun)}, {cstr(it.category)} }},")
-    lines += ["};", "", f"static const TCHAR* const GRunNotebookName = {cstr(C.NOTEBOOK_NAME)};", ""]
+    lines += ["};", "", f"static const TCHAR* const GRunNotebookName = {cstr(C.NOTEBOOK_NAME)};",
+              f"static const TCHAR* const GRunWeaponName = {cstr(C.WEAPON_NAME)};", ""]
     kinds = sorted(C.TEMPLATES)
     assert kinds == list(range(len(kinds)))
     for k in kinds:

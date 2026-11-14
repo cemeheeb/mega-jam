@@ -31,6 +31,7 @@ static const FRunItemDef GRunCatalog[] = {
 };
 
 static const TCHAR* const GRunNotebookName = TEXT("Notebook");
+static const TCHAR* const GRunWeaponName = TEXT("Pipe Wrench");
 
 static const TCHAR* const GRunTemplates0[] = {
 	TEXT("Everything you add, the singularity will erase. Only this remains.\nCarry {item}. It breaks the first loop."),

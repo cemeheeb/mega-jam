@@ -184,6 +184,7 @@
   "anomaly": "none",
   "items": [
    "Notebook",
+   "Pipe Wrench",
    "Dog Tag",
    "Fuse",
    "Circuit Board",
@@ -262,7 +263,7 @@
    "level": -1,
    "type": "Medbay",
    "switches": 1,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 5,
@@ -271,7 +272,7 @@
    "level": -1,
    "type": "LifeSupport",
    "switches": 34,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 6,
@@ -298,7 +299,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 1,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 9,
@@ -307,7 +308,7 @@
    "level": -1,
    "type": "Lab",
    "switches": 10,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 10,
@@ -316,7 +317,7 @@
    "level": -1,
    "type": "Living",
    "switches": 12,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 11,
@@ -334,7 +335,7 @@
    "level": -1,
    "type": "Cargo",
    "switches": 24,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 13,
@@ -361,7 +362,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 57,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 16,
@@ -370,7 +371,7 @@
    "level": -1,
    "type": "LifeSupport",
    "switches": 8,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 17,
@@ -388,7 +389,7 @@
    "level": -1,
    "type": "Medbay",
    "switches": 18,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 19,
@@ -397,7 +398,7 @@
    "level": -1,
    "type": "Living",
    "switches": 56,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 20,
@@ -415,7 +416,7 @@
    "level": -1,
    "type": "Mess",
    "switches": 35,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 22,
@@ -424,7 +425,7 @@
    "level": -1,
    "type": "LifeSupport",
    "switches": 26,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 23,
@@ -433,7 +434,7 @@
    "level": -1,
    "type": "Medbay",
    "switches": 27,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 24,
@@ -442,7 +443,7 @@
    "level": -1,
    "type": "LifeSupport",
    "switches": 9,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 25,
@@ -469,7 +470,7 @@
    "level": -1,
    "type": "Medbay",
    "switches": 30,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 28,
@@ -478,7 +479,7 @@
    "level": -1,
    "type": "Lab",
    "switches": 19,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 29,
@@ -487,7 +488,7 @@
    "level": -1,
    "type": "Living",
    "switches": 53,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 30,
@@ -496,7 +497,7 @@
    "level": -1,
    "type": "Living",
    "switches": 45,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 32,
@@ -523,7 +524,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 18,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 35,
@@ -532,7 +533,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 26,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 36,
@@ -541,7 +542,7 @@
    "level": -1,
    "type": "Mess",
    "switches": 5,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 37,
@@ -550,7 +551,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 42,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 38,
@@ -595,7 +596,7 @@
    "level": -1,
    "type": "Cargo",
    "switches": 49,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 43,
@@ -640,7 +641,7 @@
    "level": -1,
    "type": "LifeSupport",
    "switches": 12,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 49,
@@ -667,7 +668,7 @@
    "level": -1,
    "type": "Medbay",
    "switches": 58,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 52,
@@ -685,7 +686,7 @@
    "level": -1,
    "type": "LifeSupport",
    "switches": 46,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 54,
@@ -712,7 +713,7 @@
    "level": -1,
    "type": "LifeSupport",
    "switches": 45,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 58,
@@ -721,7 +722,7 @@
    "level": -1,
    "type": "Medbay",
    "switches": 54,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 60,
@@ -739,7 +740,7 @@
    "level": -1,
    "type": "Cargo",
    "switches": 1,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 65,
@@ -757,7 +758,7 @@
    "level": -1,
    "type": "Cargo",
    "switches": 33,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 67,
@@ -784,7 +785,7 @@
    "level": -1,
    "type": "Medbay",
    "switches": 41,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 70,
@@ -793,7 +794,7 @@
    "level": -1,
    "type": "Mess",
    "switches": 17,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 71,
@@ -802,7 +803,7 @@
    "level": -1,
    "type": "Living",
    "switches": 25,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 72,
@@ -811,7 +812,7 @@
    "level": -1,
    "type": "Lab",
    "switches": 18,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 73,
@@ -856,7 +857,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 41,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 78,
@@ -874,7 +875,7 @@
    "level": -1,
    "type": "Cargo",
    "switches": 5,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 81,
@@ -883,7 +884,7 @@
    "level": -1,
    "type": "Medbay",
    "switches": 42,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 82,
@@ -892,7 +893,7 @@
    "level": -1,
    "type": "Living",
    "switches": 40,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 83,
@@ -910,7 +911,7 @@
    "level": -1,
    "type": "Medbay",
    "switches": 35,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 85,
@@ -919,7 +920,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 44,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 86,
@@ -955,7 +956,7 @@
    "level": -1,
    "type": "Mess",
    "switches": 26,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 92,
@@ -964,7 +965,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 37,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 96,
@@ -1000,7 +1001,7 @@
    "level": -1,
    "type": "Medbay",
    "switches": 56,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 100,
@@ -1009,7 +1010,7 @@
    "level": -1,
    "type": "Medbay",
    "switches": 33,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 101,
@@ -1027,7 +1028,7 @@
    "level": -1,
    "type": "LifeSupport",
    "switches": 22,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 104,
@@ -1045,7 +1046,7 @@
    "level": -1,
    "type": "Living",
    "switches": 30,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 106,
@@ -1054,7 +1055,7 @@
    "level": -1,
    "type": "Cargo",
    "switches": 49,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 108,
@@ -1063,7 +1064,7 @@
    "level": -1,
    "type": "Lab",
    "switches": 22,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 112,
@@ -1081,7 +1082,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 46,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 114,
@@ -1099,7 +1100,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 38,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 120,
@@ -1108,7 +1109,7 @@
    "level": -1,
    "type": "Medbay",
    "switches": 38,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 128,
@@ -1117,7 +1118,7 @@
    "level": -1,
    "type": "Medbay",
    "switches": 32,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 129,
@@ -1126,7 +1127,7 @@
    "level": -1,
    "type": "Medbay",
    "switches": 40,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 130,
@@ -1144,7 +1145,7 @@
    "level": -1,
    "type": "Living",
    "switches": 24,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 132,
@@ -1162,7 +1163,7 @@
    "level": -1,
    "type": "LifeSupport",
    "switches": 38,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 134,
@@ -1180,7 +1181,7 @@
    "level": -1,
    "type": "Lab",
    "switches": 56,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 136,
@@ -1189,7 +1190,7 @@
    "level": -1,
    "type": "Medbay",
    "switches": 36,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 137,
@@ -1270,7 +1271,7 @@
    "level": -1,
    "type": "Living",
    "switches": 56,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 147,
@@ -1279,7 +1280,7 @@
    "level": -1,
    "type": "Medbay",
    "switches": 58,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 148,
@@ -1333,7 +1334,7 @@
    "level": -1,
    "type": "Medbay",
    "switches": 54,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 156,
@@ -1342,7 +1343,7 @@
    "level": -1,
    "type": "Mess",
    "switches": 43,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 160,
@@ -1351,7 +1352,7 @@
    "level": -1,
    "type": "Living",
    "switches": 18,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 161,
@@ -1369,7 +1370,7 @@
    "level": -1,
    "type": "Mess",
    "switches": 52,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 163,
@@ -1378,7 +1379,7 @@
    "level": -1,
    "type": "Living",
    "switches": 26,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 164,
@@ -1396,7 +1397,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 43,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 166,
@@ -1423,7 +1424,7 @@
    "level": -1,
    "type": "Medbay",
    "switches": 44,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 170,
@@ -1432,7 +1433,7 @@
    "level": -1,
    "type": "Medbay",
    "switches": 52,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 172,
@@ -1441,7 +1442,7 @@
    "level": -1,
    "type": "Mess",
    "switches": 45,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 176,
@@ -1459,7 +1460,7 @@
    "level": -1,
    "type": "Cargo",
    "switches": 39,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 178,
@@ -1468,7 +1469,7 @@
    "level": -1,
    "type": "Cargo",
    "switches": 37,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 180,
@@ -1477,7 +1478,7 @@
    "level": -1,
    "type": "Medbay",
    "switches": 35,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 184,
@@ -1486,7 +1487,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 7,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 192,
@@ -1522,7 +1523,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 57,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 196,
@@ -1540,7 +1541,7 @@
    "level": -1,
    "type": "LifeSupport",
    "switches": 54,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 198,
@@ -1558,7 +1559,7 @@
    "level": -1,
    "type": "Mess",
    "switches": 56,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 201,
@@ -1567,7 +1568,7 @@
    "level": -1,
    "type": "Cargo",
    "switches": 51,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 202,
@@ -1603,7 +1604,7 @@
    "level": -1,
    "type": "Mess",
    "switches": 50,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 210,
@@ -1612,7 +1613,7 @@
    "level": -1,
    "type": "LifeSupport",
    "switches": 28,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 212,
@@ -1621,7 +1622,7 @@
    "level": -1,
    "type": "Mess",
    "switches": 51,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 216,
@@ -1648,7 +1649,7 @@
    "level": -1,
    "type": "Cargo",
    "switches": 35,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 226,
@@ -1720,7 +1721,7 @@
    "level": -1,
    "type": "LifeSupport",
    "switches": 52,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 260,
@@ -1738,7 +1739,7 @@
    "level": -1,
    "type": "Mess",
    "switches": 49,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 262,
@@ -1747,7 +1748,7 @@
    "level": -1,
    "type": "Lab",
    "switches": 52,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 263,
@@ -1756,7 +1757,7 @@
    "level": -1,
    "type": "Lab",
    "switches": 60,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 264,
@@ -1765,7 +1766,7 @@
    "level": -1,
    "type": "Living",
    "switches": 36,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 265,
@@ -1783,7 +1784,7 @@
    "level": -1,
    "type": "Mess",
    "switches": 24,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 267,
@@ -1792,7 +1793,7 @@
    "level": -1,
    "type": "Mess",
    "switches": 56,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 268,
@@ -1828,7 +1829,7 @@
    "level": -1,
    "type": "Mess",
    "switches": 18,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 273,
@@ -1855,7 +1856,7 @@
    "level": -1,
    "type": "Living",
    "switches": 56,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 276,
@@ -1918,7 +1919,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 45,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 288,
@@ -1927,7 +1928,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 10,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 289,
@@ -1936,7 +1937,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 10,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 290,
@@ -1945,7 +1946,7 @@
    "level": -1,
    "type": "Lab",
    "switches": 36,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 291,
@@ -1990,7 +1991,7 @@
    "level": -1,
    "type": "Lab",
    "switches": 6,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 297,
@@ -1999,7 +2000,7 @@
    "level": -1,
    "type": "Lab",
    "switches": 14,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 298,
@@ -2026,7 +2027,7 @@
    "level": -1,
    "type": "Lab",
    "switches": 5,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 305,
@@ -2044,7 +2045,7 @@
    "level": -1,
    "type": "Medbay",
    "switches": 54,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 308,
@@ -2053,7 +2054,7 @@
    "level": -1,
    "type": "Mess",
    "switches": 23,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 312,
@@ -2080,7 +2081,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 40,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 322,
@@ -2098,7 +2099,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 56,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 324,
@@ -2107,7 +2108,7 @@
    "level": -1,
    "type": "Lab",
    "switches": 20,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 325,
@@ -2143,7 +2144,7 @@
    "level": -1,
    "type": "Lab",
    "switches": 30,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 330,
@@ -2197,7 +2198,7 @@
    "level": -1,
    "type": "Living",
    "switches": 41,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 344,
@@ -2224,7 +2225,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 42,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 354,
@@ -2251,7 +2252,7 @@
    "level": -1,
    "type": "LifeSupport",
    "switches": 21,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 368,
@@ -2269,7 +2270,7 @@
    "level": -1,
    "type": "Cargo",
    "switches": 40,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 385,
@@ -2287,7 +2288,7 @@
    "level": -1,
    "type": "Lab",
    "switches": 52,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 387,
@@ -2314,7 +2315,7 @@
    "level": -1,
    "type": "Lab",
    "switches": 28,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 390,
@@ -2341,7 +2342,7 @@
    "level": -1,
    "type": "Cargo",
    "switches": 58,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 394,
@@ -2377,7 +2378,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 13,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 402,
@@ -2386,7 +2387,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 29,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 404,
@@ -2395,7 +2396,7 @@
    "level": -1,
    "type": "Lab",
    "switches": 21,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 408,
@@ -2431,7 +2432,7 @@
    "level": -1,
    "type": "Living",
    "switches": 58,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 420,
@@ -2440,7 +2441,7 @@
    "level": -1,
    "type": "Living",
    "switches": 51,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 424,
@@ -2467,7 +2468,7 @@
    "level": -1,
    "type": "Cargo",
    "switches": 41,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 449,
@@ -2485,7 +2486,7 @@
    "level": -1,
    "type": "Living",
    "switches": 56,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 452,
@@ -2494,7 +2495,7 @@
    "level": -1,
    "type": "LifeSupport",
    "switches": 22,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 456,
@@ -2503,7 +2504,7 @@
    "level": -1,
    "type": "Lab",
    "switches": 22,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 464,
@@ -2512,7 +2513,7 @@
    "level": -1,
    "type": "Medbay",
    "switches": 38,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 480,
@@ -2521,7 +2522,7 @@
    "level": -1,
    "type": "Medbay",
    "switches": 36,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 512,
@@ -2530,7 +2531,7 @@
    "level": -1,
    "type": "Mess",
    "switches": 8,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 513,
@@ -2539,7 +2540,7 @@
    "level": -1,
    "type": "LifeSupport",
    "switches": 33,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 514,
@@ -2548,7 +2549,7 @@
    "level": -1,
    "type": "LifeSupport",
    "switches": 17,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 515,
@@ -2566,7 +2567,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 34,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 517,
@@ -2602,7 +2603,7 @@
    "level": -1,
    "type": "Mess",
    "switches": 8,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 521,
@@ -2611,7 +2612,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 11,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 522,
@@ -2620,7 +2621,7 @@
    "level": -1,
    "type": "Cargo",
    "switches": 48,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 523,
@@ -2656,7 +2657,7 @@
    "level": -1,
    "type": "Mess",
    "switches": 25,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 528,
@@ -2665,7 +2666,7 @@
    "level": -1,
    "type": "Cargo",
    "switches": 36,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 529,
@@ -2674,7 +2675,7 @@
    "level": -1,
    "type": "Lab",
    "switches": 25,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 530,
@@ -2683,7 +2684,7 @@
    "level": -1,
    "type": "Living",
    "switches": 40,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 531,
@@ -2701,7 +2702,7 @@
    "level": -1,
    "type": "LifeSupport",
    "switches": 11,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 533,
@@ -2728,7 +2729,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 7,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 537,
@@ -2737,7 +2738,7 @@
    "level": -1,
    "type": "Cargo",
    "switches": 54,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 538,
@@ -2764,7 +2765,7 @@
    "level": -1,
    "type": "Medbay",
    "switches": 32,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 545,
@@ -2773,7 +2774,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 10,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 546,
@@ -2782,7 +2783,7 @@
    "level": -1,
    "type": "Lab",
    "switches": 52,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 547,
@@ -2791,7 +2792,7 @@
    "level": -1,
    "type": "Mess",
    "switches": 60,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 548,
@@ -2818,7 +2819,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 50,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 552,
@@ -2845,7 +2846,7 @@
    "level": -1,
    "type": "Mess",
    "switches": 28,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 556,
@@ -2863,7 +2864,7 @@
    "level": -1,
    "type": "Cargo",
    "switches": 37,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 561,
@@ -2872,7 +2873,7 @@
    "level": -1,
    "type": "Medbay",
    "switches": 42,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 562,
@@ -2881,7 +2882,7 @@
    "level": -1,
    "type": "Living",
    "switches": 42,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 564,
@@ -2890,7 +2891,7 @@
    "level": -1,
    "type": "Cargo",
    "switches": 45,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 568,
@@ -2899,7 +2900,7 @@
    "level": -1,
    "type": "Mess",
    "switches": 14,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 576,
@@ -2908,7 +2909,7 @@
    "level": -1,
    "type": "LifeSupport",
    "switches": 17,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 577,
@@ -2944,7 +2945,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 34,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 581,
@@ -2953,7 +2954,7 @@
    "level": -1,
    "type": "LifeSupport",
    "switches": 51,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 582,
@@ -2971,7 +2972,7 @@
    "level": -1,
    "type": "Mess",
    "switches": 24,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 585,
@@ -2998,7 +2999,7 @@
    "level": -1,
    "type": "Living",
    "switches": 13,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 592,
@@ -3025,7 +3026,7 @@
    "level": -1,
    "type": "Living",
    "switches": 40,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 596,
@@ -3034,7 +3035,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 38,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 600,
@@ -3061,7 +3062,7 @@
    "level": -1,
    "type": "Medbay",
    "switches": 40,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 610,
@@ -3070,7 +3071,7 @@
    "level": -1,
    "type": "LifeSupport",
    "switches": 21,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 612,
@@ -3106,7 +3107,7 @@
    "level": -1,
    "type": "Medbay",
    "switches": 32,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 641,
@@ -3133,7 +3134,7 @@
    "level": -1,
    "type": "LifeSupport",
    "switches": 53,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 644,
@@ -3151,7 +3152,7 @@
    "level": -1,
    "type": "Living",
    "switches": 25,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 646,
@@ -3160,7 +3161,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 51,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 648,
@@ -3169,7 +3170,7 @@
    "level": -1,
    "type": "Mess",
    "switches": 40,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 649,
@@ -3178,7 +3179,7 @@
    "level": -1,
    "type": "Living",
    "switches": 28,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 650,
@@ -3223,7 +3224,7 @@
    "level": -1,
    "type": "Medbay",
    "switches": 50,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 660,
@@ -3232,7 +3233,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 39,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 664,
@@ -3295,7 +3296,7 @@
    "level": -1,
    "type": "Mess",
    "switches": 46,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 704,
@@ -3304,7 +3305,7 @@
    "level": -1,
    "type": "LifeSupport",
    "switches": 21,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 705,
@@ -3340,7 +3341,7 @@
    "level": -1,
    "type": "LifeSupport",
    "switches": 21,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 720,
@@ -3367,7 +3368,7 @@
    "level": -1,
    "type": "Lab",
    "switches": 20,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 769,
@@ -3376,7 +3377,7 @@
    "level": -1,
    "type": "Living",
    "switches": 56,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 770,
@@ -3385,7 +3386,7 @@
    "level": -1,
    "type": "Living",
    "switches": 40,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 771,
@@ -3394,7 +3395,7 @@
    "level": -1,
    "type": "Lab",
    "switches": 60,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 772,
@@ -3412,7 +3413,7 @@
    "level": -1,
    "type": "Living",
    "switches": 57,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 774,
@@ -3448,7 +3449,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 27,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 780,
@@ -3466,7 +3467,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 14,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 785,
@@ -3484,7 +3485,7 @@
    "level": -1,
    "type": "Living",
    "switches": 40,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 788,
@@ -3511,7 +3512,7 @@
    "level": -1,
    "type": "LifeSupport",
    "switches": 5,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 801,
@@ -3538,7 +3539,7 @@
    "level": -1,
    "type": "Medbay",
    "switches": 37,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 808,
@@ -3547,7 +3548,7 @@
    "level": -1,
    "type": "Lab",
    "switches": 22,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 816,
@@ -3574,7 +3575,7 @@
    "level": -1,
    "type": "Cargo",
    "switches": 43,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 834,
@@ -3583,7 +3584,7 @@
    "level": -1,
    "type": "LifeSupport",
    "switches": 21,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 836,
@@ -3601,7 +3602,7 @@
    "level": -1,
    "type": "Medbay",
    "switches": 36,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 848,
@@ -3628,7 +3629,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 11,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 897,
@@ -3637,7 +3638,7 @@
    "level": -1,
    "type": "Living",
    "switches": 56,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 898,
@@ -3664,7 +3665,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 11,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 912,
@@ -3673,7 +3674,7 @@
    "level": -1,
    "type": "Medbay",
    "switches": 38,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 928,
@@ -3682,7 +3683,7 @@
    "level": -1,
    "type": "Mess",
    "switches": 60,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 960,
@@ -3718,7 +3719,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 18,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 1027,
@@ -3763,7 +3764,7 @@
    "level": -1,
    "type": "Cargo",
    "switches": 42,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 1032,
@@ -3817,7 +3818,7 @@
    "level": -1,
    "type": "Medbay",
    "switches": 15,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 1038,
@@ -3826,7 +3827,7 @@
    "level": -1,
    "type": "Living",
    "switches": 13,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 1040,
@@ -3862,7 +3863,7 @@
    "level": -1,
    "type": "Lab",
    "switches": 41,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 1044,
@@ -3871,7 +3872,7 @@
    "level": -1,
    "type": "LifeSupport",
    "switches": 42,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 1045,
@@ -3898,7 +3899,7 @@
    "level": -1,
    "type": "Medbay",
    "switches": 6,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 1049,
@@ -3970,7 +3971,7 @@
    "level": -1,
    "type": "Living",
    "switches": 11,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 1061,
@@ -3979,7 +3980,7 @@
    "level": -1,
    "type": "LifeSupport",
    "switches": 38,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 1062,
@@ -3988,7 +3989,7 @@
    "level": -1,
    "type": "Living",
    "switches": 11,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 1064,
@@ -4024,7 +4025,7 @@
    "level": -1,
    "type": "Lab",
    "switches": 30,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 1072,
@@ -4033,7 +4034,7 @@
    "level": -1,
    "type": "Medbay",
    "switches": 34,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 1073,
@@ -4069,7 +4070,7 @@
    "level": -1,
    "type": "LifeSupport",
    "switches": 45,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 1088,
@@ -4096,7 +4097,7 @@
    "level": -1,
    "type": "LifeSupport",
    "switches": 48,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 1091,
@@ -4105,7 +4106,7 @@
    "level": -1,
    "type": "Cargo",
    "switches": 43,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 1092,
@@ -4114,7 +4115,7 @@
    "level": -1,
    "type": "Mess",
    "switches": 21,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 1093,
@@ -4141,7 +4142,7 @@
    "level": -1,
    "type": "Lab",
    "switches": 26,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 1097,
@@ -4168,7 +4169,7 @@
    "level": -1,
    "type": "Medbay",
    "switches": 39,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 1104,
@@ -4186,7 +4187,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 46,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 1106,
@@ -4195,7 +4196,7 @@
    "level": -1,
    "type": "Mess",
    "switches": 22,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 1108,
@@ -4204,7 +4205,7 @@
    "level": -1,
    "type": "Medbay",
    "switches": 35,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 1112,
@@ -4213,7 +4214,7 @@
    "level": -1,
    "type": "Lab",
    "switches": 27,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 1120,
@@ -4222,7 +4223,7 @@
    "level": -1,
    "type": "Cargo",
    "switches": 9,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 1121,
@@ -4231,7 +4232,7 @@
    "level": -1,
    "type": "LifeSupport",
    "switches": 52,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 1122,
@@ -4249,7 +4250,7 @@
    "level": -1,
    "type": "LifeSupport",
    "switches": 54,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 1128,
@@ -4258,7 +4259,7 @@
    "level": -1,
    "type": "Lab",
    "switches": 30,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 1136,
@@ -4267,7 +4268,7 @@
    "level": -1,
    "type": "Mess",
    "switches": 22,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 1152,
@@ -4294,7 +4295,7 @@
    "level": -1,
    "type": "Lab",
    "switches": 56,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 1155,
@@ -4330,7 +4331,7 @@
    "level": -1,
    "type": "Living",
    "switches": 25,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 1160,
@@ -4339,7 +4340,7 @@
    "level": -1,
    "type": "Living",
    "switches": 28,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 1161,
@@ -4384,7 +4385,7 @@
    "level": -1,
    "type": "Lab",
    "switches": 25,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 1170,
@@ -4393,7 +4394,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 23,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 1172,
@@ -4402,7 +4403,7 @@
    "level": -1,
    "type": "Lab",
    "switches": 25,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 1176,
@@ -4420,7 +4421,7 @@
    "level": -1,
    "type": "Mess",
    "switches": 36,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 1185,
@@ -4438,7 +4439,7 @@
    "level": -1,
    "type": "Cargo",
    "switches": 41,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 1188,
@@ -4456,7 +4457,7 @@
    "level": -1,
    "type": "Living",
    "switches": 30,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 1200,
@@ -4510,7 +4511,7 @@
    "level": -1,
    "type": "LifeSupport",
    "switches": 53,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 1232,
@@ -4528,7 +4529,7 @@
    "level": -1,
    "type": "Living",
    "switches": 26,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 1280,
@@ -4564,7 +4565,7 @@
    "level": -1,
    "type": "Mess",
    "switches": 52,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 1284,
@@ -4573,7 +4574,7 @@
    "level": -1,
    "type": "Mess",
    "switches": 21,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 1285,
@@ -4627,7 +4628,7 @@
    "level": -1,
    "type": "LifeSupport",
    "switches": 39,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 1296,
@@ -4636,7 +4637,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 14,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 1297,
@@ -4645,7 +4646,7 @@
    "level": -1,
    "type": "Cargo",
    "switches": 14,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 1298,
@@ -4654,7 +4655,7 @@
    "level": -1,
    "type": "Mess",
    "switches": 22,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 1300,
@@ -4663,7 +4664,7 @@
    "level": -1,
    "type": "LifeSupport",
    "switches": 46,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 1304,
@@ -4681,7 +4682,7 @@
    "level": -1,
    "type": "Living",
    "switches": 42,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 1313,
@@ -4699,7 +4700,7 @@
    "level": -1,
    "type": "Living",
    "switches": 42,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 1316,
@@ -4708,7 +4709,7 @@
    "level": -1,
    "type": "Medbay",
    "switches": 39,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 1320,
@@ -4726,7 +4727,7 @@
    "level": -1,
    "type": "Living",
    "switches": 42,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 1344,
@@ -4735,7 +4736,7 @@
    "level": -1,
    "type": "Living",
    "switches": 40,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 1345,
@@ -4744,7 +4745,7 @@
    "level": -1,
    "type": "Lab",
    "switches": 28,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 1346,
@@ -4753,7 +4754,7 @@
    "level": -1,
    "type": "Mess",
    "switches": 20,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 1348,
@@ -4771,7 +4772,7 @@
    "level": -1,
    "type": "LifeSupport",
    "switches": 53,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 1360,
@@ -4789,7 +4790,7 @@
    "level": -1,
    "type": "Living",
    "switches": 42,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 1408,
@@ -4798,7 +4799,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 11,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 1409,
@@ -4834,7 +4835,7 @@
    "level": -1,
    "type": "Lab",
    "switches": 30,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 1424,
@@ -4852,7 +4853,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 11,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 1472,
@@ -4879,7 +4880,7 @@
    "level": -1,
    "type": "Living",
    "switches": 24,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 1538,
@@ -4897,7 +4898,7 @@
    "level": -1,
    "type": "LifeSupport",
    "switches": 49,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 1540,
@@ -4906,7 +4907,7 @@
    "level": -1,
    "type": "Living",
    "switches": 9,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 1541,
@@ -4915,7 +4916,7 @@
    "level": -1,
    "type": "Mess",
    "switches": 45,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 1542,
@@ -4933,7 +4934,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 3,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 1545,
@@ -4951,7 +4952,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 19,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 1548,
@@ -4960,7 +4961,7 @@
    "level": -1,
    "type": "Medbay",
    "switches": 39,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 1552,
@@ -4969,7 +4970,7 @@
    "level": -1,
    "type": "Cargo",
    "switches": 44,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 1553,
@@ -4978,7 +4979,7 @@
    "level": -1,
    "type": "Medbay",
    "switches": 42,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 1554,
@@ -4987,7 +4988,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 22,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 1556,
@@ -5005,7 +5006,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 7,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 1568,
@@ -5041,7 +5042,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 34,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 1576,
@@ -5050,7 +5051,7 @@
    "level": -1,
    "type": "Living",
    "switches": 14,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 1584,
@@ -5077,7 +5078,7 @@
    "level": -1,
    "type": "LifeSupport",
    "switches": 49,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 1602,
@@ -5086,7 +5087,7 @@
    "level": -1,
    "type": "Mess",
    "switches": 28,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 1604,
@@ -5095,7 +5096,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 34,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 1608,
@@ -5104,7 +5105,7 @@
    "level": -1,
    "type": "Medbay",
    "switches": 38,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 1616,
@@ -5113,7 +5114,7 @@
    "level": -1,
    "type": "Lab",
    "switches": 25,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 1632,
@@ -5131,7 +5132,7 @@
    "level": -1,
    "type": "Mess",
    "switches": 44,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 1665,
@@ -5158,7 +5159,7 @@
    "level": -1,
    "type": "Mess",
    "switches": 45,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 1672,
@@ -5167,7 +5168,7 @@
    "level": -1,
    "type": "Medbay",
    "switches": 38,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 1680,
@@ -5176,7 +5177,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 7,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 1696,
@@ -5185,7 +5186,7 @@
    "level": -1,
    "type": "Lab",
    "switches": 28,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 1728,
@@ -5203,7 +5204,7 @@
    "level": -1,
    "type": "Lab",
    "switches": 28,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 1793,
@@ -5266,7 +5267,7 @@
    "level": -1,
    "type": "Living",
    "switches": 40,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 1920,
@@ -5275,7 +5276,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 11,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 2048,
@@ -5293,7 +5294,7 @@
    "level": -1,
    "type": "Lab",
    "switches": 12,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 2050,
@@ -5329,7 +5330,7 @@
    "level": -1,
    "type": "Mess",
    "switches": 33,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 2054,
@@ -5347,7 +5348,7 @@
    "level": -1,
    "type": "Medbay",
    "switches": 27,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 2056,
@@ -5356,7 +5357,7 @@
    "level": -1,
    "type": "Mess",
    "switches": 40,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 2057,
@@ -5365,7 +5366,7 @@
    "level": -1,
    "type": "Mess",
    "switches": 40,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 2058,
@@ -5428,7 +5429,7 @@
    "level": -1,
    "type": "Mess",
    "switches": 34,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 2066,
@@ -5437,7 +5438,7 @@
    "level": -1,
    "type": "Lab",
    "switches": 37,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 2067,
@@ -5455,7 +5456,7 @@
    "level": -1,
    "type": "Living",
    "switches": 33,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 2069,
@@ -5464,7 +5465,7 @@
    "level": -1,
    "type": "Living",
    "switches": 49,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 2070,
@@ -5473,7 +5474,7 @@
    "level": -1,
    "type": "Living",
    "switches": 41,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 2072,
@@ -5482,7 +5483,7 @@
    "level": -1,
    "type": "Lab",
    "switches": 7,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 2073,
@@ -5518,7 +5519,7 @@
    "level": -1,
    "type": "Living",
    "switches": 34,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 2081,
@@ -5527,7 +5528,7 @@
    "level": -1,
    "type": "Medbay",
    "switches": 42,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 2082,
@@ -5536,7 +5537,7 @@
    "level": -1,
    "type": "Lab",
    "switches": 36,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 2083,
@@ -5554,7 +5555,7 @@
    "level": -1,
    "type": "Lab",
    "switches": 20,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 2085,
@@ -5563,7 +5564,7 @@
    "level": -1,
    "type": "Living",
    "switches": 51,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 2086,
@@ -5581,7 +5582,7 @@
    "level": -1,
    "type": "Living",
    "switches": 38,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 2089,
@@ -5608,7 +5609,7 @@
    "level": -1,
    "type": "Cargo",
    "switches": 29,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 2096,
@@ -5617,7 +5618,7 @@
    "level": -1,
    "type": "LifeSupport",
    "switches": 13,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 2097,
@@ -5626,7 +5627,7 @@
    "level": -1,
    "type": "LifeSupport",
    "switches": 45,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 2098,
@@ -5644,7 +5645,7 @@
    "level": -1,
    "type": "Living",
    "switches": 35,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 2104,
@@ -5653,7 +5654,7 @@
    "level": -1,
    "type": "Mess",
    "switches": 46,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 2112,
@@ -5680,7 +5681,7 @@
    "level": -1,
    "type": "LifeSupport",
    "switches": 17,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 2115,
@@ -5689,7 +5690,7 @@
    "level": -1,
    "type": "Cargo",
    "switches": 39,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 2116,
@@ -5698,7 +5699,7 @@
    "level": -1,
    "type": "LifeSupport",
    "switches": 19,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 2117,
@@ -5716,7 +5717,7 @@
    "level": -1,
    "type": "Lab",
    "switches": 52,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 2120,
@@ -5725,7 +5726,7 @@
    "level": -1,
    "type": "Living",
    "switches": 44,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 2121,
@@ -5734,7 +5735,7 @@
    "level": -1,
    "type": "LifeSupport",
    "switches": 49,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 2122,
@@ -5743,7 +5744,7 @@
    "level": -1,
    "type": "Living",
    "switches": 44,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 2124,
@@ -5752,7 +5753,7 @@
    "level": -1,
    "type": "Cargo",
    "switches": 29,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 2128,
@@ -5761,7 +5762,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 44,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 2129,
@@ -5788,7 +5789,7 @@
    "level": -1,
    "type": "Mess",
    "switches": 51,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 2136,
@@ -5797,7 +5798,7 @@
    "level": -1,
    "type": "Medbay",
    "switches": 38,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 2144,
@@ -5806,7 +5807,7 @@
    "level": -1,
    "type": "Medbay",
    "switches": 34,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 2145,
@@ -5824,7 +5825,7 @@
    "level": -1,
    "type": "Medbay",
    "switches": 50,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 2148,
@@ -5860,7 +5861,7 @@
    "level": -1,
    "type": "Mess",
    "switches": 32,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 2177,
@@ -5869,7 +5870,7 @@
    "level": -1,
    "type": "Living",
    "switches": 48,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 2178,
@@ -5878,7 +5879,7 @@
    "level": -1,
    "type": "LifeSupport",
    "switches": 21,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 2179,
@@ -5887,7 +5888,7 @@
    "level": -1,
    "type": "Medbay",
    "switches": 58,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 2180,
@@ -5896,7 +5897,7 @@
    "level": -1,
    "type": "Medbay",
    "switches": 35,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 2181,
@@ -5905,7 +5906,7 @@
    "level": -1,
    "type": "Lab",
    "switches": 28,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 2182,
@@ -5923,7 +5924,7 @@
    "level": -1,
    "type": "Mess",
    "switches": 40,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 2185,
@@ -5932,7 +5933,7 @@
    "level": -1,
    "type": "Mess",
    "switches": 40,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 2186,
@@ -5959,7 +5960,7 @@
    "level": -1,
    "type": "LifeSupport",
    "switches": 13,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 2193,
@@ -5968,7 +5969,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 13,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 2194,
@@ -5995,7 +5996,7 @@
    "level": -1,
    "type": "Mess",
    "switches": 42,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 2208,
@@ -6013,7 +6014,7 @@
    "level": -1,
    "type": "LifeSupport",
    "switches": 37,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 2210,
@@ -6031,7 +6032,7 @@
    "level": -1,
    "type": "Medbay",
    "switches": 35,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 2216,
@@ -6040,7 +6041,7 @@
    "level": -1,
    "type": "Mess",
    "switches": 44,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 2224,
@@ -6076,7 +6077,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 57,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 2244,
@@ -6094,7 +6095,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 41,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 2256,
@@ -6103,7 +6104,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 45,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 2272,
@@ -6121,7 +6122,7 @@
    "level": -1,
    "type": "LifeSupport",
    "switches": 5,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 2305,
@@ -6130,7 +6131,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 8,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 2306,
@@ -6139,7 +6140,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 24,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 2307,
@@ -6202,7 +6203,7 @@
    "level": -1,
    "type": "Medbay",
    "switches": 22,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 2316,
@@ -6238,7 +6239,7 @@
    "level": -1,
    "type": "Living",
    "switches": 40,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 2324,
@@ -6247,7 +6248,7 @@
    "level": -1,
    "type": "Mess",
    "switches": 51,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 2328,
@@ -6256,7 +6257,7 @@
    "level": -1,
    "type": "Mess",
    "switches": 58,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 2336,
@@ -6292,7 +6293,7 @@
    "level": -1,
    "type": "Lab",
    "switches": 20,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 2344,
@@ -6310,7 +6311,7 @@
    "level": -1,
    "type": "Living",
    "switches": 34,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 2368,
@@ -6319,7 +6320,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 40,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 2369,
@@ -6337,7 +6338,7 @@
    "level": -1,
    "type": "Mess",
    "switches": 48,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 2372,
@@ -6355,7 +6356,7 @@
    "level": -1,
    "type": "Living",
    "switches": 44,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 2384,
@@ -6373,7 +6374,7 @@
    "level": -1,
    "type": "Lab",
    "switches": 20,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 2432,
@@ -6391,7 +6392,7 @@
    "level": -1,
    "type": "Lab",
    "switches": 28,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 2434,
@@ -6427,7 +6428,7 @@
    "level": -1,
    "type": "Living",
    "switches": 48,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 2464,
@@ -6436,7 +6437,7 @@
    "level": -1,
    "type": "Mess",
    "switches": 52,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 2496,
@@ -6454,7 +6455,7 @@
    "level": -1,
    "type": "Cargo",
    "switches": 36,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 2561,
@@ -6463,7 +6464,7 @@
    "level": -1,
    "type": "LifeSupport",
    "switches": 33,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 2562,
@@ -6481,7 +6482,7 @@
    "level": -1,
    "type": "Living",
    "switches": 56,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 2564,
@@ -6508,7 +6509,7 @@
    "level": -1,
    "type": "Mess",
    "switches": 57,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 2568,
@@ -6517,7 +6518,7 @@
    "level": -1,
    "type": "LifeSupport",
    "switches": 1,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 2569,
@@ -6589,7 +6590,7 @@
    "level": -1,
    "type": "LifeSupport",
    "switches": 9,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 2592,
@@ -6652,7 +6653,7 @@
    "level": -1,
    "type": "Lab",
    "switches": 20,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 2625,
@@ -6661,7 +6662,7 @@
    "level": -1,
    "type": "Medbay",
    "switches": 42,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 2626,
@@ -6670,7 +6671,7 @@
    "level": -1,
    "type": "Lab",
    "switches": 52,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 2628,
@@ -6679,7 +6680,7 @@
    "level": -1,
    "type": "Mess",
    "switches": 57,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 2632,
@@ -6706,7 +6707,7 @@
    "level": -1,
    "type": "LifeSupport",
    "switches": 21,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 2688,
@@ -6715,7 +6716,7 @@
    "level": -1,
    "type": "Medbay",
    "switches": 34,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 2689,
@@ -6742,7 +6743,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 43,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 2696,
@@ -6751,7 +6752,7 @@
    "level": -1,
    "type": "LifeSupport",
    "switches": 5,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 2704,
@@ -6778,7 +6779,7 @@
    "level": -1,
    "type": "Lab",
    "switches": 20,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 2816,
@@ -6787,7 +6788,7 @@
    "level": -1,
    "type": "Medbay",
    "switches": 38,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 2817,
@@ -6832,7 +6833,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 14,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 2848,
@@ -6859,7 +6860,7 @@
    "level": -1,
    "type": "Medbay",
    "switches": 38,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 3072,
@@ -6868,7 +6869,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 10,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 3073,
@@ -6895,7 +6896,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 26,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 3076,
@@ -6904,7 +6905,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 42,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 3077,
@@ -6931,7 +6932,7 @@
    "level": -1,
    "type": "Mess",
    "switches": 44,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 3081,
@@ -6940,7 +6941,7 @@
    "level": -1,
    "type": "Living",
    "switches": 60,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 3082,
@@ -6958,7 +6959,7 @@
    "level": -1,
    "type": "Medbay",
    "switches": 7,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 3088,
@@ -6985,7 +6986,7 @@
    "level": -1,
    "type": "Lab",
    "switches": 45,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 3092,
@@ -7003,7 +7004,7 @@
    "level": -1,
    "type": "Living",
    "switches": 44,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 3104,
@@ -7030,7 +7031,7 @@
    "level": -1,
    "type": "LifeSupport",
    "switches": 53,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 3108,
@@ -7048,7 +7049,7 @@
    "level": -1,
    "type": "Lab",
    "switches": 14,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 3120,
@@ -7057,7 +7058,7 @@
    "level": -1,
    "type": "Cargo",
    "switches": 13,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 3136,
@@ -7084,7 +7085,7 @@
    "level": -1,
    "type": "Lab",
    "switches": 60,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 3140,
@@ -7102,7 +7103,7 @@
    "level": -1,
    "type": "Living",
    "switches": 44,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 3152,
@@ -7120,7 +7121,7 @@
    "level": -1,
    "type": "Medbay",
    "switches": 34,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 3200,
@@ -7129,7 +7130,7 @@
    "level": -1,
    "type": "LifeSupport",
    "switches": 37,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 3201,
@@ -7156,7 +7157,7 @@
    "level": -1,
    "type": "Lab",
    "switches": 28,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 3208,
@@ -7174,7 +7175,7 @@
    "level": -1,
    "type": "Lab",
    "switches": 29,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 3232,
@@ -7183,7 +7184,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 11,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 3264,
@@ -7192,7 +7193,7 @@
    "level": -1,
    "type": "LifeSupport",
    "switches": 53,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 3328,
@@ -7201,7 +7202,7 @@
    "level": -1,
    "type": "Lab",
    "switches": 12,
-   "anomaly": "GravityFailure"
+   "anomaly": "Echo"
   },
   {
    "key": 3329,
@@ -7219,7 +7220,7 @@
    "level": -1,
    "type": "Lab",
    "switches": 44,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 3332,
@@ -7228,7 +7229,7 @@
    "level": -1,
    "type": "Lab",
    "switches": 28,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 3336,
@@ -7246,7 +7247,7 @@
    "level": -1,
    "type": "Cargo",
    "switches": 12,
-   "anomaly": "FrozenMoment"
+   "anomaly": "Robot"
   },
   {
    "key": 3360,
@@ -7255,7 +7256,7 @@
    "level": -1,
    "type": "Cargo",
    "switches": 13,
-   "anomaly": "SlowTime"
+   "anomaly": "Human"
   },
   {
    "key": 3392,
@@ -7354,7 +7355,7 @@
    "level": -1,
    "type": "Computer",
    "switches": 11,
-   "anomaly": "Radiation"
+   "anomaly": "Rats"
   },
   {
    "key": 3840,
@@ -7596,7 +7597,7 @@
    "key": 16,
    "type": "LifeSupport",
    "switches": 8,
-   "anomaly": "FrozenMoment",
+   "anomaly": "Robot",
    "items": [
     "Fuse",
     "Power Cell",
@@ -7629,7 +7630,7 @@
    "key": 5,
    "type": "LifeSupport",
    "switches": 34,
-   "anomaly": "Radiation",
+   "anomaly": "Rats",
    "items": [
     "Ration Tin",
     "Power Cell",
@@ -7641,7 +7642,7 @@
    "key": 15,
    "type": "Computer",
    "switches": 57,
-   "anomaly": "Radiation",
+   "anomaly": "Rats",
    "items": [
     "Power Cell",
     "Voice Recorder",
@@ -7653,7 +7654,7 @@
    "key": 48,
    "type": "LifeSupport",
    "switches": 12,
-   "anomaly": "FrozenMoment",
+   "anomaly": "Robot",
    "items": [
     "Data Cartridge",
     "Power Cell",

@@ -32,6 +32,7 @@ public:
 	TObjectPtr<UTextRenderComponent> Label;
 
 	void Setup(int32 InItemId, int32 InNoteIndex, const FString& Caption);
+
 	virtual void Tick(float DeltaSeconds) override;
 
 	bool IsNote() const { return NoteIndex >= 0; }

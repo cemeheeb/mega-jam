@@ -55,6 +55,7 @@ CATALOG: tuple[Item, ...] = (
 )
 
 NOTEBOOK_NAME = "Notebook"
+WEAPON_NAME = "Pipe Wrench"   # оружие: 5.9, «ломик или разводной ключ»
 
 # Виды записок (номера совпадают с N_* в generator.py)
 N_NOTEBOOK_FIRST = 0  # первая запись блокнота: проводник

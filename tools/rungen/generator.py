@@ -37,6 +37,7 @@ RM_L, RM_K1, RM_K2, RM_K3 = 1, 2, 4, 8
 FINAL_MASK = RM_K1 | RM_K2 | RM_K3
 ANCHOR = 1 << MAX_SIG   # 4096: ключ «только блокнот»
 NOTEBOOK = -1           # id блокнота в кармане (вне каталога)
+WEAPON = -2             # id оружия: занимает слот, на комнату не влияет (5.3, вопрос 12.3)
 POCKET_SLOTS = 4
 
 # Типы отсеков, 5.1
@@ -51,8 +52,11 @@ CLS_START, CLS_CHAIN, CLS_GUESS, CLS_ENGINE = 0, 1, 2, 3
 CLS_NAMES = ("start", "chain", "guess", "engine")
 
 # Аномалии ядра, 5.9
-NO_ANOMALY, FROZEN_MOMENT, RADIATION, GRAVITY_FAILURE, SLOW_TIME = 0, 1, 2, 3, 4
-ANOMALY_NAMES = ("none", "FrozenMoment", "Radiation", "GravityFailure", "SlowTime")
+# Угрозы неправильных наборов, 5.9: четыре аномалии ядра и три противника (добавлены 13.11).
+# В коде и данных всё это по-прежнему называется anomaly.
+NO_ANOMALY, FROZEN_MOMENT, RADIATION, GRAVITY_FAILURE, SLOW_TIME, ROBOT, RATS, ECHO, HUMAN = range(9)
+ANOMALY_NAMES = ("none", "FrozenMoment", "Radiation", "GravityFailure", "SlowTime", "Robot", "Rats", "Echo", "Human")
+NUM_ANOMALIES = len(ANOMALY_NAMES) - 1
 
 # Записки
 N_NOTEBOOK_FIRST, N_LOOP_EXIT, N_NEXT_KEY, N_USELESS, N_DANGER, N_ENGINE_SET, N_FINALE = range(7)
@@ -209,7 +213,7 @@ class RunLayout:
         return all_keys(self.num_sig)
 
     def role_of(self, item: int) -> int:
-        if item == NOTEBOOK:
+        if item < 0:   # блокнот и оружие вне каталога и на комнату не влияют
             return NOT_IN_RUN
         return self.item_role[item]
 
@@ -252,7 +256,7 @@ class RunLayout:
         rng = Rng(self.seed, D_ANOMALY, key)
         if not rng.chance(self.cfg.p_guess):                         # rng: есть ли аномалия у набора
             return NO_ANOMALY
-        return 1 + rng.below(4)                                      # rng: вид
+        return 1 + rng.below(NUM_ANOMALIES)                          # rng: вид
 
     # ---------- записки ----------
 
@@ -346,7 +350,7 @@ class RunLayout:
         """Рубка в начале забега — это комната набора «только блокнот», в которой ещё лежит сам блокнот.
         Взяв блокнот и раскрыв дверь, игрок попадает в неё же: первая петля."""
         r = self.room(ANCHOR)
-        return RoomContent(r.key, r.room_type, r.switches, r.anomaly, (NOTEBOOK,) + r.items, r.notes)
+        return RoomContent(r.key, r.room_type, r.switches, r.anomaly, (NOTEBOOK, WEAPON) + r.items, r.notes)
 
     # ---------- описание для дампа ----------
 
@@ -470,6 +474,6 @@ def validate_layout(layout: RunLayout) -> list[str]:
             if not any(n.kind == want_kind and n.items == want_items for n in rc.notes):
                 err.append(f"key {key}: room lacks the next-link note")
     start = layout.start_room()
-    if start.items != (NOTEBOOK,) + layout.room(ANCHOR).items or ri[L] not in start.items:
+    if start.items != (NOTEBOOK, WEAPON) + layout.room(ANCHOR).items or ri[L] not in start.items:
         err.append("start room is not the notebook-only room with the notebook and L in it")
     return err

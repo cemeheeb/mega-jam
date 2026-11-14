@@ -9,6 +9,7 @@
 
 class ARunDirector;
 class UStaticMeshComponent;
+class UTextRenderComponent;
 
 /** Размеры коробки комнаты. Должны совпадать с tools/ue/build_rooms.py. */
 namespace RunRoomGeo
@@ -62,6 +63,22 @@ public:
 
 	bool AllLeavesClosed() const;
 
+	/** Табло над дверью: название отсека, куда она ведёт. Пустая строка — дверь ещё не раскрыта, табло мерцает прочерками. */
+	void SetDoorSign(int32 Door, const FString& Text);
+
+	/** Открыть створку на несколько секунд: через эту дверь входит преследователь. */
+	void OpenFor(int32 Door, float Seconds);
+
+	/** Номер двери, в проёме или тамбуре которой стоит точка; −1 — точка в самой комнате. */
+	int32 VestibuleOf(const FVector& WorldPos) const;
+
+	/** Свободен ли прямой путь по полу между двумя точками (стены, мебель, закрытые створки). */
+	bool ClearWay(const FVector& From, const FVector& To) const;
+
+	/** Куда идти из From, чтобы попасть в To: прямо, если путь свободен; иначе в обход мебели по сетке пола,
+	 *  а между комнатой и тамбуром — через проём двери. */
+	FVector SteerTarget(const FVector& From, const FVector& To);
+
 private:
 	UPROPERTY()
 	TObjectPtr<UStaticMeshComponent> Leaf[4];
@@ -69,4 +86,22 @@ private:
 	FVector LeafClosed[4];
 	float LeafOpen[4] = { 0.f, 0.f, 0.f, 0.f };
 	bool bArrival[4] = { false, false, false, false };
+	float ForcedOpenLeft[4] = { 0.f, 0.f, 0.f, 0.f };
+
+	UPROPERTY()
+	TObjectPtr<UTextRenderComponent> Sign[4];
+	bool bSignKnown[4] = { false, false, false, false };
+
+	// Сетка пола для обхода мебели: клетка 50 см, свободна та, где помещается противник.
+	// Навигационной сетки движка нет: комнаты появляются и исчезают на ходу.
+	enum { NavNX = 18, NavNY = 15, NavCells = NavNX * NavNY };
+	bool bNavBuilt = false;
+	bool NavFree[NavCells];
+	int32 NavGoal = -1;          // для какой клетки цели посчитаны расстояния
+	int32 NavDist[NavCells];
+	void BuildNav();
+	int32 NavCellAt(const FVector& Local) const;
+	FVector NavCenter(int32 Cell) const;
+	void NavFlood(int32 Goal);
+
 };

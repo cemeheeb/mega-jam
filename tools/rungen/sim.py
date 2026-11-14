@@ -337,7 +337,7 @@ class ProbePlayer(Sim):
         self.last_hits = 0
 
     def candidates(self, room: Room) -> list[int]:
-        return [i for i in room.items if i != G.NOTEBOOK and self.status.get(i) is None and i not in self.kept]
+        return [i for i in room.items if i >= 0 and self.status.get(i) is None and i not in self.kept]
 
     def after_reveal(self, kept_set: frozenset) -> None:
         room = self.room

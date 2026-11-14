@@ -22,7 +22,9 @@ GOLDEN_DIR = os.path.join(os.path.dirname(__file__), "golden")
 
 
 def item_name(i: int) -> str:
-    return C.NOTEBOOK_NAME if i == G.NOTEBOOK else C.CATALOG[i].name
+    if i == G.NOTEBOOK:
+        return C.NOTEBOOK_NAME
+    return C.WEAPON_NAME if i == G.WEAPON else C.CATALOG[i].name
 
 
 def room_json(rc: G.RoomContent) -> dict:
