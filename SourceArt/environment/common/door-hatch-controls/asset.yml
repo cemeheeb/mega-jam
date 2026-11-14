@@ -1,0 +1,14 @@
+title: Door Hatch Controls
+kind: model
+style: interior
+idea: Door button and hatch wheel (lift panels of the set are not taken: no lifts in the game).
+prompt: ""
+notes: |
+  Набор из Singula (environment/common/door-hatch-controls): модели и текстуры сделаны для Singula, glb от 11 ноября 2026
+  (до джема — задекларировать, DESIGN.md §11). Взяты по просьбе автора 14.11 («переноси все ассеты из Singula,
+  которые помогут»). source/singula/ — glb и текстуры как есть, в Singula ничего не меняется.
+  tools/blender/export_singula.py пишет SM_*.fbx в сантиметрах (дети слиты с корнем, коллизия — коробка UCX,
+  слот MI_DoorHatchControls) и T_DoorHatchControls_*.png. Нормали — для OpenGL, в Unreal flip green.
+  В Unreal: /Game/Environment/Common/DoorHatchControls, импорт tools/ue/import_singula.py.
+  Где стоит: кнопка двери на откосе каждого проёма (build_rooms.py lining); штурвал люка пока не расставлен.
+  Вид — полуреалистичный PBR Singula, не живописный, как решено 14.11.

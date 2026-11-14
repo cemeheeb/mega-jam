@@ -1,0 +1,14 @@
+title: Acceleration Couch
+kind: model
+style: interior
+idea: Pilot's acceleration couch with harness and footrest.
+prompt: ""
+notes: |
+  Набор из Singula (environment/bridge/acceleration-couch): модели и текстуры сделаны для Singula, glb от 10 ноября 2026
+  (до джема — задекларировать, DESIGN.md §11). Взяты по просьбе автора 14.11 («переноси все ассеты из Singula,
+  которые помогут»). source/singula/ — glb и текстуры как есть, в Singula ничего не меняется.
+  tools/blender/export_singula.py пишет SM_*.fbx в сантиметрах (дети слиты с корнем, коллизия — коробка UCX,
+  слот MI_AccelerationCouch) и T_AccelerationCouch_*.png. Нормали — для OpenGL, в Unreal flip green.
+  В Unreal: /Game/Environment/Bridge/AccelerationCouch, импорт tools/ue/import_singula.py.
+  Где стоит: кресло на посту рубки (build_rooms.py bridge).
+  Вид — полуреалистичный PBR Singula, не живописный, как решено 14.11.

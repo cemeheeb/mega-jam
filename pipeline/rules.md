@@ -7,6 +7,13 @@
 - Студия: `/Users/cemeheeb/Projects/AssetStudio`, ассеты в `assets/`. Студия открывается на http://127.0.0.1:7310 (`pnpm studio`).
 - Игра: проект Unreal Engine 5.8. Файлы ассетов для импорта лежат в `<проект>/SourceArt/`, это корень игры для Студии. Папка ассета задана в манифесте полем `game.directory`, исходники лежат в её подпапке `source/`. Пути, имена и выгрузка — [unreal.md](unreal.md).
 - Прежняя игра на Godot: `/Users/cemeheeb/Projects/Singula`. Оттуда только история, ассеты оттуда не берутся.
+  Исключение по просьбе автора (14.11.2026): колонки-шкафы стены `environment/common/wall-columns` (сделаны
+  12 ноября). Их glb скопированы без изменений в `SourceArt/environment/common/wall-columns/source/singula/`;
+  в чек-листе сдачи (DESIGN.md §11) они задекларированы. В Singula ничего не меняется, только копируется.
+  Второе исключение (14.11.2026, «переноси все ассеты из Singula которые помогут»): готовые glb-наборы реквизита
+  (safety-equipment, lamps, ventilation, flexible-duct, handrails, door-hatch-controls, acceleration-couch,
+  command/control-console-parts, crew-items, welding-gun; сделаны 10–12 ноября). Копии — в `source/singula/`
+  каждого набора, выгрузка — `tools/blender/export_singula.py`, импорт — `tools/ue/import_singula.py`.
 - Blender: `/Applications/Blender.app/Contents/MacOS/Blender`. Открытым Blender управляет MCP. Фоновый Blender запускается с `-b`.
 - ArmorPaint собран из исходников: `~/Projects/armorpaint/paint/build/clt/ArmorPaint.app/Contents/MacOS/ArmorPaint`.
 - Unreal Engine 5.8: `/Users/Shared/Epic Games/UE_5.8`, редактор `Engine/Binaries/Mac/UnrealEditor.app`.

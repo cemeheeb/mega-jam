@@ -1,0 +1,14 @@
+title: Wall Columns
+kind: model
+style: interior
+idea: Floor-to-ceiling cabinet columns that line every wall of a room, from the previous project Singula.
+prompt: ""
+notes: |
+  Набор из Singula (environment/common/wall-columns, ADR-031/032 AssetStudio): 13 модулей, колонка 0,75 × 0,45 × 3 м,
+  цоколь 0–0,25 м, основная часть 0,29–2,46 м, антресоль 2,52–2,96 м. Модели, атлас 2048 и износ ArmorPaint
+  сделаны для Singula 11–12 ноября 2026 (задекларировать, DESIGN.md §11). Взяты по просьбе автора 14.11.
+  source/singula/ — glb и текстуры как есть. source/export_wall_columns.py пишет SM_*.fbx в сантиметрах
+  (крышка антресоли слита с колонкой, коллизия — коробка UCX) и T_WallColumns_BaseColor/ORM.png.
+  В Unreal: /Game/Environment/Common/WallColumns, импорт tools/ue/import_wall_columns.py.
+  Расставляет по стенам tools/ue/build_rooms.py (lining), правила — там и в DESIGN.md §14.
+  Вид — полуреалистичный PBR Singula; интерьер и предметы так и остаются (решение автора 14.11, DESIGN.md §14).

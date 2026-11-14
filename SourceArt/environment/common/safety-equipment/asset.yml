@@ -1,0 +1,14 @@
+title: Safety Equipment
+kind: model
+style: interior
+idea: Emergency kit: fire extinguisher with bracket, oxygen mask box, first-aid case, flashlight with clip, hull patch kit.
+prompt: ""
+notes: |
+  Набор из Singula (environment/common/safety-equipment): модели и текстуры сделаны для Singula, glb от 10 ноября 2026
+  (до джема — задекларировать, DESIGN.md §11). Взяты по просьбе автора 14.11 («переноси все ассеты из Singula,
+  которые помогут»). source/singula/ — glb и текстуры как есть, в Singula ничего не меняется.
+  tools/blender/export_singula.py пишет SM_*.fbx в сантиметрах (дети слиты с корнем, коллизия — коробка UCX,
+  слот MI_SafetyEquipment) и T_SafetyEquipment_*.png. Нормали — для OpenGL, в Unreal flip green.
+  В Unreal: /Game/Environment/Common/SafetyEquipment, импорт tools/ue/import_singula.py.
+  Где стоит: аварийная ниша колонки Emergency (раскладка Singula, без фонаря в зажиме); фонарь — модель предмета Flashlight (ARunItem).
+  Вид — полуреалистичный PBR Singula, не живописный, как решено 14.11.

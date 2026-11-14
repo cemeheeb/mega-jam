@@ -1,0 +1,14 @@
+title: Welding Gun
+kind: model
+style: interior
+idea: Handheld welding gun.
+prompt: ""
+notes: |
+  Набор из Singula (environment/welding-gun): модели и текстуры сделаны для Singula, glb от 10 ноября 2026
+  (до джема — задекларировать, DESIGN.md §11). Взяты по просьбе автора 14.11 («переноси все ассеты из Singula,
+  которые помогут»). source/singula/ — glb и текстуры как есть, в Singula ничего не меняется.
+  tools/blender/export_singula.py пишет SM_*.fbx в сантиметрах (дети слиты с корнем, коллизия — коробка UCX,
+  слот MI_WeldingGun) и T_WeldingGun_*.png. Нормали — для OpenGL, в Unreal flip green.
+  В Unreal: /Game/Environment/WeldingGun, импорт tools/ue/import_singula.py.
+  Где стоит: пока не расставлен.
+  Вид — полуреалистичный PBR Singula, не живописный, как решено 14.11.

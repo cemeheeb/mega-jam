@@ -1,0 +1,14 @@
+title: Crew Items
+kind: model
+style: interior
+idea: Crew items: checklist book, tablet and holder, drink pouch.
+prompt: ""
+notes: |
+  Набор из Singula (environment/bridge/crew-items): модели и текстуры сделаны для Singula, glb от 11 ноября 2026
+  (до джема — задекларировать, DESIGN.md §11). Взяты по просьбе автора 14.11 («переноси все ассеты из Singula,
+  которые помогут»). source/singula/ — glb и текстуры как есть, в Singula ничего не меняется.
+  tools/blender/export_singula.py пишет SM_*.fbx в сантиметрах (дети слиты с корнем, коллизия — коробка UCX,
+  слот MI_CrewItems) и T_CrewItems_*.png. Нормали — для OpenGL, в Unreal flip green.
+  В Unreal: /Game/Environment/Bridge/CrewItems, импорт tools/ue/import_singula.py.
+  Где стоит: книга-чеклист — модель предмета Notebook (ARunItem); остальное пока не расставлено.
+  Вид — полуреалистичный PBR Singula, не живописный, как решено 14.11.
