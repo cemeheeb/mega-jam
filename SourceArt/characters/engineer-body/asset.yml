@@ -1,0 +1,7 @@
+title: Engineer Body
+kind: model
+style: body
+idea: Body of the thin ship engineer in a clean orange work coverall, without the head. The player character.
+prompt: "The body of a thin, wiry man of about forty-five, a ship maintenance engineer: narrow shoulders, a flat chest, long lean arms and legs, a thin sinewy neck stump, and bony weathered hands with long fingers. He wears a clean, well-kept international orange one-piece work coverall that hangs a little loose on his narrow frame, the sleeves rolled up to the elbows over lean forearms, the collar open on an off-white undershirt, with off-white stripes across the shoulders and reinforced graphite patches on the knees and elbows. Around the waist a wide clean graphite webbing tool belt with two closed pouches on the hips. On the feet heavy clean graphite work boots with thick soles."
+avoid: stains, dirt, grime, oil, torn or frayed fabric, gloves, tools hanging from the belt, backpack, spacesuit, armour
+notes: Модель Tripo лежит в source/tripo. Собирается вместе со второй частью в карточке characters/engineer.

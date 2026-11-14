@@ -1,0 +1,22 @@
+title: Engineer
+kind: model
+style: character
+idea: The hero assembled from two generated models, engineer-body and engineer-head. The player character and "the other you".
+prompt: ""
+notes: |
+  Собирается в Blender из characters/engineer-body и characters/engineer-head (source/engineer.blend):
+  тело 1,56 м до верха воротника. Голову по росту и посадке поправил автор. Низ шеи продлён внутрь тела.
+  Из текстур Tripo оставлен только цвет.
+  Готово: разрез губ и полость рта (материал Engineer_Mouth), язык (объект Engineer_Tongue),
+  ресницы по краю верхнего века, мелкие дыры головы закрыты.
+  Риг: скелет манекена Unreal (объект root), кости повёрнуты под тело и применены как поза покоя, длины не тронуты —
+  меш встаёт на SK_Mannequin. Веса тела перенесены с манекена (Manny_ref, скрыт), пальцы не гнутся.
+  Зубы из characters/engineer-teeth: объекты Engineer_TeethUpper и Engineer_TeethLower, материал Engineer_Teeth,
+  полость подогнана под них; зубы и язык весят на кости head.
+  Выгрузка: source/export_engineer.py -> SK_Engineer.fbx (в сантиметрах), T_Engineer_Teeth_BaseColor.png, ORM.
+  В Unreal (14.11): /Game/Characters/Engineer, скелет SK_Mannequin, импорт tools/ue/import_engineer.py.
+  Анимации манекена встают, проверено на неподвижных кадрах.
+  Лицо (14.11): FaceIt, 51 форма ARKit (без tongueOut) запечена на голову, язык и зубы, в Unreal 51 морф.
+  Риг FaceitRig скрыт; правки рига и весов рта — в DESIGN.md §14, при перестройке рига они пропадут.
+  В игре (14.11): меш игроку ставит ARunDirector (HeroMesh), проверено в PIE.
+image: engineer-1.webp

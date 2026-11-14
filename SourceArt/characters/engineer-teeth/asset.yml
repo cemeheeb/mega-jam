@@ -1,0 +1,10 @@
+title: Engineer Teeth
+kind: model
+style: prop
+idea: Upper and lower teeth with gums for the hero's mouth. Goes inside the head, needed for facial animation.
+prompt: "A full set of adult human teeth with gums, like a dental model without any stand: the upper and the lower arch held slightly apart so that both rows are fully visible, natural slightly yellowish teeth of a forty-five-year-old man, every tooth separate with clear gaps, realistic pink gums that end in a clean smooth cut above the upper row and below the lower row. Nothing else: no lips, no tongue, no face."
+avoid: skull, jaw bone, lips, tongue, face, braces, fillings, dental tools, hinge, stand, blood
+notes: |
+  Ставится в полость рта головы characters/engineer-head. Сгенерировано 14.11 (source/tripo/engineer_teeth.fbx,
+  из текстур — только цвет). В characters/engineer/source/engineer.blend разделено на Engineer_TeethUpper
+  и Engineer_TeethLower и посажено в рот.

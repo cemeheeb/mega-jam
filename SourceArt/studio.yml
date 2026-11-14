@@ -3,21 +3,26 @@
 downloads: ~/Downloads
 blender: /Applications/Blender.app
 
-# Стиль ассета берётся по папке. В карточке ассета его можно задать вручную (поле style в asset.yml).
+# Стиль ассета берётся по папке. В карточке ассета его можно задать вручную (поле style в asset.yml):
+# так карточки тела и головы персонажа получают стили body и head.
 folders:
   environment: interior
   interior: interior
   items: prop
+  characters: character
+  ui: ui
 default_style: prop
 
 # Стили промта. {prompt} — описание из asset.yml, {avoid} — свои запреты ассета (поле avoid).
 # Основа взята из промтов Singula: шапка, описание, ракурс, стиль, запреты.
+# Графика (решение автора 14.11): реалистичные пропорции, но текстуры расписаны от руки грубым, рваным мазком,
+# свет и тень нарисованы прямо в текстуре. Не мультяшность: без утрированных форм, контуров и плоской заливки.
 styles:
   # Интерьер корабля: стены, пол, двери, мебель, оборудование. Палитра задана жёстко.
   interior:
     title: Интерьер
     model: |
-      3D render of a single game-ready prop with semi-realistic PBR materials for a third-person sci-fi game set aboard a bright NASA-punk spaceship. Alone, centered, filling most of the frame, on a plain seamless light-grey studio background with only a soft shadow under it.
+      3D render of a single game-ready prop with hand-painted painterly textures for a third-person sci-fi game set aboard a bright, clean, functional near-future spaceship. Alone, centered, filling most of the frame, on a plain seamless light-grey studio background with only a soft shadow under it.
 
       {prompt}
 
@@ -25,38 +30,137 @@ styles:
 
       View: three-quarter view from slightly above, the whole object fully visible.
 
-      Style: realistic proportions and materials: satin painted metal with light wear on the edges, brushed aluminium, matte rubber and plastic; subtle surface variation and a little dust in the crevices; soft physically based studio lighting.
+      Style: Painterly hand-painted look: every surface is painted by hand with rough, ragged, clearly visible layered brush strokes and dry-brush edges; light, shadow and colour variation are painted directly into the texture; broken colour with warm and cool strokes side by side; forms simplified into clear painted planes; matte finish. Realistic proportions and construction; painted metal, aluminium, rubber and plastic told apart by brushwork and colour, not by reflections; edges picked out with lighter strokes; soft even studio lighting.
 
-      Avoid: heavy rust, heavy grime, text, logos, table or visible floor, scenery, several objects, a base or plinth, cropped parts, glow, transparency, loose cables or cords{avoid}.
+      Avoid: cartoon look, caricature, exaggerated proportions, ink outlines, cel shading, flat untextured colours, smooth airbrushed gradients, photorealism, photographic textures, glossy plastic, heavy rust, heavy grime, text, logos, table or visible floor, scenery, several objects, a base or plinth, cropped parts, glow, transparency, loose cables or cords{avoid}.
     texture: |
-      PBR albedo texture for a third-person sci-fi video game set aboard a bright NASA-punk spaceship: a square swatch of the surface seen straight from above, filling the whole frame edge to edge. One continuous image, not a grid of repeated copies.
+      Hand-painted painterly albedo texture for a third-person sci-fi video game set aboard a bright, clean, functional near-future spaceship: a square swatch of the surface seen straight from above, filling the whole frame edge to edge. One continuous image, not a grid of repeated copies.
 
       {prompt}
 
       Colors: only the ship palette, as named in the description: off-white paint #ECEAE4, warm light-grey aluminium #B9BCC0, graphite rubber and plastic #2E3236, international orange #F26A21, muted teal #5FC6C9. No other colors.
 
-      Style: semi-realistic material at real-world scale; subtle surface variation, light wear and a little dust in the crevices; flat even diffuse lighting with no shadows, highlights or reflections; low contrast so it reads as one calm surface from a distance.
+      Style: Painterly hand-painted look: every surface is painted by hand with rough, ragged, clearly visible layered brush strokes and dry-brush edges; light, shadow and colour variation are painted directly into the texture; broken colour with warm and cool strokes side by side; forms simplified into clear painted planes; matte finish. Real-world scale; flat even lighting with no cast shadows or reflections; low contrast so it reads as one calm surface from a distance.
 
-      Avoid: large distinct elements, high contrast, a grid of repeated copies, side view, perspective, horizon, objects, text, logos, directional shadows, specular highlights, vignette, borders, heavy rust, heavy grime{avoid}.
+      Avoid: cartoon look, caricature, exaggerated proportions, ink outlines, cel shading, flat untextured colours, smooth airbrushed gradients, photorealism, photographic textures, glossy plastic, large distinct elements, high contrast, a grid of repeated copies, side view, perspective, horizon, objects, text, logos, directional shadows, specular highlights, vignette, borders, heavy rust, heavy grime{avoid}.
 
   # Предметы и всё остальное: палитры нет, цвета задаёт описание самого предмета.
   prop:
     title: Предметы
     model: |
-      3D render of a single game-ready prop with semi-realistic PBR materials for a third-person sci-fi game set aboard a bright NASA-punk spaceship. Alone, centered, filling most of the frame, on a plain seamless light-grey studio background with only a soft shadow under it.
+      3D render of a single game-ready prop with hand-painted painterly textures for a third-person sci-fi game set aboard a bright, clean, functional near-future spaceship. Alone, centered, filling most of the frame, on a plain seamless light-grey studio background with only a soft shadow under it.
 
       {prompt}
 
       View: three-quarter view from slightly above, the whole object fully visible.
 
-      Style: realistic proportions and materials; light wear on the edges, subtle surface variation and a little dust in the crevices; soft physically based studio lighting.
+      Style: Painterly hand-painted look: every surface is painted by hand with rough, ragged, clearly visible layered brush strokes and dry-brush edges; light, shadow and colour variation are painted directly into the texture; broken colour with warm and cool strokes side by side; forms simplified into clear painted planes; matte finish. Realistic proportions; materials told apart by brushwork and colour, not by reflections; edges picked out with lighter strokes; soft even studio lighting.
 
-      Avoid: heavy rust, heavy grime, text, logos, table or visible floor, scenery, several objects, a base or plinth, cropped parts, glow, transparency, loose cables or cords{avoid}.
+      Avoid: cartoon look, caricature, exaggerated proportions, ink outlines, cel shading, flat untextured colours, smooth airbrushed gradients, photorealism, photographic textures, glossy plastic, heavy rust, heavy grime, text, logos, table or visible floor, scenery, several objects, a base or plinth, cropped parts, glow, transparency, loose cables or cords{avoid}.
     texture: |
-      PBR albedo texture for a third-person sci-fi video game: a square swatch of the surface seen straight from above, filling the whole frame edge to edge. One continuous image, not a grid of repeated copies.
+      Hand-painted painterly albedo texture for a third-person sci-fi video game: a square swatch of the surface seen straight from above, filling the whole frame edge to edge. One continuous image, not a grid of repeated copies.
 
       {prompt}
 
-      Style: semi-realistic material at real-world scale; subtle surface variation and light wear; flat even diffuse lighting with no shadows, highlights or reflections.
+      Style: Painterly hand-painted look: every surface is painted by hand with rough, ragged, clearly visible layered brush strokes and dry-brush edges; light, shadow and colour variation are painted directly into the texture; broken colour with warm and cool strokes side by side; forms simplified into clear painted planes; matte finish. Real-world scale; flat even lighting with no cast shadows or reflections.
 
-      Avoid: a grid of repeated copies, side view, perspective, horizon, objects, text, logos, directional shadows, specular highlights, vignette, borders{avoid}.
+      Avoid: cartoon look, caricature, exaggerated proportions, ink outlines, cel shading, flat untextured colours, smooth airbrushed gradients, photorealism, photographic textures, glossy plastic, a grid of repeated copies, side view, perspective, horizon, objects, text, logos, directional shadows, specular highlights, vignette, borders{avoid}.
+
+  # Персонажи: фигура целиком в А-позе спереди — так её проще превратить в модель и поставить на скелет.
+  # Одежда в оранжевой теме корабля; кожа и волосы — естественных цветов.
+  character:
+    title: Персонажи
+    model: |
+      Full-body 3D character render with hand-painted painterly textures for a third-person sci-fi game set aboard a bright, clean, functional near-future spaceship. One character, alone, centered, the whole figure from the top of the head to the soles of the boots inside the frame, on a plain seamless light-grey studio background with only a soft shadow under the feet.
+
+      {prompt}
+
+      Colors: the outfit is built around international orange #F26A21 as the main clothing color, with off-white #ECEAE4, graphite #2E3236 and warm light-grey #B9BCC0 for secondary parts and only small muted teal #5FC6C9 details. Natural skin and hair tones. No other clothing colors.
+
+      Pose: standing upright in a relaxed A-pose, facing the camera, feet shoulder-width apart, arms straight and held about 45 degrees away from the body, hands open and empty with the fingers slightly spread, neutral facial expression, mouth closed, eyes looking straight ahead.
+
+      View: straight front view at chest height, long lens with no perspective distortion, the figure symmetrical in the frame.
+
+      Style: Painterly hand-painted look: every surface is painted by hand with rough, ragged, clearly visible layered brush strokes and dry-brush edges; light, shadow and colour variation are painted directly into the texture; broken colour with warm and cool strokes side by side; forms simplified into clear painted planes; matte finish. Realistic human proportions, about seven and a half heads tall, with slightly sharpened, angular features; skin, hair and cloth painted with the same rough brushwork, folds and wrinkles as confident strokes; clothing that keeps the arms and legs clearly separate from the torso; soft even studio lighting from the front with no hard shadows.
+
+      Avoid: cartoon look, caricature, exaggerated proportions, ink outlines, cel shading, flat untextured colours, smooth airbrushed gradients, photorealism, photographic textures, glossy plastic, action pose, crossed arms, hands in pockets, hands touching the body, held objects, weapons, loose hanging straps or cables, flowing cloth, cropped head or feet, several characters, turnaround sheet, scenery, visible floor, text, logos, glow, transparency{avoid}.
+    texture: |
+      Hand-painted painterly albedo texture for a character in a third-person sci-fi video game: a square swatch of the material seen straight from above, filling the whole frame edge to edge. One continuous image, not a grid of repeated copies.
+
+      {prompt}
+
+      Style: Painterly hand-painted look: every surface is painted by hand with rough, ragged, clearly visible layered brush strokes and dry-brush edges; light, shadow and colour variation are painted directly into the texture; broken colour with warm and cool strokes side by side; forms simplified into clear painted planes; matte finish. Real-world scale; flat even lighting with no cast shadows or reflections.
+
+      Avoid: cartoon look, caricature, exaggerated proportions, ink outlines, cel shading, flat untextured colours, smooth airbrushed gradients, photorealism, photographic textures, glossy plastic, a grid of repeated copies, side view, perspective, horizon, objects, text, logos, directional shadows, specular highlights, vignette, borders{avoid}.
+
+  # Тело персонажа без головы: голова делается отдельной моделью (стиль head) и ставится в воротник.
+  # Стиль задаётся в карточке полем style: body. Одежда в оранжевой теме корабля.
+  body:
+    title: Тела
+    model: |
+      Full-body 3D character render, without the head, with hand-painted painterly textures for a third-person sci-fi game set aboard a bright, clean, functional near-future spaceship. One headless figure, alone, centered, the whole body from the base of the neck to the soles of the boots inside the frame, on a plain seamless light-grey studio background with only a soft shadow under the feet. The body ends at the base of the neck in a clean flat horizontal cut inside the collar, like a tailor's mannequin.
+
+      {prompt}
+
+      Colors: the outfit is built around international orange #F26A21 as the main clothing color, with off-white #ECEAE4, graphite #2E3236 and warm light-grey #B9BCC0 for secondary parts and only small muted teal #5FC6C9 details. Natural skin tone on the hands and forearms. No other clothing colors.
+
+      Pose: standing upright in a relaxed A-pose, facing the camera, feet shoulder-width apart, arms straight and held about 45 degrees away from the body, hands open and empty with all five fingers clearly separate and slightly spread.
+
+      View: straight front view at chest height, long lens with no perspective distortion, the figure symmetrical in the frame.
+
+      Style: Painterly hand-painted look: every surface is painted by hand with rough, ragged, clearly visible layered brush strokes and dry-brush edges; light, shadow and colour variation are painted directly into the texture; broken colour with warm and cool strokes side by side; forms simplified into clear painted planes; matte finish. Realistic adult human proportions; cloth, leather and skin painted with the same rough brushwork, folds as confident strokes; detailed hands with clear knuckles, nails and tendons; clothing that keeps the arms and legs clearly separate from the torso; soft even studio lighting from the front with no hard shadows.
+
+      Avoid: cartoon look, caricature, exaggerated proportions, ink outlines, cel shading, flat untextured colours, smooth airbrushed gradients, photorealism, photographic textures, glossy plastic, head, face, hair, helmet, hood, action pose, crossed arms, hands in pockets, hands touching the body, fused fingers, held objects, weapons, loose hanging straps or cables, flowing cloth, cropped hands or feet, several characters, turnaround sheet, scenery, visible floor, text, logos, glow, transparency{avoid}.
+    texture: |
+      Hand-painted painterly albedo texture for a character in a third-person sci-fi video game: a square swatch of the material seen straight from above, filling the whole frame edge to edge. One continuous image, not a grid of repeated copies.
+
+      {prompt}
+
+      Style: Painterly hand-painted look: every surface is painted by hand with rough, ragged, clearly visible layered brush strokes and dry-brush edges; light, shadow and colour variation are painted directly into the texture; broken colour with warm and cool strokes side by side; forms simplified into clear painted planes; matte finish. Real-world scale; flat even lighting with no cast shadows or reflections.
+
+      Avoid: cartoon look, caricature, exaggerated proportions, ink outlines, cel shading, flat untextured colours, smooth airbrushed gradients, photorealism, photographic textures, glossy plastic, a grid of repeated copies, side view, perspective, horizon, objects, text, logos, directional shadows, specular highlights, vignette, borders{avoid}.
+
+  # Голова персонажа отдельной моделью: всё место в картинке и в текстуре достаётся лицу.
+  # Стиль задаётся в карточке полем style: head.
+  head:
+    title: Головы
+    model: |
+      3D character head render with hand-painted painterly textures for a third-person sci-fi game set aboard a bright, clean, functional near-future spaceship. A single head with the whole neck, alone, centered, filling most of the frame, on a plain seamless light-grey studio background. The neck ends at its base in a clean flat horizontal cut; no shoulders and no clothing.
+
+      {prompt}
+
+      Pose: head upright, not tilted and not turned, neutral facial expression, mouth closed, eyes open and looking straight ahead.
+
+      View: straight front view at eye level, long lens with no perspective distortion, the face symmetrical in the frame, both ears visible.
+
+      Style: Painterly hand-painted look: every surface is painted by hand with rough, ragged, clearly visible layered brush strokes and dry-brush edges; light, shadow and colour variation are painted directly into the texture; broken colour with warm and cool strokes side by side; forms simplified into clear painted planes; matte finish. Realistic human proportions with slightly sharpened, angular planes of the face; skin painted with visible strokes of varied warm and cool tones, wrinkles as confident brush lines; hair, eyebrows and beard as compact solid masses with a clear outline and painted strands; soft even studio lighting from the front with no hard shadows.
+
+      Avoid: cartoon look, caricature, exaggerated proportions, ink outlines, cel shading, flat untextured colours, smooth airbrushed gradients, photorealism, photographic textures, glossy plastic, shoulders, torso, clothing, collar, hands, hat, helmet, glasses, open mouth, teeth, smile, tilted head, turned head, loose flying hair strands, several heads, turnaround sheet, scenery, text, logos, glow, transparency{avoid}.
+    texture: |
+      Hand-painted painterly albedo texture for a character in a third-person sci-fi video game: a square swatch of the material seen straight from above, filling the whole frame edge to edge. One continuous image, not a grid of repeated copies.
+
+      {prompt}
+
+      Style: Painterly hand-painted look: every surface is painted by hand with rough, ragged, clearly visible layered brush strokes and dry-brush edges; light, shadow and colour variation are painted directly into the texture; broken colour with warm and cool strokes side by side; forms simplified into clear painted planes; matte finish. Real-world scale; flat even lighting with no cast shadows or reflections.
+
+      Avoid: cartoon look, caricature, exaggerated proportions, ink outlines, cel shading, flat untextured colours, smooth airbrushed gradients, photorealism, photographic textures, glossy plastic, a grid of repeated copies, side view, perspective, horizon, objects, text, logos, directional shadows, specular highlights, vignette, borders{avoid}.
+
+  # Интерфейс: плоские картинки для экрана — фон блокнота, обложка. Вид ассета — texture.
+  ui:
+    title: Интерфейс
+    model: |
+      Hand-painted illustration for the user interface of a third-person sci-fi game set aboard a bright, clean, functional near-future spaceship that is falling into a black hole.
+
+      {prompt}
+
+      Style: Painterly hand-painted look: every surface is painted by hand with rough, ragged, clearly visible layered brush strokes and dry-brush edges; light, shadow and colour variation are painted directly into the texture; broken colour with warm and cool strokes side by side; forms simplified into clear painted planes; matte finish. A painting in the look of the game, realistic proportions; restrained detail so that interface text placed on top stays readable.
+
+      Avoid: cartoon look, caricature, exaggerated proportions, ink outlines, cel shading, flat untextured colours, smooth airbrushed gradients, photorealism, photographic textures, glossy plastic, text, letters, numbers, logos, watermarks, interface buttons, frames, borders{avoid}.
+    texture: |
+      Hand-painted illustration for the user interface of a third-person sci-fi game set aboard a bright, clean, functional near-future spaceship that is falling into a black hole.
+
+      {prompt}
+
+      Style: Painterly hand-painted look: every surface is painted by hand with rough, ragged, clearly visible layered brush strokes and dry-brush edges; light, shadow and colour variation are painted directly into the texture; broken colour with warm and cool strokes side by side; forms simplified into clear painted planes; matte finish. A painting in the look of the game, realistic proportions; restrained detail so that interface text placed on top stays readable.
+
+      Avoid: cartoon look, caricature, exaggerated proportions, ink outlines, cel shading, flat untextured colours, smooth airbrushed gradients, photorealism, photographic textures, glossy plastic, text, letters, numbers, logos, watermarks, interface buttons, frames, borders{avoid}.

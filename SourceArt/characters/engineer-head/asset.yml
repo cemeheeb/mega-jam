@@ -1,0 +1,7 @@
+title: Engineer Head
+kind: model
+style: head
+idea: Head of the thin bearded ship engineer. Separate model, so the face gets all the detail.
+prompt: "The head of a thin man of about forty-five, a ship maintenance engineer: a long gaunt face with sunken cheeks and sharp cheekbones, deep-set tired grey eyes with fine wrinkles at the corners, a straight narrow nose, thin lips, weathered skin with a few lines across the forehead, short untidy dark-brown hair greying at the temples, thick dark eyebrows, and a full, dense, neatly trimmed dark beard and moustache streaked with grey that read as one solid mass. A thin sinewy neck with the same weathered skin."
+avoid: long beard, stubble only, scars, bandages, dirt, blood, sweat, earrings
+notes: Модель Tripo лежит в source/tripo. Собирается вместе со второй частью в карточке characters/engineer.

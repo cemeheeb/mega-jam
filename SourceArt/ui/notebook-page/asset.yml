@@ -1,0 +1,6 @@
+title: Notebook Page
+kind: texture
+idea: Blank grid page of a pocket notebook. Background for the notebook screen and for note cards.
+prompt: "A single blank page of a pocket engineering notebook seen straight from above, filling the whole frame edge to edge: clean off-white, slightly warm paper with a faint pale-teal square grid, a barely visible soft crease across the middle and very lightly worn corners. Flat even lighting with no shadows, low contrast, the same calm tone across the whole page."
+avoid: handwriting, drawings, stains, spiral binding, holes, pen, desk, hands, perspective, shadows
+image: notebook-page-1.webp

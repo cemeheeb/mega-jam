@@ -2,12 +2,12 @@
 
 Общие правила выгрузки для всех ассетов. Раньше ассеты выгружались для Godot в glb. Теперь игра делается на Unreal Engine 5.8, а модели передаются в FBX. Рецепты описывают только свои отличия: имена объектов, точки привязки, подвижные детали и особые материалы. Всё общее записано здесь.
 
-Что проверено. Названия опций и их значения по умолчанию взяты из установленных программ: Blender 5.2 LTS (`bpy.ops.export_scene.fbx`) и заголовков Interchange в UE 5.8 (`InterchangeFbxTranslator.h`, `InterchangeGenericMeshPipeline.h`, `InterchangeGenericAssetsPipelineSharedSettings.h`, `InterchangeGenericMaterialPipeline.h`, `InterchangeGenericTexturePipeline.h`). Ни одного ассета в Unreal ещё не импортировали. Оси, масштаб и повороты подвижных деталей выведены по формулам, поэтому на первом ассете их нужно проверить (раздел «Первый импорт»).
+Что проверено. Названия опций и их значения по умолчанию взяты из установленных программ: Blender 5.2 LTS (`bpy.ops.export_scene.fbx`) и заголовков Interchange в UE 5.8 (`InterchangeFbxTranslator.h`, `InterchangeGenericMeshPipeline.h`, `InterchangeGenericAssetsPipelineSharedSettings.h`, `InterchangeGenericMaterialPipeline.h`, `InterchangeGenericTexturePipeline.h`). Первым импортирован герой (скелетный меш, 14 ноября), см. «Первый импорт: результат»; статичных мешей ещё не импортировали. Оси, масштаб и повороты подвижных деталей выведены по формулам, поэтому на первом ассете их нужно проверить (раздел «Первый импорт»).
 
 ## Пути
 
 - Unreal Engine 5.8: `/Users/Shared/Epic Games/UE_5.8`. Редактор — `Engine/Binaries/Mac/UnrealEditor.app`.
-- Проект Unreal ещё не создан. Ниже `<проект>` — его папка, та, где лежит `.uproject`.
+- Проект Unreal — `MegaJam.uproject` в корне репозитория. Ниже `<проект>` — его папка, та, где лежит `.uproject`.
 - Файлы для импорта лежат в `<проект>/SourceArt/`, рядом с `Content/`, а не внутри неё. Содержимое `Content/` Unreal отслеживает сам и может импортировать новый PNG или FBX без спроса.
 - Корень игры для Студии — `<проект>/SourceArt`: `node core/src/cli.ts validate assets --game <проект>/SourceArt`. Поле `game.directory` в манифесте остаётся прежним, например `environment/common/lamps`. В этой папке лежат FBX и текстуры для импорта, в подпапке `source/` — blend, маски, `.arm`, промежуточные выгрузки ArmorPaint и скрипт выгрузки.
 - Куда импортировать в Unreal: `/Game/` плюс `game.directory`, где каждое слово пишется с заглавной буквы и без дефисов: `environment/common/safety-equipment` → `/Game/Environment/Common/SafetyEquipment`.
@@ -182,3 +182,35 @@ FBX для ArmorPaint (шаг 7 `kit.md`) — другой файл с друг�
 8. Поверхности без толщины (обечайки, открытые снизу клавиши) видны с обеих сторон: `M_Kit` двусторонний.
 
 Результат записать сюда: что совпало, что пришлось поменять.
+
+## Первый импорт: результат
+
+14 ноября 2026, герой `SK_Engineer` (скелетный меш, `characters/engineer`). Импорт делался через MCP редактора
+скриптами `tools/ue/kit_materials.py` и `tools/ue/import_engineer.py`, а не через окно Interchange.
+
+- **Единицы.** `SkeletalMeshTools.import_file` идёт через старый `FbxFactory` (в журнале `LogFbx`), а у него
+  Convert Scene Unit выключен. Метровый FBX (`FBX_SCALE_UNITS`, единица сцены 1 м) встал в 100 раз меньше.
+  Поэтому скрипт героя пишет файл сразу в сантиметрах: на время выгрузки единица сцены 0,01 м, меши ×100,
+  скелет манекена и так в сантиметрах. `UnitScaleFactor` в файле 1, при любом импортёре размер верный.
+  Для статичных мешей через `StaticMeshTools.import_file` скорее всего то же самое — проверить на первом наборе.
+- **Оси.** Лицо в +Y Unreal, как в таблице выше; поворот не понадобился.
+- **Скелет.** Корень FBX — сам объект арматуры `root` (тип узла Null по умолчанию), пустышка-родитель не выгружается.
+  Оси костей по умолчанию (`primary_bone_axis` Y, `secondary_bone_axis` X) — те же, с какими манекен импортирован
+  в Blender, поэтому анимации шаблона встают без перенастройки. Импортёр пишет «Not valid bind pose… Recreating bind
+  pose succeeded»: поза в файле — поза покоя, на результат не влияет.
+- **Материалы.** Импорт без материалов (`import_materials` = False), слоты называются по временным материалам
+  `MI_<Материал>`, экземпляры ставит скрипт. Для параметра `ORM` в `M_Kit` нужна текстура по умолчанию с типом
+  Masks — в движке такой нет, поэтому `/Game/Materials/T_Kit_DefaultORM` (4 × 4: AO 1, шероховатость 0,5, металл 0).
+  У `M_Kit` и `M_KitSolid` включены `bUsedWithSkeletalMesh` и `bUsedWithMorphTargets`.
+- **Повторный импорт.** Инструменты импорта MCP не перезаписывают существующий ассет («already exists»),
+  настоящего реимпорта среди них нет. Скрипт удаляет меш и импортирует заново. Удаление обнуляет ссылки на меш
+  у акторов уровней (14 ноября так опустели три героя на проверочном уровне): после импорта их надо вернуть.
+  Ассеты, на которые ссылается код по пути (`ConstructorHelpers`), от этого не страдают.
+- **Формы лица (morph targets) и нормали.** У `FbxFactory` по умолчанию `bImportMorphTargets` = False
+  и `normalImportMethod` = ComputeNormals, а у инструмента MCP таких опций нет. Скрипт перед импортом ставит
+  `bImportMorphTargets` = True и `FBXNIM_ImportNormals` в объектах настроек по умолчанию
+  (`Default__FbxSkeletalMeshImportData` и `Default__FbxImportUI:SkeletalMeshImportData`). После перезапуска
+  редактора они сбрасываются. Проверено тестовой формой: без этого форма теряется, с этим доходит.
+- **Без Triangulate.** Если на меше включён любой модификатор, кроме Armature, экспортёр FBX берёт вычисленный
+  меш, а в нём нет форм (Blender #104714). У героя нет карты нормалей, поэтому треугольники ему не нужны
+  и модификатор не ставится. Набору с картой нормалей и формами пришлось бы триангулировать сам меш.
