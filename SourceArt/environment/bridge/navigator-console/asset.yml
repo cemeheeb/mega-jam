@@ -1,0 +1,31 @@
+title: Navigator Console
+kind: model
+idea: Standing navigator's console with two monitors. Seven of them stand in a ring around the captain's couch on the bridge.
+prompt: "A spaceship navigator's console for a standing operator: a sturdy desk-height cabinet of off-white painted metal whose footprint is a shallow trapezoid, wider at the back than at the front, so that several stand side by side in a ring; a flat graphite working surface left clear in the middle, a narrow sloped strip of small graphite buttons and switches along the front edge, two flat monitors with simple muted teal star charts and orbit lines on short brushed aluminium stands along the back edge, a recessed toe kick and an international orange stripe along the plinth."
+avoid: chair, seat, keyboard, people, cables, curved one-piece desk, several consoles
+notes: |
+  Пометка автора на снимке рубки 14.11: «Делаем консоль навигаторов с мониторами» — консоль кольца вокруг поста.
+  Одна модель на все семь мест кольца (build_rooms.py bridge: радиус 2,15 м, шаг 45°, на юге проход к креслу).
+  Размеры серой коробки, по которым её заменит модель: стол на высоте 0,95–1,01 м; глубина 0,6 м; ширина 1,5 м.
+  Трапеция в плане сомкнёт кольцо: спереди около 1,42 м, сзади около 1,88 м.
+  Мониторы — у дальнего края, низ на 1,05 м, верх около 1,45 м, лицом к креслу. Середина стола свободна:
+  там лежат предметы и записки (места ItemSpot/NoteSpot в 0,2–0,25 м от ближнего края), без кнопок и выступов.
+  Точка привязки — середина дна; лицо (сторона оператора) — +Y в Unreal, как у колонок.
+  Пока модели нет, на каждой консоли по краям стоят по паре органов из наборов Singula; с моделью их можно убрать.
+  14.11: модель Tripo (source/tripo/control-console.fbx, картинка source/navigator-console-1.webp) пересобрана
+  из примитивов скриптом tools/blender/kit/navigator_build.py, blend — source/navigator-console.blend.
+  Размеры сверены с Tripo лучами: ширина 1,5 м, глубина 0,92 м (не 0,6 как у серой коробки), стол 1,003 м,
+  полка мониторов 1,074 м, верх мониторов 1,58 м. В плане прямоугольник, не трапеция.
+  Коврик утоплен на 3 мм (у Tripo заподлицо с канавкой). Средняя плита под тумблерами тонкая, 1,5 мм: у Tripo
+  её нет, на картинке полоса тёмная по всей длине.
+  Правки автора после осмотра 14.11: все кнопки по одной сетке (ячейка 40 × 36 мм, клавиши 30 × 28, двойные —
+  на две ячейки, края плит по границам ячеек); все семь тумблеров заменены выключателями on/off с лампочкой
+  прямо на клавише (клавиша на две ячейки по высоте, окошко лампочки — зона glass, у каждого окошка свои острова:
+  цвет и состояние задаёт текстура). Меш Tripo лежит в blend скрытым (ReferenceTripo).
+  Кольцо: с началом координат в середине глубины передние углы соседних консолей при шаге 45° сходятся,
+  если радиус до начала координат меньше 2,42 м (сейчас 2,15). При расстановке — около 2,45 м.
+  Выгрузка 14.11: source/export_navigator_console.py пишет SM_NavigatorConsole.fbx (мониторы слиты с консолью,
+  меш в сантиметрах, одна секция MI_NavigatorConsole, коллизия — две коробки UCX: корпус до столешницы и полка
+  с мониторами, чтобы над столом с предметами не было стены) и T_NavigatorConsole_BaseColor/ORM/Normal/Emissive.png.
+  Текстуры 2048, а не 1024 по kit.md: на 1024 пропадут мелкие царапины панели, которые просил автор.
+  Импорт — tools/ue/import_kit.py в /Game/Environment/Bridge/NavigatorConsole, EmissiveStrength 3.

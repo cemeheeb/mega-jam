@@ -1,0 +1,12 @@
+title: Bridge Dais
+kind: model
+idea: Low round raised floor module under the captain's acceleration couch in the middle of the bridge.
+prompt: "A standalone round raised floor module for the command post of a spaceship bridge, like a wide flat disc about two and a half metres across and only a hand's height tall: a top of off-white painted metal floor plates divided into radial segments with fine seams and small recessed screw heads, a graphite anti-slip ring around a central round brushed aluminium mounting plate with four bolts where a chair is fixed, a short vertical rim of light-grey aluminium with a thin muted teal light strip, and an international orange safety stripe along the top edge of the rim."
+avoid: chair, seat, steps, railing, objects on top, thick cylinder, stage
+notes: |
+  Пометка автора на снимке рубки 14.11: «Делаем этот выступ в tripo» — помост под креслом на посту рубки.
+  Размер серого цилиндра, по которому его заменит модель: диаметр 2,4 м, высота 12 см
+  (build_rooms.py bridge, Post_Dais). Кресло стоит на его верхе в центре.
+  Точка привязки — центр дна; поворот любой, но радиальные швы лучше совместить с шагом консолей кольца (45°).
+  В шаблоне стиля interior в Avoid есть «a base or plinth» и «visible floor». Если картинка из-за них выходит без помоста,
+  эти слова можно вычеркнуть из промта перед копированием в Nano Banana.
