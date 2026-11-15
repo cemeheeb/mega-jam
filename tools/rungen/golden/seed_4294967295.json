@@ -48,8 +48,7 @@
    "Circuit Board"
   ],
   "chain_room_types": {
-   "notebook only": "Bridge",
-   "empty pocket": "Living",
+   "nothing that matters": "Bridge",
    "L": "Cargo",
    "L,K1": "Lab",
    "K1": "Computer",
@@ -57,8 +56,9 @@
    "K1,K2": "Computer",
    "K1,K2,K3": "Engine"
   },
-  "notebook_first": "Everything you add, the singularity will erase. Only this remains.\nCarry the rubber duck. It breaks the first loop.",
-  "decompression_level": 2
+  "notebook_first": "All systems are green. The engines only need the captain's card. The captain went down to the engine room and never came back.\nIf you are reading this, the rubber duck got you off the bridge too. What you carry decides where a door leads.",
+  "decompression_level": 2,
+  "hide_spot": 2
  },
  "run_items": [
   "Rubber Duck",
@@ -184,39 +184,14 @@
   "switches": 22,
   "anomaly": "none",
   "items": [
-   "Notebook",
-   "Pipe Wrench",
-   "Rubber Duck",
-   "Pressure Gauge",
-   "Family Photo",
-   "Coolant Valve",
-   "Fuse"
+   "Rubber Duck"
   ],
-  "notes": [
-   {
-    "kind": "next_key",
-    "items": [
-     "Ration Tin",
-     "Rubber Duck"
-    ],
-    "tpl": 1,
-    "text": "You won't find the ration tin unless you carry the rubber duck. Don't ask me how I know."
-   }
-  ]
+  "notes": []
  },
  "looks": [
   {
-   "key": 0,
-   "signature": "{} (empty pocket)",
-   "class": "chain",
-   "level": 0,
-   "type": "Living",
-   "switches": 0,
-   "anomaly": "none"
-  },
-  {
    "key": 4096,
-   "signature": "{} (notebook only)",
+   "signature": "{} (nothing that matters)",
    "class": "chain",
    "level": 0,
    "type": "Bridge",
@@ -7362,59 +7337,15 @@
   }
  ],
  "rooms": {
-  "{} (empty pocket)": {
-   "key": 0,
-   "type": "Living",
-   "switches": 0,
-   "anomaly": "none",
-   "items": [
-    "Voice Recorder",
-    "Sealant Can",
-    "Fuse"
-   ],
-   "notes": [
-    {
-     "kind": "next_key",
-     "items": [
-      "Ration Tin",
-      "Rubber Duck"
-     ],
-     "tpl": 1,
-     "text": "You won't find the ration tin unless you carry the rubber duck. Don't ask me how I know."
-    },
-    {
-     "kind": "useless",
-     "items": [
-      "Sealant Can"
-     ],
-     "tpl": 1,
-     "text": "Carried the sealant can through a dozen doors. Nothing changed. Drop it."
-    }
-   ]
-  },
-  "{} (notebook only)": {
+  "{} (nothing that matters)": {
    "key": 4096,
    "type": "Bridge",
    "switches": 22,
    "anomaly": "none",
    "items": [
-    "Rubber Duck",
-    "Pressure Gauge",
-    "Family Photo",
-    "Coolant Valve",
-    "Fuse"
+    "Rubber Duck"
    ],
-   "notes": [
-    {
-     "kind": "next_key",
-     "items": [
-      "Ration Tin",
-      "Rubber Duck"
-     ],
-     "tpl": 1,
-     "text": "You won't find the ration tin unless you carry the rubber duck. Don't ask me how I know."
-    }
-   ]
+   "notes": []
   },
   "{L}": {
    "key": 1,
@@ -7422,12 +7353,12 @@
    "switches": 4,
    "anomaly": "none",
    "items": [
+    "Notebook",
+    "Pipe Wrench",
     "Ration Tin",
     "Space Suit",
     "Flashlight",
-    "Voice Recorder",
-    "Snow Globe",
-    "Fuse"
+    "Voice Recorder"
    ],
    "notes": [
     {
@@ -7562,13 +7493,15 @@
    "type": "Engine",
    "switches": 61,
    "anomaly": "none",
-   "items": [],
+   "items": [
+    "Captain's Card"
+   ],
    "notes": [
     {
      "kind": "finale",
      "items": [],
      "tpl": 0,
-     "text": "Remember how you got to the bridge."
+     "text": "Take his card. Keep the notebook and the card, nothing else. Remember how you got to the bridge."
     }
    ]
   },

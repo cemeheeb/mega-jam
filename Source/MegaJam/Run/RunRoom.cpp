@@ -131,6 +131,13 @@ void ARunRoom::SetDoorSign(int32 Door, const FString& Text)
 	{
 		return;
 	}
+	// пустой текст — табло нет: двери, кроме обратной, снова не определены после каждого прохода, и прочерки
+	// над ними ничего не говорили (автор, 15.11: табло только над обратной дверью и HULL BREACH)
+	bSignKnown[Door] = !Text.IsEmpty();
+	if (!Sign[Door] && !bSignKnown[Door])
+	{
+		return;
+	}
 	if (!Sign[Door])
 	{
 		// табло создаётся на ходу: блюпринты комнат менять не нужно
@@ -160,11 +167,15 @@ void ARunRoom::SetDoorSign(int32 Door, const FString& Text)
 		Plate->SetRelativeLocation(Dir(Door) * (InnerFace(Door) - 1.5f) + FVector(0.f, 0.f, 275.f));
 		Plate->SetRelativeRotation((-Dir(Door)).Rotation());
 		Plate->SetRelativeScale3D(FVector(0.03f, 2.3f, 0.42f));
+		SignPlate[Door] = Plate;
 	}
-	bSignKnown[Door] = !Text.IsEmpty();
-	Sign[Door]->SetText(FText::FromString(bSignKnown[Door] ? Text : FString(TEXT("-  -  -"))));
-	Sign[Door]->SetTextRenderColor(Text.StartsWith(TEXT("HULL")) ? FColor(235, 60, 45)   // разгерметизация за дверью
-		: bSignKnown[Door] ? FColor(95, 198, 201) : FColor(230, 230, 230));
+	Sign[Door]->SetVisibility(bSignKnown[Door]);
+	SignPlate[Door]->SetVisibility(bSignKnown[Door]);
+	if (bSignKnown[Door])
+	{
+		Sign[Door]->SetText(FText::FromString(Text));
+		Sign[Door]->SetTextRenderColor(Text.StartsWith(TEXT("HULL")) ? FColor(235, 60, 45) : FColor(95, 198, 201));   // красное — разгерметизация
+	}
 }
 
 void ARunRoom::SetArrivalDoor(int32 Door)
@@ -522,12 +533,6 @@ void ARunRoom::Tick(float DeltaSeconds)
 		const bool bDoorway = bPawnHere && Along > Inner && Along <= Outer + 90.f && Lateral < VestibuleWidth * 0.5f;
 		const bool bDeep = bPawnHere && Along > Outer + 90.f && Along < Outer + VestibuleDepth + Wall && Lateral < VestibuleWidth * 0.5f + Wall;
 
-		if (Sign[D] && !bSignKnown[D])
-		{
-			// нераскрытая дверь: табло неровно мерцает
-			const float T = GetWorld()->GetTimeSeconds() * 7.f + D * 1.7f;
-			Sign[D]->SetVisibility(FMath::Sin(T) + 0.6f * FMath::Sin(T * 2.3f) > -0.9f);
-		}
 		if (bApproach && Director.IsValid())
 		{
 			Director->OnDoorApproach();

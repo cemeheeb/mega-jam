@@ -48,8 +48,7 @@
    "Pressure Gauge"
   ],
   "chain_room_types": {
-   "notebook only": "Bridge",
-   "empty pocket": "Living",
+   "nothing that matters": "Bridge",
    "L": "Computer",
    "L,K1": "Lab",
    "K1": "Computer",
@@ -57,8 +56,9 @@
    "K1,K2": "Cargo",
    "K1,K2,K3": "Engine"
   },
-  "notebook_first": "Everything you add, the singularity will erase. Only this remains.\nCarry the dog tag. It breaks the first loop.",
-  "decompression_level": 3
+  "notebook_first": "All systems are green. The engines only need the captain's card. The captain went down to the engine room and never came back.\nIf you are reading this, the dog tag got you off the bridge too. What you carry decides where a door leads.",
+  "decompression_level": 3,
+  "hide_spot": 1
  },
  "run_items": [
   "Dog Tag",
@@ -184,46 +184,14 @@
   "switches": 50,
   "anomaly": "none",
   "items": [
-   "Notebook",
-   "Pipe Wrench",
-   "Dog Tag",
-   "Fuse",
-   "Circuit Board",
-   "Data Cartridge"
+   "Dog Tag"
   ],
-  "notes": [
-   {
-    "kind": "next_key",
-    "items": [
-     "Family Photo",
-     "Dog Tag"
-    ],
-    "tpl": 1,
-    "text": "You won't find the family photo unless you carry the dog tag. Don't ask me how I know."
-   },
-   {
-    "kind": "useless",
-    "items": [
-     "Voice Recorder"
-    ],
-    "tpl": 2,
-    "text": "Don't waste a slot on the voice recorder."
-   }
-  ]
+  "notes": []
  },
  "looks": [
   {
-   "key": 0,
-   "signature": "{} (empty pocket)",
-   "class": "chain",
-   "level": 0,
-   "type": "Living",
-   "switches": 0,
-   "anomaly": "none"
-  },
-  {
    "key": 4096,
-   "signature": "{} (notebook only)",
+   "signature": "{} (nothing that matters)",
    "class": "chain",
    "level": 0,
    "type": "Bridge",
@@ -7369,59 +7337,15 @@
   }
  ],
  "rooms": {
-  "{} (empty pocket)": {
-   "key": 0,
-   "type": "Living",
-   "switches": 0,
-   "anomaly": "none",
-   "items": [
-    "Fuse",
-    "Ration Tin",
-    "Sealant Can",
-    "Rubber Duck"
-   ],
-   "notes": [
-    {
-     "kind": "next_key",
-     "items": [
-      "Family Photo",
-      "Dog Tag"
-     ],
-     "tpl": 2,
-     "text": "Looked everywhere for the family photo. It was never there until I picked up the dog tag."
-    }
-   ]
-  },
-  "{} (notebook only)": {
+  "{} (nothing that matters)": {
    "key": 4096,
    "type": "Bridge",
    "switches": 50,
    "anomaly": "none",
    "items": [
-    "Dog Tag",
-    "Fuse",
-    "Circuit Board",
-    "Data Cartridge"
+    "Dog Tag"
    ],
-   "notes": [
-    {
-     "kind": "next_key",
-     "items": [
-      "Family Photo",
-      "Dog Tag"
-     ],
-     "tpl": 1,
-     "text": "You won't find the family photo unless you carry the dog tag. Don't ask me how I know."
-    },
-    {
-     "kind": "useless",
-     "items": [
-      "Voice Recorder"
-     ],
-     "tpl": 2,
-     "text": "Don't waste a slot on the voice recorder."
-    }
-   ]
+   "notes": []
   },
   "{L}": {
    "key": 1,
@@ -7429,10 +7353,10 @@
    "switches": 8,
    "anomaly": "none",
    "items": [
+    "Notebook",
+    "Pipe Wrench",
     "Family Photo",
-    "Sealant Can",
-    "Rubber Duck",
-    "Data Cartridge"
+    "Sealant Can"
    ],
    "notes": [
     {
@@ -7586,13 +7510,15 @@
    "type": "Engine",
    "switches": 62,
    "anomaly": "none",
-   "items": [],
+   "items": [
+    "Captain's Card"
+   ],
    "notes": [
     {
      "kind": "finale",
      "items": [],
      "tpl": 0,
-     "text": "Remember how you got to the bridge."
+     "text": "Take his card. Keep the notebook and the card, nothing else. Remember how you got to the bridge."
     }
    ]
   },

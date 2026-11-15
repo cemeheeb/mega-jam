@@ -10,6 +10,7 @@
 #include "EngineUtils.h"
 #include "RunDirector.h"
 #include "RunGen.h"
+#include "RunHUDStyle.h"
 
 // Шрифт из файла Content/Fonts: объект шрифта на время игры, буквы рисует кэш Slate — чёткие при любом масштабе.
 // Size — кегль при масштабе 1 (у Roboto движка, под который подобраны все масштабы экрана, он 9).
@@ -263,13 +264,17 @@ FString ARunHUD::DrawNotebook(ARunDirector& D, float S, float X0, float Y0, floa
 
 // Меню на Tab (решение автора 15.11): блокнот с закладками записок, справа — где ты и здоровье, карман, записки,
 // скафандр. Время под ним стоит (решение автора 15.11, вечер); фон затемнён и размыт (ARunDirector::SetMenuBlend).
+// Вид (15.11): блокнот в угловых скобках, боковая панель со срезанными углами; при открытии всё выезжает за 0,18 с.
 void ARunHUD::DrawMenu(ARunDirector& D, float S)
 {
 	UFont* Font = Hud();
 	const float SX = Canvas->SizeX, SY = Canvas->SizeY;
-	const FLinearColor Teal(0.37f, 0.78f, 0.79f), Dim(1.f, 1.f, 1.f, 0.55f);
+	const FLinearColor Teal = RunStyle::Teal, Dim(1.f, 1.f, 1.f, 0.55f);
 	const FLinearColor PanelBg(0.012f, 0.03f, 0.045f, 0.93f);
 	DrawShade(MenuBlend);
+	// выезд: быстро стартует, мягко останавливается
+	const float Slide = FMath::Pow(1.f - MenuBlend, 3.f) * 40.f * S;
+	const float RealNow = GetWorld()->GetRealTimeSeconds();
 
 	const float M = 18.f * S, PanelW = FMath::Min(300.f * S, SX * 0.26f);
 	float H = SY * 0.72f, W = H * 4.f / 3.f;
@@ -278,35 +283,50 @@ void ARunHUD::DrawMenu(ARunDirector& D, float S)
 		W = SX - PanelW - 3.f * M;
 		H = W * 0.75f;
 	}
-	const float X0 = (SX - W - M - PanelW) * 0.5f, Y0 = SY * 0.075f;
+	const float X0 = (SX - W - M - PanelW) * 0.5f, Y0 = SY * 0.075f, BookY = Y0 + Slide * 0.6f;
 	FString PagesHelp;
-	if (D.HasNotebook())
+	if (D.IsVideoOpen())
 	{
-		PagesHelp = DrawNotebook(D, S, X0, Y0, W, H);
+		// настройки видео (O) — на месте разворота блокнота; та же панель, что в главном меню
+		const float PW = FMath::Min(W, 520.f * S);
+		D.GetVideo().Draw(Canvas, Font, X0 + (W - PW) * 0.5f, BookY, PW, S, [](float A) { return A; });
+		PagesHelp = TEXT("[Up] [Down] choose      [Left] [Right] change      [Enter] select      [Esc] back      ");
+	}
+	else if (D.HasNotebook())
+	{
+		PagesHelp = DrawNotebook(D, S, X0, BookY, W, H) + TEXT("[O] settings      ");
+		RunStyle::Brackets(Canvas, X0 - 12.f * S, BookY - 12.f * S, W + 24.f * S, H + 24.f * S, 22.f * S, 2.f * S, RunStyle::A(Teal, 0.8f));
 	}
 	else
 	{
-		DrawRect(PanelBg, X0, Y0, W, H);
+		PagesHelp = TEXT("[O] settings      ");
+		RunStyle::Panel(Canvas, X0, BookY, W, H, 18.f * S, PanelBg, RunStyle::A(Teal, 0.35f), 1.f * S);
+		RunStyle::Brackets(Canvas, X0 - 12.f * S, BookY - 12.f * S, W + 24.f * S, H + 24.f * S, 22.f * S, 2.f * S, RunStyle::A(Teal, 0.5f));
 		const TCHAR* Lines[] = { TEXT("The notebook is not with you."), TEXT("The notes you read are kept in it.") };
 		for (int32 I = 0; I < 2; ++I)
 		{
-			float TW = 0.f, TH = 0.f;
-			GetTextSize(Lines[I], TW, TH, Font, 1.2f * S);
-			DrawText(Lines[I], I == 0 ? FLinearColor::White : Dim, X0 + (W - TW) * 0.5f, Y0 + H * 0.45f + I * 30.f * S, Font, 1.2f * S);
+			RunStyle::Text(Canvas, Font, Lines[I], X0 + W * 0.5f, BookY + H * 0.45f + I * 30.f * S, 1.2f * S, I == 0 ? FLinearColor::White : Dim, 0.5f);
 		}
 	}
 
-	// боковая панель: почти непрозрачная, с бирюзовой кромкой сверху
-	const float PX = X0 + W + M, In = 14.f * S, TextW = PanelW - 2.f * In, RowH = 24.f * S;
-	DrawRect(PanelBg, PX, Y0, PanelW, H);
-	DrawRect(FLinearColor(0.37f, 0.78f, 0.79f, 0.85f), PX, Y0, PanelW, 2.f * S);
+	// боковая панель: срезанные углы, тонкая кромка, полоски-метки на верхней и нижней кромках
+	const float PX = X0 + W + M + Slide, In = 14.f * S, TextW = PanelW - 2.f * In, RowH = 24.f * S, Cut = 14.f * S;
+	RunStyle::Panel(Canvas, PX, Y0, PanelW, H, Cut, PanelBg, RunStyle::A(Teal, 0.4f), 1.f * S);
+	RunStyle::Rect(Canvas, PX + Cut + 8.f * S, Y0 - 1.f * S, 64.f * S, 3.f * S, Teal);
+	RunStyle::Rect(Canvas, PX + PanelW - Cut - 48.f * S, Y0 + H - 2.f * S, 40.f * S, 3.f * S, RunStyle::A(Teal, 0.6f));
 	float Y = Y0 + In;
-	const auto Header = [&](const TCHAR* Text)
+	float LineW = 0.f, LineH = 0.f;
+	Canvas->TextSize(Font, TEXT("Ag"), LineW, LineH, 1.f * S, 1.f * S);
+	// заголовок раздела: квадратик, название, линия до края и справа счётчик
+	const auto Header = [&](const TCHAR* Text, const FString& Count)
 	{
-		DrawText(Text, Teal, PX + In, Y, Font, 1.05f * S);
-		Y += RowH;
-		DrawRect(FLinearColor(0.37f, 0.78f, 0.79f, 0.5f), PX + In, Y - 3.f * S, TextW, 1.5f * S);
-		Y += 5.f * S;
+		const float Mid = Y + LineH * 0.5f;
+		RunStyle::Rect(Canvas, PX + In, Mid - 3.f * S, 6.f * S, 6.f * S, Teal);
+		const float TW = RunStyle::Text(Canvas, Font, Text, PX + In + 13.f * S, Y, 1.f * S, Teal);
+		const float CW = Count.IsEmpty() ? 0.f : RunStyle::Text(Canvas, Font, Count, PX + In + TextW, Y + 2.f * S, 0.8f * S, Dim, 1.f) + 8.f * S;
+		const float LX = PX + In + 13.f * S + TW + 8.f * S;
+		RunStyle::Rect(Canvas, LX, Mid, PX + In + TextW - CW - LX, 1.f * S, RunStyle::A(Teal, 0.35f));
+		Y += RowH + 6.f * S;
 	};
 	const auto Row = [&](const FString& Text, const FLinearColor& Color)
 	{
@@ -316,67 +336,76 @@ void ARunHUD::DrawMenu(ARunDirector& D, float S)
 			Y += RowH * 0.9f;
 		}
 	};
+	// строка с клавишами-кнопками
+	const auto Keys = [&](const FString& Text)
+	{
+		RunStyle::Rich(Canvas, Font, Text, PX + In, Y, 0.85f * S, FLinearColor(1.f, 1.f, 1.f, 0.7f), Teal);
+		Y += RowH;
+	};
+	// выделенная строка: подложка и полоса слева
+	const auto Highlight = [&](float Alpha)
+	{
+		RunStyle::Rect(Canvas, PX + In * 0.4f, Y - 3.f * S, PanelW - In * 0.8f, RowH - 1.f * S, RunStyle::A(Teal, Alpha));
+		RunStyle::Rect(Canvas, PX + In * 0.4f, Y - 3.f * S, 2.f * S, RowH - 1.f * S, Teal);
+	};
 
 	// где ты и здоровье: нижняя полоса экрана под меню не рисуется, всё нужное — здесь
 	{
 		const float Hp = D.GetHealth(), MaxHp = ARunDirector::MaxHealth;
-		DrawText(FitText(this, D.GetRoomName().ToUpper(), Font, 1.05f * S, TextW - 60.f * S), FLinearColor::White, PX + In, Y, Font, 1.05f * S);
-		const FString HpText = FString::Printf(TEXT("HP %d"), FMath::CeilToInt32(Hp));
-		float HW = 0.f, HH = 0.f;
-		GetTextSize(HpText, HW, HH, Font, 0.95f * S);
 		const bool bLow = Hp <= 25.f;
-		DrawText(HpText, bLow ? FLinearColor(1.f, 0.4f, 0.3f) : Dim, PX + In + TextW - HW, Y + 1.f * S, Font, 0.95f * S);
+		RunStyle::Text(Canvas, Font, TEXT("SECTOR"), PX + In, Y, 0.7f * S, RunStyle::A(Teal, 0.85f));
+		Y += 14.f * S;
+		DrawText(FitText(this, D.GetRoomName().ToUpper(), Font, 1.05f * S, TextW - 60.f * S), FLinearColor::White, PX + In, Y, Font, 1.05f * S);
+		RunStyle::Text(Canvas, Font, FString::Printf(TEXT("HP %d"), FMath::CeilToInt32(Hp)), PX + In + TextW, Y + 1.f * S, 0.95f * S,
+			bLow ? FLinearColor(1.f, 0.4f, 0.3f) : Dim, 1.f);
 		Y += RowH;
-		DrawRect(FLinearColor(1.f, 1.f, 1.f, 0.1f), PX + In, Y, TextW, 5.f * S);
-		DrawRect(bLow ? FLinearColor(0.9f, 0.25f, 0.18f) : FLinearColor(0.37f, 0.78f, 0.79f, 0.9f), PX + In, Y, TextW * FMath::Clamp(Hp / MaxHp, 0.f, 1.f), 5.f * S);
-		Y += 18.f * S;
+		DrawHealthCells(PX + In, Y, TextW, 6.f * S, S, Hp / MaxHp, Hp / MaxHp,
+			bLow ? FLinearColor(0.9f, 0.25f, 0.18f) : RunStyle::A(Teal, 0.9f));
+		Y += 20.f * S;
 	}
 
-	// карман: все четыре слота с вещами; вещь в руке подсвечена
-	Header(TEXT("POCKET"));
+	// карман: все четыре ячейки с вещами; вещь в руке подсвечена
+	const TArray<int32>& Pocket = D.GetPocket();
+	Header(TEXT("POCKET"), FString::Printf(TEXT("%d/%d"), Pocket.Num(), RunGen::PocketSlots));
 	{
-		const TArray<int32>& Pocket = D.GetPocket();
 		const int32 Held = D.GetHeldSlot();
 		for (int32 I = 0; I < RunGen::PocketSlots; ++I)
 		{
-			const bool bHeld = I == Held && Pocket.IsValidIndex(I);
+			const bool bItem = Pocket.IsValidIndex(I), bHeld = bItem && I == Held;
 			if (bHeld)
 			{
-				DrawRect(FLinearColor(0.37f, 0.78f, 0.79f, 0.22f), PX + In * 0.4f, Y - 2.f * S, PanelW - In * 0.8f, RowH - 2.f * S);
-				DrawRect(Teal, PX + In * 0.4f, Y - 2.f * S, 2.f * S, RowH - 2.f * S);
+				Highlight(0.18f);
 			}
-			DrawText(FString::FromInt(I + 1), Dim, PX + In, Y, Font, 0.9f * S);
-			if (Pocket.IsValidIndex(I))
+			RunStyle::Rich(Canvas, Font, FString::Printf(TEXT("[%d]"), I + 1), PX + In - 3.f * S, Y, 0.8f * S, FLinearColor::White,
+				bItem ? (bHeld ? Teal : FLinearColor(1.f, 1.f, 1.f, 0.6f)) : FLinearColor(1.f, 1.f, 1.f, 0.25f));
+			if (bItem)
 			{
-				float TagW = 0.f, TagH = 0.f;
-				if (bHeld)
-				{
-					GetTextSize(TEXT("IN HAND"), TagW, TagH, Font, 0.75f * S);
-					DrawText(TEXT("IN HAND"), Teal, PX + In + TextW - TagW, Y + 2.f * S, Font, 0.75f * S);
-				}
-				DrawText(FitText(this, RunGen::ItemName(Pocket[I]), Font, 0.95f * S, TextW - 22.f * S - TagW - 8.f * S), ItemInk(Pocket[I]),
-					PX + In + 18.f * S, Y, Font, 0.95f * S);
+				const float TagW = bHeld ? RunStyle::Text(Canvas, Font, TEXT("IN HAND"), PX + In + TextW, Y + 2.f * S, 0.75f * S, Teal, 1.f) : 0.f;
+				DrawText(FitText(this, RunGen::ItemName(Pocket[I]), Font, 0.95f * S, TextW - 26.f * S - TagW - 8.f * S), ItemInk(Pocket[I]),
+					PX + In + 24.f * S, Y, Font, 0.95f * S);
 				if (Pocket[I] == RunGen::Notebook && D.HasUnreadJournal())
 				{
-					DrawRect(Teal, PX + In + TextW - (bHeld ? TagW + 14.f * S : 8.f * S), Y + 6.f * S, 7.f * S, 7.f * S);
+					const float Pulse = 0.55f + 0.45f * FMath::Sin(RealNow * 6.f);
+					RunStyle::Rect(Canvas, PX + In + TextW - (bHeld ? TagW + 14.f * S : 8.f * S), Y + 6.f * S, 7.f * S, 7.f * S, RunStyle::A(Teal, Pulse));
 				}
 			}
 			else
 			{
-				DrawText(TEXT("empty"), FLinearColor(1.f, 1.f, 1.f, 0.25f), PX + In + 18.f * S, Y, Font, 0.9f * S);
+				DrawText(TEXT("EMPTY"), FLinearColor(1.f, 1.f, 1.f, 0.22f), PX + In + 24.f * S, Y + 1.f * S, Font, 0.8f * S);
 			}
 			Y += RowH;
 		}
-		Row(TEXT("[1]-[4] look closer      [G] drop"), Teal);
-		Y += RowH * 0.4f;
+		Y += 2.f * S;
+		Keys(TEXT("[1]-[4] look closer      [G] drop"));
+		Y += RowH * 0.3f;
 	}
 
 	// внизу панели — скафандр; записки занимают всё, что между карманом и им
-	const float FootH = 4.2f * RowH;
+	const float FootH = 4.4f * RowH;
 	const float NotesBottom = Y0 + H - FootH;
-	Header(TEXT("NOTES"));
 	const TArray<FString>& Marks = D.GetBookmarks();
 	const int32 Chosen = D.GetBookmark();
+	Header(TEXT("NOTES"), Marks.Num() > 0 ? FString::FromInt(Marks.Num()) : FString());
 	if (Marks.Num() == 0)
 	{
 		Row(TEXT("No notes read yet."), Dim);
@@ -391,36 +420,85 @@ void ARunHUD::DrawMenu(ARunDirector& D, float S)
 			const bool bChosen = bBook && I == Chosen;
 			if (bChosen)
 			{
-				DrawRect(FLinearColor(0.37f, 0.78f, 0.79f, 0.25f), PX + In * 0.4f, Y - 2.f * S, PanelW - In * 0.8f, RowH - 2.f * S);
+				Highlight(0.2f);
 			}
-			DrawRect(BookmarkColor(I, bBook ? 1.f : 0.4f), PX + In, Y + 2.f * S, 5.f * S, RowH - 10.f * S);
+			RunStyle::Rect(Canvas, PX + In + 4.f * S, Y + 2.f * S, 5.f * S, RowH - 10.f * S, BookmarkColor(I, bBook ? 1.f : 0.4f));
 			const FString Label = FString::Printf(TEXT("%d  %s"), I + 1, *Marks[I].Replace(TEXT("\n"), TEXT(" ")));
-			DrawText(FitText(this, Label, Font, 0.9f * S, TextW - 12.f * S), bChosen ? FLinearColor::White : (bBook ? FLinearColor(1.f, 1.f, 1.f, 0.8f) : Dim),
-				PX + In + 12.f * S, Y, Font, 0.9f * S);
+			DrawText(FitText(this, Label, Font, 0.9f * S, TextW - 18.f * S), bChosen ? FLinearColor::White : (bBook ? FLinearColor(1.f, 1.f, 1.f, 0.8f) : Dim),
+				PX + In + 16.f * S, Y, Font, 0.9f * S);
 			Y += RowH;
 		}
 		Y += 2.f * S;
-		DrawText(bBook ? TEXT("[Up] [Down] open a bookmark") : TEXT("Bookmarks are in the notebook"), Teal, PX + In, Y, Font, 0.85f * S);
+		if (bBook)
+		{
+			Keys(TEXT("[Up] [Down] open a bookmark"));
+		}
+		else
+		{
+			Row(TEXT("Bookmarks are in the notebook"), Dim);
+		}
 	}
 
 	Y = NotesBottom;
-	Header(TEXT("SPACE SUIT"));
+	Header(TEXT("SPACE SUIT"), D.IsSuitOn() ? FString(TEXT("ON")) : FString());
 	if (D.IsSuitOn())
 	{
 		Row(TEXT("You are wearing it."), FLinearColor::White);
-		Row(D.IsInVacuum() ? TEXT("No air here - keep it on") : TEXT("[T] take it off"), Teal);
+		if (D.IsInVacuum())
+		{
+			Row(TEXT("No air here - keep it on"), FLinearColor(1.f, 0.55f, 0.35f));
+		}
+		else
+		{
+			Keys(TEXT("[T] take it off"));
+		}
 	}
 	else
 	{
 		Row(D.WasSuitWorn() ? TEXT("Left where you took it off.") : TEXT("You have no suit."), Dim);
-		Row(TEXT("[E] next to it - put it on"), Teal);
+		Keys(TEXT("[E] next to it - put it on"));
 	}
 
-	const FString Help = PagesHelp + TEXT("[Tab] close      Time is stopped");
-	float HW = 0.f, HH = 0.f;
-	GetTextSize(Help, HW, HH, Font, 1.0f * S);
-	DrawRect(PanelBg, (SX - HW) * 0.5f - 12.f * S, Y0 + H + 12.f * S, HW + 24.f * S, HH + 10.f * S);
-	Centered(Help, Y0 + H + 17.f * S, Teal, 1.0f * S);
+	// подсказка снизу: клавиши-кнопками и метка «время стоит» — две оранжевые черты паузы
+	{
+		const FString Help = PagesHelp + TEXT("[Tab] close");
+		const float HS = 0.95f * S, TagS = 0.8f * S;
+		const float HelpW = RunStyle::Rich(Canvas, Font, Help, 0.f, 0.f, HS, Dim, Teal, true);
+		float TagW = 0.f, TagH = 0.f, HelpLW = 0.f, HelpH = 0.f;
+		Canvas->TextSize(Font, TEXT("TIME STOPPED"), TagW, TagH, TagS, TagS);
+		Canvas->TextSize(Font, TEXT("Ag"), HelpLW, HelpH, HS, HS);
+		const float Sep = 16.f * S, Icon = 10.f * S, Total = HelpW + 2.f * Sep + Icon + 6.f * S + TagW;
+		const float BX = (SX - Total) * 0.5f, BY = Y0 + H + 16.f * S + Slide * 0.5f, BH = HelpH + 14.f * S;
+		RunStyle::Panel(Canvas, BX - 16.f * S, BY, Total + 32.f * S, BH, 8.f * S, PanelBg, RunStyle::A(Teal, 0.3f), 1.f * S);
+		RunStyle::Rich(Canvas, Font, Help, BX, BY + 7.f * S, HS, Dim, Teal);
+		const float SepX = BX + HelpW + Sep;
+		RunStyle::Rect(Canvas, SepX, BY + 6.f * S, 1.f * S, BH - 12.f * S, RunStyle::A(Teal, 0.3f));
+		const float IX = SepX + Sep, IH = TagH * 0.7f, IY = BY + (BH - IH) * 0.5f;
+		RunStyle::Rect(Canvas, IX, IY, 3.f * S, IH, RunStyle::Orange);
+		RunStyle::Rect(Canvas, IX + 6.f * S, IY, 3.f * S, IH, RunStyle::Orange);
+		RunStyle::Text(Canvas, Font, TEXT("TIME STOPPED"), IX + Icon + 6.f * S, BY + (BH - TagH) * 0.5f, TagS, RunStyle::Orange);
+	}
+}
+
+// Полоса здоровья из ячеек: 20 делений по 5 единиц. Lag — светлый хвост после попадания (доля 0..1).
+void ARunHUD::DrawHealthCells(float X, float Y, float W, float H, float S, float Frac, float Lag, const FLinearColor& Color)
+{
+	const int32 Cells = 20;
+	const float Gap = 2.f * S, CW = (W - (Cells - 1) * Gap) / Cells;
+	Frac = FMath::Clamp(Frac, 0.f, 1.f);
+	Lag = FMath::Clamp(Lag, Frac, 1.f);
+	for (int32 I = 0; I < Cells; ++I)
+	{
+		const float CX = X + I * (CW + Gap);
+		// доля этой ячейки, которая ещё полна: последняя тает частично
+		const float Full = FMath::Clamp(Frac * Cells - I, 0.f, 1.f), Trail = FMath::Clamp(Lag * Cells - I, 0.f, 1.f);
+		RunStyle::Rect(Canvas, CX, Y, CW, H, FLinearColor(1.f, 1.f, 1.f, 0.1f));
+		if (Trail > Full)
+		{
+			RunStyle::Rect(Canvas, CX + CW * Full, Y, CW * (Trail - Full), H, FLinearColor(1.f, 0.85f, 0.7f, 0.85f));
+		}
+		RunStyle::Rect(Canvas, CX, Y, CW * Full, H, Color);
+	}
 }
 
 void ARunHUD::DrawHUD()
@@ -460,38 +538,52 @@ void ARunHUD::DrawHUD()
 		DrawShade(MenuBlend);   // меню закрыли: затемнение уходит плавно, экран игры уже поверх
 	}
 
-	// карман: четыре слота снизу по центру
-	const float SlotW = 170.f * S, SlotH = 44.f * S, Gap = 10.f * S;
-	const float X0 = (SX - 4.f * SlotW - 3.f * Gap) * 0.5f, Y0 = SY - SlotH - 28.f * S;
+	// карман: четыре ячейки снизу по центру (стиль 15.11). Вещь в руке приподнята, в яркой кромке и скобках, со свечением;
+	// пустая ячейка — пунктиром. Полоска снизу — вид вещи (блокнот, оружие, аптечка); значимые вещи не выделяются
+	const float SlotW = 150.f * S, SlotH = 54.f * S, Gap = 12.f * S, Cut = 9.f * S, Lift = 6.f * S;
+	const float X0 = (SX - 4.f * SlotW - 3.f * Gap) * 0.5f, Y0 = SY - SlotH - 34.f * S;
 	const TArray<int32>& Pocket = D.GetPocket();
 	const int32 Held = D.GetHeldSlot();
+	const float RealNow = GetWorld()->GetRealTimeSeconds();
 	for (int32 I = 0; I < RunGen::PocketSlots; ++I)
 	{
-		const float X = X0 + I * (SlotW + Gap);
-		DrawRect(FLinearColor(0.f, 0.f, 0.f, I == Held ? 0.75f : 0.55f), X, Y0, SlotW, SlotH);
-		if (I == Held)
+		const bool bItem = Pocket.IsValidIndex(I), bHeld = bItem && I == Held;
+		const float X = X0 + I * (SlotW + Gap), Y = Y0 - (bHeld ? Lift : 0.f);
+		const FString Num = FString::Printf(TEXT("[%d]"), I + 1);
+		if (!bItem)
 		{
-			// вещь в руке: слот в бирюзовой рамке и чуть приподнят надписью
-			const float B = 2.f * S;
-			const FLinearColor Frame(0.37f, 0.78f, 0.79f, 0.95f);
-			DrawRect(Frame, X, Y0, SlotW, B);
-			DrawRect(Frame, X, Y0 + SlotH - B, SlotW, B);
-			DrawRect(Frame, X, Y0, B, SlotH);
-			DrawRect(Frame, X + SlotW - B, Y0, B, SlotH);
-			DrawText(TEXT("IN HAND"), Frame, X + 4.f * S, Y0 - 18.f * S, Font, 0.8f * S);
+			RunStyle::Rect(Canvas, X, Y, SlotW, SlotH, RunStyle::A(RunStyle::Fill, 0.5f));
+			RunStyle::Dashed(Canvas, X, Y, SlotW, SlotH, 6.f * S, 1.5f * S, RunStyle::A(RunStyle::Teal, 0.45f));
+			RunStyle::Rich(Canvas, Font, Num, X + 4.f * S, Y + 5.f * S, 0.85f * S, FLinearColor::White, FLinearColor(1.f, 1.f, 1.f, 0.4f));
+			RunStyle::Text(Canvas, Font, TEXT("EMPTY"), X + SlotW * 0.5f, Y + SlotH * 0.5f - 6.f * S, 0.8f * S, FLinearColor(1.f, 1.f, 1.f, 0.4f), 0.5f);
+			continue;
 		}
-		DrawText(FString::Printf(TEXT("%d"), I + 1), FLinearColor(1.f, 1.f, 1.f, 0.45f), X + 6.f * S, Y0 + 3.f * S, Font, 0.9f * S);
-		if (Pocket.IsValidIndex(I))
+		const int32 Item = Pocket[I];
+		const FLinearColor Ink = ItemInk(Item);
+		if (bHeld)
 		{
-			const FLinearColor Ink = Pocket[I] == RunGen::Notebook ? FLinearColor(0.45f, 0.9f, 0.95f)
-				: Pocket[I] == RunGen::Weapon ? FLinearColor(1.f, 0.6f, 0.3f)
-				: Pocket[I] == RunGen::Medkit ? FLinearColor(0.55f, 1.f, 0.55f) : FLinearColor::White;
-			if (Pocket[I] == RunGen::Notebook && D.HasUnreadJournal())
-			{
-				DrawRect(FLinearColor(0.37f, 0.78f, 0.79f), X + SlotW - 16.f * S, Y0 + 6.f * S, 9.f * S, 9.f * S);   // есть новая запись
-			}
-			DrawText(RunGen::ItemName(Pocket[I]), Ink,
-				X + 24.f * S, Y0 + 13.f * S, Font, 1.1f * S);
+			RunStyle::Glow(Canvas, X, Y, SlotW, SlotH, S, RunStyle::Teal);
+		}
+		RunStyle::Panel(Canvas, X, Y, SlotW, SlotH, Cut, bHeld ? FLinearColor(0.02f, 0.09f, 0.11f, 0.94f) : RunStyle::Fill,
+			RunStyle::A(RunStyle::Teal, bHeld ? 0.95f : 0.35f), (bHeld ? 2.f : 1.f) * S);
+		RunStyle::Rich(Canvas, Font, Num, X + 4.f * S, Y + 5.f * S, 0.85f * S, FLinearColor::White, bHeld ? RunStyle::Teal : FLinearColor(1.f, 1.f, 1.f, 0.6f));
+		float TagW = 0.f;
+		if (bHeld)
+		{
+			RunStyle::Brackets(Canvas, X - 5.f * S, Y - 5.f * S, SlotW + 10.f * S, SlotH + 10.f * S, 10.f * S, 2.f * S, RunStyle::Teal);
+			TagW = RunStyle::Text(Canvas, Font, TEXT("IN HAND"), X + SlotW - 8.f * S, Y + 6.f * S, 0.7f * S, RunStyle::Teal, 1.f);
+		}
+		if (Item == RunGen::Notebook || Item == RunGen::Weapon || Item == RunGen::Medkit)
+		{
+			RunStyle::Rect(Canvas, X + 8.f * S, Y + SlotH - 6.f * S, SlotW - Cut - 16.f * S, 2.f * S, RunStyle::A(Ink, 0.85f));
+		}
+		RunStyle::Text(Canvas, Font, FitText(this, RunGen::ItemName(Item), Font, 1.05f * S, SlotW - 20.f * S), X + SlotW * 0.5f, Y + SlotH * 0.5f - 5.f * S,
+			1.05f * S, bHeld ? Ink : RunStyle::A(Ink, 0.85f), 0.5f);
+		if (Item == RunGen::Notebook && D.HasUnreadJournal())
+		{
+			// есть новая запись: точка пульсирует
+			const float Pulse = 0.55f + 0.45f * FMath::Sin(RealNow * 6.f);
+			RunStyle::Rect(Canvas, X + SlotW - (bHeld ? TagW + 20.f * S : 16.f * S), Y + 8.f * S, 7.f * S, 7.f * S, RunStyle::A(RunStyle::Teal, Pulse));
 		}
 	}
 
@@ -528,30 +620,43 @@ void ARunHUD::DrawHUD()
 		{
 			Keys.Add(TEXT("[V] light"));
 		}
-		Centered(FString::Join(Keys, TEXT("     ")), Y0 + SlotH + 7.f * S, FLinearColor(1.f, 1.f, 1.f, 0.5f), 0.8f * S);
+		// на тёмной полосе: на светлом полу без подложки строка не читается
+		const FString Line = FString::Join(Keys, TEXT("     "));
+		const float KS = 0.8f * S, KY = Y0 + SlotH + 9.f * S;
+		const float KW = RunStyle::Rich(Canvas, Font, Line, 0.f, 0.f, KS, FLinearColor::White, FLinearColor::White, true);
+		float KLW = 0.f, KH = 0.f;
+		GetTextSize(TEXT("Ag"), KLW, KH, Font, KS);
+		RunStyle::Panel(Canvas, (SX - KW) * 0.5f - 12.f * S, KY - 3.f * S, KW + 24.f * S, KH + 6.f * S, 5.f * S, RunStyle::A(RunStyle::Fill, 0.6f),
+			FLinearColor::Transparent, 0.f);
+		RunStyle::Rich(Canvas, Font, Line, (SX - KW) * 0.5f, KY, KS, FLinearColor(1.f, 1.f, 1.f, 0.75f), FLinearColor(1.f, 1.f, 1.f, 0.8f));
 	}
 
-	// шлюз считывает карман: пока створки закрыты, слоты вспыхивают по очереди — все, без разбора
+	// шлюз считывает карман: пока створки закрыты, ячейки по очереди вспыхивают и по ним проходит луч — все, без разбора
 	const float Scan = D.GetTransitionAlpha();
 	if (Scan >= 0.f)
 	{
-		const int32 Lit = FMath::Min(RunGen::PocketSlots - 1, FMath::FloorToInt32(Scan * RunGen::PocketSlots));
-		const float X = X0 + Lit * (SlotW + Gap), B = 3.f * S;
-		const FLinearColor Teal(0.37f, 0.78f, 0.79f, 0.95f);
-		DrawRect(Teal, X - B, Y0 - B, SlotW + 2 * B, B);
-		DrawRect(Teal, X - B, Y0 + SlotH, SlotW + 2 * B, B);
-		DrawRect(Teal, X - B, Y0, B, SlotH);
-		DrawRect(Teal, X + SlotW, Y0, B, SlotH);
+		const float Pos = Scan * RunGen::PocketSlots;
+		const int32 Lit = FMath::Min(RunGen::PocketSlots - 1, FMath::FloorToInt32(Pos));
+		const float X = X0 + Lit * (SlotW + Gap), Y = Y0 - (Lit == Held && Pocket.IsValidIndex(Lit) ? Lift : 0.f);
+		RunStyle::Glow(Canvas, X, Y, SlotW, SlotH, S, RunStyle::Teal);
+		RunStyle::Frame(Canvas, X - 2.f * S, Y - 2.f * S, SlotW + 4.f * S, SlotH + 4.f * S, 2.f * S, RunStyle::Teal);
+		RunStyle::Rect(Canvas, X, Y + SlotH * FMath::Min(Pos - Lit, 1.f) - 1.f * S, SlotW, 2.f * S, RunStyle::A(RunStyle::Teal, 0.9f));
 	}
-	// где я: мелко справа от кармана, крупно на пару секунд при входе
+	// где я: мелко справа вверху, крупно на пару секунд при входе — с расходящимися от названия линиями
 	if (!D.GetRoomName().IsEmpty())
 	{
-		DrawText(D.GetRoomName(), FLinearColor(1.f, 1.f, 1.f, 0.6f), X0 + 4.f * SlotW + 3.f * Gap + 22.f * S, Y0 + 13.f * S, Font, 1.0f * S);
+		RunStyle::Text(Canvas, Font, TEXT("SECTOR"), SX - 28.f * S, 22.f * S, 0.7f * S, RunStyle::A(RunStyle::Teal, 0.85f), 1.f);
+		RunStyle::Text(Canvas, Font, D.GetRoomName().ToUpper(), SX - 28.f * S, 36.f * S, 1.1f * S, FLinearColor(1.f, 1.f, 1.f, 0.85f), 1.f);
 		const float Title = D.GetRoomTitleAlpha();
 		if (Title > 0.f && Scan < 0.f)
 		{
 			const float A = FMath::Min(1.f, Title * 3.f);
+			float TW = 0.f, TH = 0.f;
+			GetTextSize(D.GetRoomName(), TW, TH, Font, 2.6f * S);
 			Centered(D.GetRoomName(), SY * 0.27f, FLinearColor(1.f, 1.f, 1.f, A), 2.6f * S);
+			const float LineLen = 140.f * S * FMath::Min(1.f, (1.f - Title) * 6.f + 0.2f), LineY = SY * 0.27f + TH * 0.55f;
+			RunStyle::Rect(Canvas, (SX - TW) * 0.5f - 24.f * S - LineLen, LineY, LineLen, 1.5f * S, RunStyle::A(RunStyle::Teal, A * 0.8f));
+			RunStyle::Rect(Canvas, (SX + TW) * 0.5f + 24.f * S, LineY, LineLen, 1.5f * S, RunStyle::A(RunStyle::Teal, A * 0.8f));
 			if (D.IsRoomFamiliar())
 			{
 				Centered(TEXT("You have been here"), SY * 0.27f + 46.f * S, FLinearColor(0.37f, 0.78f, 0.79f, A), 1.1f * S);
@@ -571,12 +676,13 @@ void ARunHUD::DrawHUD()
 		LagHealth = FMath::Max(Hp, LagHealth - 60.f * GetWorld()->GetDeltaSeconds());
 	}
 	{
-		const float BX = 28.f * S, BY = 30.f * S, BW = 240.f * S, BH = 14.f * S, B = 2.f * S;
-		DrawRect(FLinearColor(0.f, 0.f, 0.f, 0.55f), BX - B, BY - B, BW + 2.f * B, BH + 2.f * B);
-		DrawRect(FLinearColor(1.f, 0.85f, 0.7f, 0.85f), BX, BY, BW * LagHealth / MaxHp, BH);
+		// 20 ячеек по 5 единиц на тёмной подложке со срезанными углами (вид 15.11)
+		const float BX = 28.f * S, BY = 30.f * S, BW = 240.f * S, BH = 12.f * S;
+		RunStyle::Panel(Canvas, BX - 8.f * S, BY - 7.f * S, BW + 58.f * S, BH + 14.f * S, 7.f * S, RunStyle::A(RunStyle::Fill, 0.6f),
+			RunStyle::A(RunStyle::Teal, 0.25f), 1.f * S);
 		const FLinearColor Fill = FLinearColor::LerpUsingHSV(FLinearColor(0.85f, 0.2f, 0.15f, 0.95f), FLinearColor(0.3f, 0.9f, 0.4f, 0.95f), D.GetHealFlash());
-		DrawRect(Fill, BX, BY, BW * Hp / MaxHp, BH);
-		DrawText(FString::Printf(TEXT("%d"), FMath::CeilToInt32(Hp)), FLinearColor::White, BX + BW + 10.f * S, BY - 4.f * S, Font, 1.0f * S);
+		DrawHealthCells(BX, BY, BW, BH, S, Hp / MaxHp, LagHealth / MaxHp, Fill);
+		DrawText(FString::Printf(TEXT("%d"), FMath::CeilToInt32(Hp)), FLinearColor::White, BX + BW + 10.f * S, BY - 5.f * S, Font, 1.0f * S);
 	}
 	if (Hp > 0.f && Hp <= 25.f && D.GetPhase() == ERunPhase::Playing)
 	{
@@ -589,18 +695,44 @@ void ARunHUD::DrawHUD()
 		DrawRect(Red, 0.f, E, E, SY - 2.f * E);
 		DrawRect(Red, SX - E, E, E, SY - 2.f * E);
 	}
-	if (D.IsEngineFixed())
+	// обучение (автор 15.11): слева под здоровьем — цель забега и, в режиме обучения, что делать сейчас
+	if (D.GetPhase() == ERunPhase::Playing)
 	{
-		DrawText(TEXT("ENGINES ONLINE - return to the bridge"), FLinearColor(0.45f, 0.9f, 0.95f), 28.f * S, 62.f * S, Font, 1.1f * S);
+		const FString Goal = D.GetGoal();
+		const FString Step = ARunDirector::IsTrainingOn() ? D.GetStep() : FString();
+		if (!Goal.IsEmpty())
+		{
+			const float PX = 28.f * S, PY = 58.f * S, PW = 430.f * S, LineH = 20.f * S;
+			const TArray<FString> Lines = Step.IsEmpty() ? TArray<FString>() : WrapText(this, Step, Font, 1.0f * S, PW - 24.f * S);
+			// вид 15.11: панель со срезанными углами, бирюзовая черта у цели, тонкий разделитель перед шагом обучения
+			const float BoxH = 30.f * S + Lines.Num() * LineH;
+			RunStyle::Panel(Canvas, PX - 8.f * S, PY - 6.f * S, PW, BoxH, 9.f * S, RunStyle::A(RunStyle::Fill, 0.75f), RunStyle::A(RunStyle::Teal, 0.3f), 1.f * S);
+			RunStyle::Rect(Canvas, PX - 8.f * S, PY - 1.f * S, 3.f * S, 18.f * S, RunStyle::Teal);
+			if (Lines.Num() > 0)
+			{
+				RunStyle::Rect(Canvas, PX, PY + 21.f * S, PW - 24.f * S, 1.f * S, RunStyle::A(RunStyle::Teal, 0.25f));
+			}
+			DrawText(Goal, FLinearColor(0.45f, 0.9f, 0.95f), PX, PY, Font, 0.95f * S);
+			for (int32 I = 0; I < Lines.Num(); ++I)
+			{
+				DrawText(Lines[I], FLinearColor::White, PX, PY + 24.f * S + I * LineH, Font, 1.0f * S);
+			}
+		}
 	}
 	// клавиши не висят на экране постоянно: каждая показывается один раз, когда впервые нужна
 	const FString Tip = D.GetTip();
 	if (!Tip.IsEmpty())
 	{
-		float TW = 0.f, TH = 0.f;
-		GetTextSize(Tip, TW, TH, Font, 1.15f * S);
-		DrawRect(FLinearColor(0.f, 0.f, 0.f, 0.6f), (SX - TW) * 0.5f - 14.f * S, SY * 0.115f - 6.f * S, TW + 28.f * S, TH + 12.f * S);
-		Centered(Tip, SY * 0.115f, FLinearColor(0.37f, 0.78f, 0.79f), 1.15f * S);
+		// панель со срезанными углами, бирюзовая черта слева; клавиши — кнопками
+		const float TS = 1.1f * S;
+		float LW = 0.f, TH = 0.f;
+		GetTextSize(TEXT("Ag"), LW, TH, Font, TS);
+		const float TW = RunStyle::Rich(Canvas, Font, Tip, 0.f, 0.f, TS, FLinearColor::White, RunStyle::Teal, true);
+		const float TX = (SX - TW) * 0.5f, TY = SY * 0.115f;
+		RunStyle::Panel(Canvas, TX - 18.f * S, TY - 7.f * S, TW + 36.f * S, TH + 14.f * S, 8.f * S, RunStyle::A(RunStyle::Fill, 0.8f),
+			RunStyle::A(RunStyle::Teal, 0.35f), 1.f * S);
+		RunStyle::Rect(Canvas, TX - 18.f * S, TY + 1.f * S, 3.f * S, TH - 2.f * S, RunStyle::Teal);
+		RunStyle::Rich(Canvas, Font, Tip, TX, TY, TS, FLinearColor::White, RunStyle::Teal);
 	}
 
 	// попадание: красная вспышка
@@ -644,6 +776,28 @@ void ARunHUD::DrawHUD()
 	{
 		Centered(TEXT("You are unarmed"), 26.f * S, FLinearColor(1.f, 0.55f, 0.1f), 1.1f * S);
 	}
+	// обучение: в опасной комнате — метка двери, через которую вошёл (обратный путь ведёт туда, откуда пришёл)
+	FVector Back;
+	if (D.GetBackDoor(Back))
+	{
+		const FLinearColor Way(0.45f, 0.9f, 0.95f);
+		const FVector Scr = Project(Back);
+		const float Pad = 70.f * S;
+		float X = Scr.X, Y = Scr.Y;
+		if (Scr.Z <= 0.f)
+		{
+			X = SX - X;      // дверь за спиной: метка прижимается к низу
+			Y = SY;
+		}
+		X = FMath::Clamp(X, Pad, SX - Pad);
+		Y = FMath::Clamp(Y, Pad + 40.f * S, Y0 - 130.f * S);   // выше субтитров рассказчика
+		const float M = 11.f * S;
+		DrawLine(X, Y - M, X + M, Y, Way, 3.f * S);
+		DrawLine(X + M, Y, X, Y + M, Way, 3.f * S);
+		DrawLine(X, Y + M, X - M, Y, Way, 3.f * S);
+		DrawLine(X - M, Y, X, Y - M, Way, 3.f * S);
+		DrawText(TEXT("WAY BACK"), Way, X + 18.f * S, Y - 9.f * S, Font, 0.95f * S);
+	}
 	if (!D.GetThreatHint().IsEmpty())
 	{
 		Centered(D.GetThreatHint(), 54.f * S, FLinearColor(1.f, 0.85f, 0.3f), 1.1f * S);
@@ -662,13 +816,15 @@ void ARunHUD::DrawHUD()
 		{
 			Scr = Project(At + FVector(0.f, 0.f, 38.f));
 		}
-		float PW = 0.f, PH = 0.f;
-		GetTextSize(Prompt, PW, PH, Font, 1.1f * S);
+		float PLW = 0.f, PH = 0.f;
+		GetTextSize(TEXT("Ag"), PLW, PH, Font, 1.1f * S);
+		const float PW = RunStyle::Rich(Canvas, Font, Prompt, 0.f, 0.f, 1.1f * S, FLinearColor::White, RunStyle::Teal, true);
 		const bool bInWorld = Scr.Z > 0.f && Scr.X > PW * 0.5f + 20.f * S && Scr.X < SX - PW * 0.5f - 20.f * S && Scr.Y > 80.f * S && Scr.Y < Y0 - 60.f * S;
 		const float PX = bInWorld ? Scr.X - PW * 0.5f : (SX - PW) * 0.5f;
 		const float PY = bInWorld ? Scr.Y - PH - 26.f * S : Y0 - 34.f * S;
-		DrawRect(FLinearColor(0.f, 0.f, 0.f, 0.65f), PX - 10.f * S, PY - 5.f * S, PW + 20.f * S, PH + 10.f * S);
-		DrawText(Prompt, FLinearColor(0.37f, 0.78f, 0.79f), PX, PY, Font, 1.1f * S);
+		RunStyle::Panel(Canvas, PX - 12.f * S, PY - 6.f * S, PW + 24.f * S, PH + 12.f * S, 7.f * S, RunStyle::A(RunStyle::Fill, 0.8f),
+			RunStyle::A(RunStyle::Teal, 0.5f), 1.f * S);
+		RunStyle::Rich(Canvas, Font, Prompt, PX, PY, 1.1f * S, FLinearColor::White, RunStyle::Teal);
 	}
 
 	const FString Message = D.GetPhase() == ERunPhase::Playing ? D.GetMessage() : FString();
@@ -677,7 +833,7 @@ void ARunHUD::DrawHUD()
 		const TArray<FString> Lines = WrapText(this, Message, Font, 1.25f * S, SX * 0.76f - 40.f * S);
 		// строка рассказчика — как субтитры, над карманом
 		const float LineH = 24.f * S, BoxH = Lines.Num() * LineH + 20.f * S, BoxY = Y0 - BoxH - 62.f * S;
-		DrawRect(FLinearColor(0.f, 0.f, 0.f, 0.6f), SX * 0.12f, BoxY, SX * 0.76f, BoxH);
+		RunStyle::Panel(Canvas, SX * 0.12f, BoxY, SX * 0.76f, BoxH, 10.f * S, RunStyle::A(RunStyle::Fill, 0.7f), RunStyle::A(RunStyle::Teal, 0.2f), 1.f * S);
 		for (int32 I = 0; I < Lines.Num(); ++I)
 		{
 			Centered(Lines[I], BoxY + 10.f * S + I * LineH, D.GetPhase() == ERunPhase::Dead ? FLinearColor(1.f, 0.35f, 0.3f) : FLinearColor::White, 1.25f * S);
@@ -691,10 +847,17 @@ void ARunHUD::DrawHUD()
 		const FString Name = RunGen::ItemName(Item);
 		float NW = 0.f, NH = 0.f;
 		GetTextSize(Name, NW, NH, Font, 1.5f * S);
-		DrawRect(FLinearColor(0.f, 0.f, 0.f, 0.6f), (SX - NW) * 0.5f - 16.f * S, SY * 0.72f - 6.f * S, NW + 32.f * S, NH + 12.f * S);
-		Centered(Name, SY * 0.72f, FLinearColor::White, 1.5f * S);
-		Centered(Item == RunGen::Medkit ? TEXT("Move the mouse to turn it      [LMB] use it      [RMB] put it down")
-			: TEXT("Move the mouse to turn it      [RMB] put it down"), SY * 0.72f + NH + 14.f * S, FLinearColor(0.37f, 0.78f, 0.79f), 1.0f * S);
+		// одна панель на имя и клавиши: вещь крупно позади, текст поверх неё без подложки теряется
+		const FString Help = Item == RunGen::Medkit ? TEXT("Move the mouse to turn it      [LMB] use it      [RMB] put it down")
+			: TEXT("Move the mouse to turn it      [RMB] put it down");
+		const float HelpW = RunStyle::Rich(Canvas, Font, Help, 0.f, 0.f, 1.0f * S, FLinearColor::White, RunStyle::Teal, true);
+		float HLW = 0.f, HH = 0.f;
+		GetTextSize(TEXT("Ag"), HLW, HH, Font, 1.0f * S);
+		const float BoxW = FMath::Max(NW, HelpW) + 40.f * S, BoxY = SY * 0.72f - 8.f * S, BoxH = NH + HH + 30.f * S;
+		RunStyle::Panel(Canvas, (SX - BoxW) * 0.5f, BoxY, BoxW, BoxH, 10.f * S, RunStyle::A(RunStyle::Fill, 0.85f), RunStyle::A(RunStyle::Teal, 0.4f), 1.f * S);
+		RunStyle::Brackets(Canvas, (SX - BoxW) * 0.5f - 5.f * S, BoxY - 5.f * S, BoxW + 10.f * S, BoxH + 10.f * S, 12.f * S, 2.f * S, RunStyle::A(RunStyle::Teal, 0.8f));
+		Centered(Name, SY * 0.72f, ItemInk(Item), 1.5f * S);
+		RunStyle::RichCentered(Canvas, Font, Help, SX * 0.5f, SY * 0.72f + NH + 10.f * S, 1.0f * S, FLinearColor(1.f, 1.f, 1.f, 0.8f), RunStyle::Teal);
 	}
 
 	if (D.IsDebugShown())
@@ -715,6 +878,41 @@ void ARunHUD::DrawHUD()
 	const int32 Secs = FMath::RoundToInt32(D.GetRunSeconds());
 	const FString Clock = FString::Printf(TEXT("%d:%02d"), Secs / 60, Secs % 60);
 	const FLinearColor Teal(0.37f, 0.78f, 0.79f), Dim(1.f, 1.f, 1.f, 0.65f);
+	const FString ShipCode = D.GetShipCode();   // зерно цифрами: этот код на двери каюты возвращает на тот же корабль
+
+	if (D.IsCodeOpen())
+	{
+		// окно кода двери каюты (решение автора 15.11, вечер): цифры корабля, на котором уже был; пусто — новый
+		const float W = 640.f * S, H = 250.f * S, X = (SX - W) * 0.5f, Y = SY * 0.3f;
+		DrawRect(FLinearColor(0.f, 0.02f, 0.03f, 0.88f), X, Y, W, H);
+		const float B = 2.f * S;
+		DrawRect(Teal, X, Y, W, B);
+		DrawRect(Teal, X, Y + H - B, W, B);
+		DrawRect(Teal, X, Y, B, H);
+		DrawRect(Teal, X + W - B, Y, B, H);
+		Centered(TEXT("DOOR CODE"), Y + 16.f * S, Teal, 1.6f * S);
+		Centered(TEXT("The code of a ship you have already been on takes you back to it."), Y + 54.f * S, FLinearColor::White, 1.0f * S);
+		Centered(TEXT("Leave it empty for a new ship."), Y + 76.f * S, FLinearColor::White, 1.0f * S);
+		const float FieldY = Y + 106.f * S;
+		DrawRect(FLinearColor(0.f, 0.f, 0.f, 0.9f), X + 40.f * S, FieldY, W - 80.f * S, 44.f * S);
+		const bool bCaret = FMath::Fmod(FPlatformTime::Seconds(), 1.0) < 0.55;   // реальное время: мигает и без хода мира
+		FString Shown;   // цифры вразрядку, как на табло замка
+		for (const TCHAR C : D.GetCodeText())
+		{
+			Shown.AppendChar(C);
+			Shown += TEXT(" ");
+		}
+		Centered(Shown + (bCaret ? TEXT("_") : TEXT(" ")), FieldY + 9.f * S, FLinearColor::White, 1.5f * S);
+		if (!D.GetCodeError().IsEmpty())
+		{
+			Centered(D.GetCodeError(), FieldY + 54.f * S, FLinearColor(1.f, 0.35f, 0.3f), 1.0f * S);
+		}
+		Centered(TEXT("[0]-[9] digits      [Enter] open      [Backspace] erase      [Esc] step back"), Y + H - 52.f * S, Dim, 0.95f * S);
+		if (!D.GetLastCode().IsEmpty())
+		{
+			Centered(FString::Printf(TEXT("[Up] last ship: %s"), *D.GetLastCode()), Y + H - 28.f * S, Teal, 0.95f * S);
+		}
+	}
 	if (D.GetPhase() == ERunPhase::Dead)
 	{
 		for (int32 I = 0; I < 3; ++I)   // три слоя: игровой экран под итогами почти не просвечивает
@@ -723,24 +921,19 @@ void ARunHUD::DrawHUD()
 		}
 		Centered(TEXT("YOU DIED"), SY * 0.26f, FLinearColor(1.f, 0.3f, 0.25f), 3.4f * S);
 		Centered(D.GetDeathCause(), SY * 0.26f + 78.f * S, FLinearColor::White, 1.25f * S);
-		Centered(FString::Printf(TEXT("Doors opened: %d      Notes read: %d      Time: %s"), D.GetDoorsOpened(), D.GetNotesRead(), *Clock), SY * 0.26f + 124.f * S, Dim, 1.1f * S);
-		Centered(TEXT("Another you wakes up on the bridge."), SY * 0.26f + 190.f * S, Teal, 1.25f * S);
-		Centered(TEXT("[Enter] try again"), SY * 0.26f + 236.f * S, Dim, 1.1f * S);
+		Centered(D.GetDeathAdvice(), SY * 0.26f + 112.f * S, Teal, 1.1f * S);   // обучение: что делать в следующий раз
+		Centered(FString::Printf(TEXT("Doors opened: %d      Notes read: %d      Time: %s"), D.GetDoorsOpened(), D.GetNotesRead(), *Clock), SY * 0.26f + 156.f * S, Dim, 1.1f * S);
+		Centered(FString::Printf(TEXT("Ship code: %s  -  type it at your cabin door to come back to this ship"), *ShipCode), SY * 0.26f + 184.f * S, Dim, 1.0f * S);
+		Centered(TEXT("Another you wakes up."), SY * 0.26f + 226.f * S, Teal, 1.25f * S);
+		Centered(TEXT("[Enter] try again"), SY * 0.26f + 268.f * S, Dim, 1.1f * S);
 	}
 	else if (D.GetPhase() == ERunPhase::Won)
 	{
-		for (int32 I = 0; I < 3; ++I)
+		// концовка — сценой в меню (ARunDirector::StartEnding): здесь только затемнение перед ней
+		if (const float Fade = D.GetWinFade(); Fade > 0.f)
 		{
-			DrawRect(FLinearColor(0.f, 0.02f, 0.03f, 0.84f), 0.f, 0.f, SX, SY);
+			DrawRect(FLinearColor(0.f, 0.f, 0.f, Fade * Fade * (3.f - 2.f * Fade)), 0.f, 0.f, SX, SY);
 		}
-		Centered(TEXT("YOU ESCAPED"), SY * 0.2f, Teal, 3.4f * S);
-		Centered(TEXT("The ship tears itself free of the singularity."), SY * 0.2f + 78.f * S, FLinearColor::White, 1.25f * S);
-		Centered(FString::Printf(TEXT("Doors opened: %d      Notes read: %d      Damage taken: %d      Medkits used: %d      Time: %s"), D.GetDoorsOpened(), D.GetNotesRead(),
-			FMath::RoundToInt32(D.GetDamageTaken()), D.GetMedkitsUsed(), *Clock), SY * 0.2f + 124.f * S, Dim, 1.1f * S);
-		Centered(FString::Printf(TEXT("Run seed: %u"), D.GetSeed()), SY * 0.2f + 152.f * S, Dim, 1.0f * S);
-		Centered(TEXT("Made for Epic AI MegaJam 2026 by one person."), SY * 0.2f + 220.f * S, FLinearColor::White, 1.1f * S);
-		Centered(TEXT("Tools: Unreal Engine 5, Claude Code, Tripo, Nano Banana, Blender."), SY * 0.2f + 248.f * S, Dim, 1.0f * S);
-		Centered(TEXT("[Enter] play again"), SY * 0.2f + 310.f * S, Dim, 1.1f * S);
 	}
 	else if (D.IsPausedByMenu())
 	{
@@ -756,6 +949,9 @@ void ARunHUD::DrawHUD()
 		{
 			Centered(Lines[I], SY * 0.2f + (90.f + I * 34.f) * S, I < 3 ? Teal : Dim, 1.2f * S);
 		}
-		DrawText(FString::Printf(TEXT("Run seed: %u"), D.GetSeed()), Dim, 28.f * S, SY - 34.f * S, Font, 0.95f * S);
+		if (!D.IsInCabin())   // в каюте код ещё не набран
+		{
+			DrawText(FString::Printf(TEXT("Ship code: %s"), *ShipCode), Dim, 28.f * S, SY - 34.f * S, Font, 0.95f * S);
+		}
 	}
 }

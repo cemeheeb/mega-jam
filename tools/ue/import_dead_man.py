@@ -2,6 +2,7 @@
 
     python3 tools/ue/import_dead_man.py          # импортировать то, чего ещё нет; материалы и слоты — всегда
     python3 tools/ue/import_dead_man.py --mesh   # после новой выгрузки: удалить меши и импортировать заново
+    python3 tools/ue/import_dead_man.py --mesh SM_DeadMan_Floor3   # заново только названные позы
 
 Файлы готовит SourceArt/characters/dead-man/source/export_dead_man.py: SM_DeadMan_<Поза>.fbx в сантиметрах,
 начало координат — опора позы (SourceArt/characters/dead-man/asset.yml): пол под тазом, стена или край стола
@@ -67,8 +68,11 @@ def main():
 
     files = sorted(glob.glob(os.path.join(SRC, "SM_DeadMan_*.fbx")))
     assert len(files) == POSES, files
+    only = [a for a in sys.argv[1:] if not a.startswith("--")]
     for fbx in files:
         name = os.path.splitext(os.path.basename(fbx))[0]
+        if only and name not in only:
+            continue
         mesh_path = f"{FOLDER}/{name}"
         if "--mesh" in sys.argv and exists(mesh_path):
             call(AS, "delete", {"path": mesh_path})

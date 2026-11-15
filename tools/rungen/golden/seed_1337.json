@@ -48,8 +48,7 @@
    "Rubber Duck"
   ],
   "chain_room_types": {
-   "notebook only": "Bridge",
-   "empty pocket": "Living",
+   "nothing that matters": "Bridge",
    "L": "Computer",
    "L,K1": "Cargo",
    "K1": "Lab",
@@ -57,8 +56,9 @@
    "K1,K2": "Medbay",
    "K1,K2,K3": "Engine"
   },
-  "notebook_first": "Everything you add, the singularity will erase. Only this remains.\nCarry the coolant valve. It breaks the first loop.",
-  "decompression_level": 3
+  "notebook_first": "All systems are green. The engines only need the captain's card. The captain went down to the engine room and never came back.\nIf you are reading this, the coolant valve got you off the bridge too. What you carry decides where a door leads.",
+  "decompression_level": 3,
+  "hide_spot": 1
  },
  "run_items": [
   "Coolant Valve",
@@ -184,39 +184,14 @@
   "switches": 17,
   "anomaly": "none",
   "items": [
-   "Notebook",
-   "Pipe Wrench",
-   "Coolant Valve",
-   "Sealant Can",
-   "Snow Globe",
-   "Voice Recorder",
-   "Ration Tin"
+   "Coolant Valve"
   ],
-  "notes": [
-   {
-    "kind": "next_key",
-    "items": [
-     "Dog Tag",
-     "Coolant Valve"
-    ],
-    "tpl": 2,
-    "text": "Looked everywhere for the dog tag. It was never there until I picked up the coolant valve."
-   }
-  ]
+  "notes": []
  },
  "looks": [
   {
-   "key": 0,
-   "signature": "{} (empty pocket)",
-   "class": "chain",
-   "level": 0,
-   "type": "Living",
-   "switches": 0,
-   "anomaly": "none"
-  },
-  {
    "key": 4096,
-   "signature": "{} (notebook only)",
+   "signature": "{} (nothing that matters)",
    "class": "chain",
    "level": 0,
    "type": "Bridge",
@@ -7362,60 +7337,15 @@
   }
  ],
  "rooms": {
-  "{} (empty pocket)": {
-   "key": 0,
-   "type": "Living",
-   "switches": 0,
-   "anomaly": "none",
-   "items": [
-    "Data Cartridge",
-    "Ration Tin",
-    "Pressure Gauge",
-    "Snow Globe"
-   ],
-   "notes": [
-    {
-     "kind": "next_key",
-     "items": [
-      "Dog Tag",
-      "Coolant Valve"
-     ],
-     "tpl": 0,
-     "text": "The dog tag only shows up for someone carrying the coolant valve."
-    },
-    {
-     "kind": "useless",
-     "items": [
-      "Sealant Can"
-     ],
-     "tpl": 2,
-     "text": "Don't waste a slot on the sealant can."
-    }
-   ]
-  },
-  "{} (notebook only)": {
+  "{} (nothing that matters)": {
    "key": 4096,
    "type": "Bridge",
    "switches": 17,
    "anomaly": "none",
    "items": [
-    "Coolant Valve",
-    "Sealant Can",
-    "Snow Globe",
-    "Voice Recorder",
-    "Ration Tin"
+    "Coolant Valve"
    ],
-   "notes": [
-    {
-     "kind": "next_key",
-     "items": [
-      "Dog Tag",
-      "Coolant Valve"
-     ],
-     "tpl": 2,
-     "text": "Looked everywhere for the dog tag. It was never there until I picked up the coolant valve."
-    }
-   ]
+   "notes": []
   },
   "{L}": {
    "key": 1,
@@ -7423,11 +7353,11 @@
    "switches": 2,
    "anomaly": "none",
    "items": [
+    "Notebook",
+    "Pipe Wrench",
     "Dog Tag",
     "Family Photo",
-    "Flashlight",
-    "Sealant Can",
-    "Duct Tape"
+    "Flashlight"
    ],
    "notes": [
     {
@@ -7555,13 +7485,15 @@
    "type": "Engine",
    "switches": 48,
    "anomaly": "none",
-   "items": [],
+   "items": [
+    "Captain's Card"
+   ],
    "notes": [
     {
      "kind": "finale",
      "items": [],
      "tpl": 0,
-     "text": "Remember how you got to the bridge."
+     "text": "Take his card. Keep the notebook and the card, nothing else. Remember how you got to the bridge."
     }
    ]
   },

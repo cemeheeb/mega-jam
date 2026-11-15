@@ -49,7 +49,7 @@ DIRECTOR_CLASS = "/Script/MegaJam.RunDirector"
 # где комнаты стоят на проверочном уровне и где появляется игрок
 PLACES = {"Living": (0, 0, 0), "Bridge": (0, 3000, 0), "Lab": (0, 6000, 0),
           "LifeSupport": (0, 9000, 0), "Engine": (0, 12000, 0), "Medbay": (0, 15000, 0),
-          "Cargo": (0, 18000, 0), "Mess": (0, 21000, 0), "Computer": (0, 24000, 0)}
+          "Cargo": (0, 18000, 0), "Mess": (0, 21000, 0), "Computer": (0, 24000, 0), "Cabin": (0, 27000, 0)}
 PLAYER_START = (-290, -225, 100)   # в жилой комнате, перед спальной капсулой
 
 # --- размеры коробки, общие для всех комнат ---
@@ -81,19 +81,23 @@ FLOOR_TILES = "/Game/Environment/Common/FloorTiles/MI_FloorTiles"   # вмест
 class Room:
     def __init__(self, name):
         self.name = name
+        self.parent = ROOM_CLASS   # класс-родитель блюпринта: у каюты свой (ARunCabin)
         self.boxes = []      # (имя, размер, центр, материал, поворот вокруг Z)
         self.cylinders = []  # (имя, радиус, высота, центр, материал, поворот (pitch, yaw, roll))
         self.lights = []     # (имя, положение, сила, радиус, цвет)
         self.spots = []      # (имя, положение): места для предметов и записок, высота — верх поверхности
         self.meshes = []     # (имя, путь меша, положение, (pitch, yaw, roll)): колонки у стен и реквизит
         self.feet = []       # (имя, размер, центр): габариты мебели-мешей по осям комнаты, для раскладки колонок
+        self.scales = {}     # имя меша -> (x, y, z): масштаб в осях меша (один меш бака на три размера)
 
-    def mesh(self, name, asset, center, yaw=0.0, rot=None, foot=None):
+    def mesh(self, name, asset, center, yaw=0.0, rot=None, foot=None, scale=None):
         """asset — путь от /Game/Environment, например Common/Lamps/SM_CagedCeilingLamp. foot — (размер, центр)
         по осям комнаты: габарит меша-мебели, который стоит у стены (коробки и цилиндры дают габарит сами).
         Третьим в foot можно дать False: предмет не коробка со столешницей (бочка, унитаз) — колонку за ним
         он закрывает, а не служит ей рабочей поверхностью."""
         self.meshes.append((name, f"{ENV}/{asset}", center, rot or (0, yaw, 0)))
+        if scale:
+            self.scales[name] = scale
         if foot:
             self.feet.append((name, *foot))
 
@@ -121,6 +125,8 @@ class Room:
 UP = (0, 0, 1)
 # Поручень Singula смоделирован лёжа: длинная ось Y меша, стойки вниз к основанию z = 0 (ручка в 9,5 см над ним).
 GRAB_HANDLE = "Common/Handrails/SM_GrabHandle"
+STORAGE_TANK = "Common/StorageTank/SM_StorageTank"            # бак 2,5 м: жизнеобеспечение, двигательный, серверная
+CONTROL_CABINET = "Common/ControlCabinet/SM_ControlCabinet"   # пульт со столом на 1,0 м и экраном
 
 
 def cross(a, b):
@@ -157,9 +163,10 @@ def wall_with_door(room, prefix, axis, fixed, lo, hi, door_at):
             room.box(f"{prefix}_{tag}", (length, T, height), (mid, fixed, z), "Wall")
 
 
-def airlock(room, side, door_at=0):
-    """Тамбур шлюза снаружи стены. u — вдоль стены, v — наружу от её внешней грани."""
-    ox, oy = LX / 2 + LIN + T, LY / 2 + LIN + T     # внешние грани стен
+def airlock(room, side, door_at=0, ox=None):
+    """Тамбур шлюза снаружи стены. u — вдоль стены, v — наружу от её внешней грани.
+    ox — своя внешняя грань северной и южной стен (каюта меньше комнат)."""
+    ox, oy = ox or LX / 2 + LIN + T, LY / 2 + LIN + T     # внешние грани стен
 
     def place(name, su, sv, sz, u, v, z, mat):
         if side == "N":         # стена +X, наружу +X
@@ -172,17 +179,53 @@ def airlock(room, side, door_at=0):
             room.box(name, (su, sv, sz), (door_at + u, oy + v, z), mat)
 
     p = f"{side}_Airlock"
-    # вертикальные поручни (Singula handrails) на боковых стенах тамбура, посередине глубины, лицом внутрь
-    ux, uy = {"N": (0, 1), "S": (0, 1), "W": (1, 0), "E": (1, 0)}[side]          # направление u в осях комнаты
+    # оси тамбура в осях комнаты: u — вдоль стены, v — наружу; base — середина проёма на внешней грани стены
+    uvec = {"N": (0, 1), "S": (0, 1), "W": (1, 0), "E": (1, 0)}[side]
+    vvec = {"N": (1, 0), "S": (-1, 0), "W": (0, -1), "E": (0, 1)}[side]
+    base = {"N": (ox, door_at), "S": (-ox, door_at), "W": (door_at, -oy), "E": (door_at, oy)}[side]
+
+    def at(u, v):
+        return (base[0] + u * uvec[0] + v * vvec[0], base[1] + u * uvec[1] + v * vvec[1])
+
+    def facing(f):              # колонки и табло смотрят лицом в +Y при yaw 0
+        return math.degrees(math.atan2(-f[0], f[1]))
+
+    # Отделка тамбура (автор, 15.11, вечер: «сейчас там дефолтные текстуры, как минимум нужен свет, желательно
+    # вентиляцию»). Боковые стены — колонки набора с решётками вентиляции; у торцов щель на толщину створки:
+    # внутренняя створка этой комнаты (и соседней — у торца напротив) уезжает вбок вдоль торца до боковой стены.
+    # Над обоими проёмами перемычка, потолок — панели: две пары светильников по сторонам маячка, решётки у створок.
+    # Тамбур симметричен по глубине (автор, 15.11: «тамбуры надо делать симметричными, тк при открытии двери видно
+    # свап»): при смене комнат на его место встаёт тамбур соседней комнаты передом назад — ось вдоль стены та же,
+    # глубина v зеркальная (v -> VD - v). Поэтому ряд колонок каждой стены — палиндром по середине тамбура, поручни
+    # посередине, повороты панелей потолка одинаковы в зеркальных рядах. Ряд 56 + 75 + 17 + 75 + 56 = 279 см
+    # между щелями створок (280).
+    widths = {"Filler17": 17, "Filler53": 53, "Filler56": 56}
+    for sgn, tag, mods in ((-1, "A", ("Filler56", "Vent", "Filler17", "Vent", "Filler56")),
+                           (1, "B", ("Filler56", "Blank", "Filler17", "Blank", "Filler56"))):
+        v = (VD - sum(widths.get(m, COL) for m in mods)) / 2
+        for k, m in enumerate(mods):
+            w = widths.get(m, COL)
+            x, y = at(sgn * VW / 2, v + w / 2)
+            room.mesh(f"{p}_Col{tag}{k + 1}", f"{WALL_COLUMNS}/SM_WallColumn{m}", (x, y, 0), facing((-sgn * uvec[0], -sgn * uvec[1])))
+            v += w
+    for v0, f, tag in ((0, vvec, "Inner"), (VD, (-vvec[0], -vvec[1]), "Outer")):
+        x, y = at(0, v0)
+        room.mesh(f"{p}_Header{tag}", f"{WALL_COLUMNS}/SM_WallColumnHeader", (x, y, 0), facing(f))
+    lit = {(-75, 112.5): "Light", (75, 112.5): "Light", (-75, 187.5): "Light", (75, 187.5): "Light",
+           (0, 37.5): "Vent", (0, 262.5): "Vent"}
+    for i, u in enumerate((-150, -75, 0, 75, 150)):           # 5 × 75 = 375: края уходят в колонки (лица на ±180)
+        for j, v in enumerate((37.5, 112.5, 187.5, 262.5)):
+            k = lit.get((u, v), "")
+            x, y = at(u, v)
+            yaw = facing(uvec) + (0 if k else 90 * ((i * 3 + min(j, 3 - j)) % 4))   # ряды j и 3 − j одинаковы
+            room.mesh(f"{p}_CeilingTile{k}_{i}{j}", TILES + k, (x, y, H), rot=(0, yaw, 180))
+    # вертикальные поручни (Singula handrails) на лице средних вставок, посередине боковых стен, лицом внутрь
     for sgn, tag in ((-1, "A"), (1, "B")):
-        c = {"N": (ox + VD / 2, door_at), "S": (-ox - VD / 2, door_at),
-             "W": (door_at, -oy - VD / 2), "E": (door_at, oy + VD / 2)}[side]
-        u = sgn * VW / 2
-        inward = (-sgn * ux, -sgn * uy, 0)
-        room.mesh(f"{p}_Handle{tag}", GRAB_HANDLE, (c[0] + u * ux, c[1] + u * uy, 120),
-                  rot=rot_from_axes(cross(UP, inward), UP, inward))
+        inward = (-sgn * uvec[0], -sgn * uvec[1], 0)
+        x, y = at(sgn * (VW / 2 - LIN), VD / 2)
+        room.mesh(f"{p}_Handle{tag}", GRAB_HANDLE, (x, y, 120), rot=rot_from_axes(cross(UP, inward), UP, inward))
     place(f"{p}_Floor", VW + 2 * T, VD + T, 20, 0, (VD + T) / 2, -10, "Floor")
-    place(f"{p}_Ceiling", VW + 2 * T, VD + T, 20, 0, (VD + T) / 2, H + 10, "Ceiling")
+    place(f"{p}_Ceiling", VW + 2 * T, VD + T, 20, 0, (VD + T) / 2, H + 11, "Ceiling")   # на 1 см над панелями
     for sgn, tag in ((-1, "SideA"), (1, "SideB")):
         place(f"{p}_{tag}", T, VD, H, sgn * (VW / 2 + T / 2), VD / 2, H / 2, "Wall")
     seg = VW / 2 + T - DW / 2
@@ -195,7 +238,7 @@ def airlock(room, side, door_at=0):
     place(f"{side}_DoorOuter", DW, LEAF, DH, 0, VD - LEAF / 2, DH / 2, "Door")
     mid = {"N": (ox + VD / 2, door_at), "S": (-ox - VD / 2, door_at),
            "W": (door_at, -oy - VD / 2), "E": (door_at, oy + VD / 2)}[side]
-    room.light(f"{p}_Light", (mid[0], mid[1], H - 40), 600, 700, (1.0, 0.72, 0.45))
+    room.light(f"{p}_Light", (mid[0], mid[1], H - 40), 1500, 650, (1.0, 0.88, 0.72))   # было 600, тускло-рыжий
 
 
 def shell(room):
@@ -226,10 +269,12 @@ def living():
     r.mesh("Sleep", "Living/SleepCapsule/SM_SleepCapsule", (px, py, 0), yaw=-90, foot=((100, 236.5, 180), (px, py, 90)))
     r.light("Sleep_Light", (px, py, 150), 250, 350, (0.45, 0.90, 0.95))
     # три шкафчика в юго-восточном углу, вдоль южной стены
+    # модель environment/living/crew-locker (Tripo автора, 15.11, ночь; третья партия — до неё серые коробки):
+    # 76 × 50 × 200 см, лицо меша +Y смотрит на север, в комнату
     for i in range(3):
         y = 150 + i * 80
-        r.box(f"Locker{i + 1}", (50, 76, 200), (-LX / 2 + 25, y, 100), "Furniture")
-        r.box(f"Locker{i + 1}_Handle", (4, 6, 30), (-LX / 2 + 52, y + 26, 110), "Dark")
+        r.mesh(f"Locker{i + 1}", "Living/CrewLocker/SM_CrewLocker", (-LX / 2 + 25, y, 0), yaw=-90,
+               foot=((50, 76, 200), (-LX / 2 + 25, y, 100)))
     # кухонный уголок у северной стены, в северо-западной четверти
     r.box("Galley_Counter", (60, 220, 90), (LX / 2 - 30, -230, 45), "Furniture")
     r.box("Galley_Top", (62, 222, 4), (LX / 2 - 30, -230, 92), "Dark")
@@ -309,15 +354,10 @@ def lab():
     r = Room("Lab")
     shell(r)
     # стеллаж с клетками вдоль южной стены, юго-западная четверть; одна клетка распахнута
-    r.box("Cages_Rack", (50, 240, 190), (-LX / 2 + 25, -225, 95), "Furniture")
-    for row in range(2):
-        for col in range(3):
-            y, z = -305 + col * 80, 55 + row * 85
-            if (row, col) == (0, 1):
-                r.box("Cage_Open_Hole", (6, 68, 68), (-LX / 2 + 49, y, z), "Dark")
-                r.box("Cage_Open_Door", (4, 68, 68), (-LX / 2 + 84, y + 36, z), "Furniture", yaw=80)
-            else:
-                r.box(f"Cage_{row}{col}", (4, 68, 68), (-LX / 2 + 52, y, z), "Dark")
+    # модель environment/lab/cage-rack (третья партия): корпус 240 × 60 × 190 см, привязка — середина корпуса;
+    # распахнутая дверца верхней средней клетки выходит вперёд ещё на 18 см. Лицо +Y -> север
+    r.mesh("Cages_Rack", "Lab/CageRack/SM_CageRack", (-LX / 2 + 30, -225, 0), yaw=-90,
+           foot=((60, 240, 190), (-LX / 2 + 30, -225, 95)))
     # капсула с образцом в юго-восточной четверти и пульт к ней
     cx, cy = -270, 250
     r.cylinder("Specimen_Base", 75, 30, (cx, cy, 15), "Furniture")
@@ -353,10 +393,10 @@ def life_support():
     r = Room("LifeSupport")
     shell(r)
     # два больших бака у западной стены, северо-западная четверть
+    # модель environment/common/storage-tank (третья партия): 2,5 м, поперечник 1,6 м с лапами; манометр на лице +Y
+    # смотрит на восток, в комнату. Тот же меш с масштабом — баки охлаждения двигателя и охладители серверов
     for i, x in enumerate((180, 350)):
-        r.cylinder(f"Tank{i + 1}", 75, 250, (x, -LY / 2 + 85, 125), "Tank")
-        r.cylinder(f"Tank{i + 1}_Band", 78, 14, (x, -LY / 2 + 85, 70), "Door")
-        r.box(f"Tank{i + 1}_Gauge", (24, 6, 24), (x, -LY / 2 + 163, 140), "Dark")
+        r.mesh(f"Tank{i + 1}", STORAGE_TANK, (x, -LY / 2 + 85, 0), foot=((150, 150, 250), (x, -LY / 2 + 85, 125), False))
     # два очистителя воздуха у северной стены, северо-восточная четверть
     for i, y in enumerate((150, 290)):
         r.box(f"Scrubber{i + 1}", (80, 120, 220), (LX / 2 - 40, y, 110), "Furniture")
@@ -372,8 +412,11 @@ def life_support():
     rack("E", (-200, LY / 2 - 25), (200, 50, 200), "x")
     r.light("Hydro_Light", (-320, 260, 250), 500, 450, (0.85, 0.55, 0.95))
     # пульт и стойка кислородных баллонов в юго-западной четверти
-    r.box("Control", (60, 130, 100), (-LX / 2 + 30, -150, 50), "Furniture")
-    r.box("Control_Screen", (4, 110, 60), (-LX / 2 + 3, -150, 150), "Dark")
+    # пульт — модель environment/common/control-cabinet (третья партия): 180 × 72 см, стол на 1,0 м, экран над задним
+    # краем; здесь уже — 130 см (масштаб 0,72 по ширине меша). Лицо +Y -> север. Вещи и записки лежат на передней
+    # половине стола: задняя — под экраном
+    r.mesh("Control", CONTROL_CABINET, (-LX / 2 + 36, -150, 0), yaw=-90, scale=(0.72, 1, 1),
+           foot=((72, 130, 100), (-LX / 2 + 36, -150, 50)))
     for i in range(4):
         r.cylinder(f"Oxygen{i + 1}", 14, 120, (-LX / 2 + 24, -260 - i * 34, 60), "Linen")
     r.box("Oxygen_Rack", (36, 140, 10), (-LX / 2 + 24, -305, 95), "Dark")
@@ -383,9 +426,9 @@ def life_support():
         r.cylinder(f"Pipe{tag}1", 10, LX, (0, y, 265), "Tank", rot=(90, 0, 0))
         r.cylinder(f"Pipe{tag}2", 7, LX, (0, y, 238), "Door", rot=(90, 0, 0))
         r.cylinder(f"Pipe{tag}_Valve", 16, 6, (-150, sgn * (LY / 2 - 34), 238), "Door", rot=(90, 90, 0))
-    r.spots_for("ItemSpot", [(-LX / 2 + 30, -115, 100), (-LX / 2 + 30, -185, 100), (200, -170, 0), (300, 120, 0),
+    r.spots_for("ItemSpot", [(-LX / 2 + 50, -115, 100), (-LX / 2 + 50, -185, 100), (200, -170, 0), (300, 120, 0),
                              (-150, 150, 0), (-330, -300, 0), (120, -120, 0), (-250, 250, 0)])
-    r.spots_for("NoteSpot", [(-LX / 2 + 30, -150, 100), (250, 200, 0), (-120, -200, 0)])
+    r.spots_for("NoteSpot", [(-LX / 2 + 50, -150, 100), (250, 200, 0), (-120, -200, 0)])
     return r
 
 
@@ -402,24 +445,30 @@ def engine():
     r.light("Core_Light", (140, 0, 150), 2500, 900, (0.35, 0.85, 1.0))
     r.light("Core_Light2", (-140, 0, 150), 2500, 900, (0.35, 0.85, 1.0))
     # четыре пилона по диагоналям и силовые шины от них к ядру
+    # модель environment/engine/core-pylon (третья партия): колонна 45 × 48 × 300 см, привязка — её середина; шина
+    # уходит на 1,56 м вдоль +X меша, поэтому меш повёрнут шиной к ядру, а пилон стоит в 2,5 м от оси (у коробок 2,15):
+    # конец шины — в 94 см от оси, у колонны ядра
     for i, deg in enumerate((45, 135, 225, 315)):
         a = math.radians(deg)
-        x, y = 215 * math.cos(a), 215 * math.sin(a)
-        r.box(f"Pylon{i + 1}", (40, 40, H), (x, y, H / 2), "Furniture", yaw=deg)
-        r.box(f"Pylon{i + 1}_Bus", (110, 14, 14), (150 * math.cos(a), 150 * math.sin(a), 250), "Door", yaw=deg)
+        x, y = 250 * math.cos(a), 250 * math.sin(a)
+        r.mesh(f"Pylon{i + 1}", "Engine/CorePylon/SM_CorePylon", (x, y, 0), yaw=deg + 180, foot=((48, 48, H), (x, y, H / 2), False))
     # два пульта у южной стены, по сторонам от двери
+    # модель environment/common/control-cabinet (третья партия): 180 × 72 см, стол на 1,0 м, лицо +Y -> север
     for sgn, tag in ((-1, "W"), (1, "E")):
-        r.box(f"Console{tag}", (60, 180, 100), (-LX / 2 + 30, sgn * 220, 50), "Furniture")
-        r.box(f"Console{tag}_Screen", (4, 160, 70), (-LX / 2 + 3, sgn * 220, 160), "Dark")
+        r.mesh(f"Console{tag}", CONTROL_CABINET, (-LX / 2 + 36, sgn * 220, 0), yaw=-90,
+               foot=((72, 180, 100), (-LX / 2 + 36, sgn * 220, 50)))
     # после ремонта на пультах остались сварочный пистолет (лежит на боку: толщина меша по Y -> вверх)
     # и ремкомплект обшивки; середина пультов свободна под записки
-    r.mesh("ConsoleW_WeldingGun", "WeldingGun/SM_WeldingGun", (-LX / 2 + 30, -270, 100 + 2.1), rot=(0, 0, -90))
-    r.mesh("ConsoleE_PatchKit", "Common/SafetyEquipment/SM_HullPatchKit", (-LX / 2 + 30, 280, 100), yaw=-75)
+    r.mesh("ConsoleW_WeldingGun", "WeldingGun/SM_WeldingGun", (-LX / 2 + 50, -270, 100 + 2.1), rot=(0, 0, -90))
+    r.mesh("ConsoleE_PatchKit", "Common/SafetyEquipment/SM_HullPatchKit", (-LX / 2 + 50, 280, 100), yaw=-75)
     # баки охлаждения в северных углах с трубами к потолку
+    # бак — модель storage-tank с масштабом 0,73 (высота 1,83 м, поперечник 1,17 м), манометром к ядру;
+    # до потолка добирает труба
     for sgn, tag in ((-1, "W"), (1, "E")):
-        r.cylinder(f"Coolant{tag}", 55, 220, (LX / 2 - 65, sgn * (LY / 2 - 65), 110), "Tank")
-        r.cylinder(f"Coolant{tag}_Band", 58, 14, (LX / 2 - 65, sgn * (LY / 2 - 65), 60), "Door")
-        r.cylinder(f"Coolant{tag}_Pipe", 12, 70, (LX / 2 - 65, sgn * (LY / 2 - 65), 255), "Tank")
+        cx, cy = LX / 2 - 65, sgn * (LY / 2 - 65)
+        r.mesh(f"Coolant{tag}", STORAGE_TANK, (cx, cy, 0), yaw=math.degrees(math.atan2(-cy, -cx)) - 90,
+               scale=(0.73, 0.73, 0.73), foot=((110, 110, 220), (cx, cy, 110), False))
+        r.cylinder(f"Coolant{tag}_Pipe", 12, 122, (cx, cy, 239), "Tank")
     # щит питания на западной стене: гнёзда под батареи и предохранители
     r.box("Power_Board", (150, 10, 150), (-230, -LY / 2 + 5, 130), "Dark")
     for i in range(3):
@@ -431,7 +480,7 @@ def engine():
     r.cylinder("Gyro_Ring", 42, 8, (-230, LY / 2 - 50, 122), "Tank", rot=(90, 90, 0))
     r.cylinder("Gyro_Rotor", 22, 20, (-230, LY / 2 - 50, 122), "Door", rot=(90, 90, 0))
     r.spots_for("ItemSpot", [(300, 150, 0), (300, -150, 0), (-300, 120, 0), (-300, -120, 0)])
-    r.spots_for("NoteSpot", [(-LX / 2 + 30, -220, 100), (-LX / 2 + 30, 220, 100)])
+    r.spots_for("NoteSpot", [(-LX / 2 + 50, -220, 100), (-LX / 2 + 50, 220, 100)])
     return r
 
 
@@ -443,19 +492,18 @@ def medbay():
     # две койки у западной стены, изголовьем к стене; северо-западная четверть
     for i, x in enumerate((150, 310)):
         y = -LY / 2 + 100
-        r.box(f"Bed{i + 1}_Frame", (80, 200, 55), (x, y, 27.5), "Furniture")
-        r.box(f"Bed{i + 1}_Mattress", (76, 190, 10), (x, y, 60), "Linen")
-        r.box(f"Bed{i + 1}_Pillow", (60, 36, 8), (x, y - 72, 69), "Bed")
-        r.box(f"Bed{i + 1}_MonitorStand", (8, 8, 150), (x - 48, -LY / 2 + 20, 75), "Dark")
-        r.box(f"Bed{i + 1}_Monitor", (40, 6, 30), (x - 48, -LY / 2 + 24, 160), "Dark")
-    # диагностическая капсула в северо-восточной четверти: лежачий цилиндр на основании и пульт
-    r.box("Scanner_Base", (90, 230, 40), (300, 250, 20), "Furniture")
-    r.cylinder("Scanner_Tube", 48, 220, (300, 250, 90), "Glow", rot=(90, 90, 0))
-    r.box("Scanner_RingA", (104, 14, 104), (300, 160, 92), "Furniture")
-    r.box("Scanner_RingB", (104, 14, 104), (300, 340, 92), "Furniture")
-    r.box("Scanner_Panel", (36, 70, 100), (180, 330, 50), "Furniture")
-    r.box("Scanner_PanelTop", (32, 66, 4), (180, 330, 102), "Dark")
-    r.light("Scanner_Light", (300, 250, 240), 350, 400, (0.45, 0.90, 0.95))
+        # модель environment/medbay/medical-bed (третья партия): 94 × 200 см, матрас на 65 см, стойка с монитором
+        # у изголовья до 1,5 м; изголовье меша в −Y — к западной стене
+        r.mesh(f"Bed{i + 1}", "Medbay/MedicalBed/SM_MedicalBed", (x, y, 0), foot=((94, 200, 65), (x, y, 32.5)))
+    # диагностическая капсула в северо-восточной четверти (Tripo автора, 15.11; до неё — коробки и цилиндр):
+    # 230 × 148 × 116 см, труба вдоль длинной оси меша X, пульт на лице +Y у конца +X. Yaw 90: труба — вдоль Y
+    # комнаты, пульт смотрит на юг, в комнату, у восточного конца. Капсула в 30 см от колонок северной стены:
+    # щель в 76 см, как у коробок, была уже героя, а дверцы в ней выглядели бы доступными; так они глухие
+    # (ближе REACH). Коллизия — UCX меша; капсула не столешница, на ней ничего не лежит
+    sx, sy = LX / 2 - 30 - 74, 250
+    r.mesh("Scanner", "Medbay/DiagnosticCapsule/SM_DiagnosticCapsule", (sx, sy, 0), yaw=90,
+           foot=((148, 230, 116), (sx, sy, 58), False))
+    r.light("Scanner_Light", (sx, sy, 240), 350, 400, (0.45, 0.90, 0.95))
     # шкафы с лекарствами и раковина вдоль южной стены, юго-восточная четверть
     for i in range(3):
         y = 130 + i * 84
@@ -483,9 +531,11 @@ def medbay():
     # бак у южной стены, педалью в комнату (лицо меша +Y -> +X)
     r.mesh("Biohazard_Bin", "Medbay/MedbayKit/SM_BiohazardBin", (-LX / 2 + 18, -100, 0), yaw=-90,
            foot=((29, 29, 65), (-LX / 2 + 18, -100, 32.5)))
-    r.spots_for("ItemSpot", [(150, -LY / 2 + 130, 65), (310, -LY / 2 + 130, 65), (180, 330, 104), (cx - 20, cy - 84, 68),
+    # пульт капсулы скошен, на него не положить: третья вещь — на полу у его подножия, вторая записка — на первой
+    # койке у подушки, как первая на второй (обе раньше лежали на коробке-пульте)
+    r.spots_for("ItemSpot", [(150, -LY / 2 + 130, 65), (310, -LY / 2 + 130, 65), (sx - 115, sy + 74, 0), (cx - 20, cy - 84, 68),
                              (cx + 4, cy, 50), (150, 120, 0), (-150, 150, 0), (-330, -100, 0)])
-    r.spots_for("NoteSpot", [(310, -LY / 2 + 70, 65), (180, 315, 104), (-200, 250, 0)])
+    r.spots_for("NoteSpot", [(310, -LY / 2 + 70, 65), (150, -LY / 2 + 70, 65), (-200, 250, 0)])
     return r
 
 
@@ -512,15 +562,9 @@ def cargo():
             r.mesh(f"Barrel{k}", crates + "Barrel", (bx, by, 0), yaw=k * 47, foot=((64, 64, 90), (bx, by, 45), False))
     r.mesh("Barrel_Top", crates + "Barrel", (336, 236, 90), yaw=20, foot=((64, 64, 90), (336, 236, 135), False))
     # стеллаж с коробками вдоль южной стены, юго-восточная четверть
-    r.box("Shelf_Frame", (60, 260, 8), (-LX / 2 + 30, 240, 4), "Dark")
-    for lvl in range(3):
-        z = 70 + lvl * 75
-        r.box(f"Shelf_Board{lvl + 1}", (60, 260, 6), (-LX / 2 + 30, 240, z), "Dark")
-        for j in range(3):
-            if (lvl + j) % 3 != 2:
-                r.box(f"Shelf_Box{lvl + 1}{j + 1}", (46, 60, 50), (-LX / 2 + 30, 160 + j * 80, z + 28), "Furniture")
-    for j, y in enumerate((112, 368)):
-        r.box(f"Shelf_Post{j + 1}", (60, 8, 230), (-LX / 2 + 30, y, 115), "Dark")
+    # модель environment/cargo/cargo-shelf (третья партия): 260 × 60 × 230 см с шестью ящиками, лицо +Y -> север
+    r.mesh("Shelf", "Cargo/CargoShelf/SM_CargoShelf", (-LX / 2 + 30, 240, 0), yaw=-90,
+           foot=((60, 260, 230), (-LX / 2 + 30, 240, 115)))
     # длинный контейнер и тележка с ящиком, юго-западная четверть
     r.box("Container", (110, 240, 130), (-LX / 2 + 55, -230, 65), "Furniture")
     r.box("Container_Door", (4, 100, 110), (-LX / 2 + 112, -280, 60), "Dark")
@@ -569,10 +613,11 @@ def mess():
     r.cylinder("Galley_Pot", 14, 18, (-LX / 2 + 30, 190, 106), "Tank")
     r.box("Galley_Cabinet", (35, 260, 60), (-LX / 2 + 17.5, 240, 190), "Furniture")
     # раздаточный автомат у восточной стены
-    r.box("Dispenser", (120, 50, 200), (-230, LY / 2 - 25, 100), "Furniture")
-    r.box("Dispenser_Screen", (60, 4, 40), (-230, LY / 2 - 52, 150), "Dark")
-    r.box("Dispenser_Slot", (70, 6, 26), (-230, LY / 2 - 52, 95), "Dark")
-    r.light("Dispenser_Light", (-230, LY / 2 - 90, 160), 200, 250, (0.45, 0.90, 0.95))
+    # модель environment/mess/food-dispenser (третья партия): 120 × 80 × 200 см, экран светится своей картой;
+    # лицо +Y -> запад, в комнату
+    r.mesh("Dispenser", "Mess/FoodDispenser/SM_FoodDispenser", (-230, LY / 2 - 40, 0), yaw=180,
+           foot=((120, 80, 200), (-230, LY / 2 - 40, 100)))
+    r.light("Dispenser_Light", (-230, LY / 2 - 125, 160), 200, 250, (0.45, 0.90, 0.95))
     # холодильник, бак с водой и утилизатор, юго-западная четверть
     r.box("Fridge", (70, 90, 200), (-LX / 2 + 35, -320, 100), "Tank")
     r.box("Fridge_Handle", (4, 6, 60), (-LX / 2 + 72, -285, 120), "Dark")
@@ -592,23 +637,25 @@ def mess():
 def computer():
     r = Room("Computer")
     shell(r)
-    # по две стойки в северных четвертях, лицом друг к другу
+    # по две стойки в северных четвертях, одна за другой, лицом на юг, к середине комнаты, как стояли серые коробки
+    # (у них светились полосы на южной грани) — модель environment/computer/server-rack (15.11, пока с однотонными
+    # зонами, import_server_rack.py). Корпус 194 × 74 × 200 см, крышка 199 × 79, ящики с ручками выходят вперёд
+    # до 41,2 см от середины; привязка — середина корпуса на полу. Лицо меша +Y -> −X: yaw 90
     k = 0
     for sgn in (-1, 1):
         for x in (190, 340):
             k += 1
             y = sgn * 250
-            r.box(f"Rack{k}", (70, 200, 240), (x, y, 120), "Dark")
-            for lvl in range(4):
-                r.box(f"Rack{k}_Strip{lvl + 1}", (4, 180, 8), (x - 37, y, 50 + lvl * 50), "Glow")
-            r.box(f"Rack{k}_Top", (74, 204, 6), (x, y, 243), "Furniture")
+            r.mesh(f"Rack{k}", "Computer/ServerRack/SM_ServerRack", (x, y, 0), yaw=90,
+                   foot=((80.7, 199, 200), (x - 0.85, y, 100)))
     r.light("Racks_LightW", (265, -250, 150), 300, 350, (0.35, 0.85, 1.0))
     r.light("Racks_LightE", (265, 250, 150), 300, 350, (0.35, 0.85, 1.0))
     # охладители в юго-восточной четверти: два цилиндра с трубами к потолку
+    # бак — модель storage-tank с масштабом 0,6 (высота 1,5 м, поперечник 96 см), манометром на север
     for i, y in enumerate((190, 310)):
-        r.cylinder(f"Cooler{i + 1}", 45, 200, (-LX / 2 + 60, y, 100), "Tank")
-        r.cylinder(f"Cooler{i + 1}_Band", 48, 14, (-LX / 2 + 60, y, 60), "Door")
-        r.cylinder(f"Cooler{i + 1}_Pipe", 10, 90, (-LX / 2 + 60, y, 245), "Tank")
+        r.mesh(f"Cooler{i + 1}", STORAGE_TANK, (-LX / 2 + 60, y, 0), yaw=-90, scale=(0.6, 0.6, 0.6),
+               foot=((90, 90, 200), (-LX / 2 + 60, y, 100), False))
+        r.cylinder(f"Cooler{i + 1}_Pipe", 10, 152, (-LX / 2 + 60, y, 224), "Tank")
     r.box("Cooler_Panel", (30, 60, 110), (-250, LY / 2 - 30, 55), "Furniture")
     # пульт оператора у южной стены, юго-западная четверть: консоль навигатора (автор, 14.11: в выгоревшей комнате
     # она может сгореть, DESIGN.md §14). Спиной к колонкам, лицом на север: лицо меша +Y -> +X. Консоль на ногах
@@ -630,8 +677,87 @@ def computer():
     return r
 
 
+# ---------- каюта героя (решение автора 15.11, вечер) ----------
+#
+# Вне генератора: с неё начинается каждый забег, поведение — ARunCabin (Source/MegaJam/Run/RunCabin.*). Внутри до лица
+# колонок 4,5 × 3,75 м, потолок 3 м, одна дверь — на север, на оси y = 0, за ней обычный тамбур: после кода двери на
+# месте каюты встаёт рубка, её южный тамбур совпадает с этим. Дверь не посередине северной стены: слева от неё одна
+# колонка (на ней кодовый замок), справа две. Спальная капсула у южной стены, шкафы и зеркало у западной, у восточной —
+# открытые полки с вещами быта: модели тех же вещей, что встречаются в забеге, — они и объясняют, откуда эти вещи на
+# корабле. Взять их нельзя: это меши блюпринта. Колонки и потолок расставлены здесь же, не lining() и fixtures():
+# те рассчитаны на коробку комнаты 9 × 7,5 м.
+
+CABIN_CLASS = "/Script/MegaJam.RunCabin"
+CAB_X = 225                  # лица колонок северной и южной стен: x = ±CAB_X (RunCabinGeo::InnerFace)
+CAB_W, CAB_E = -150, 225     # лица колонок западной и восточной стен
+ITEMS = "/Game/Items"        # модели вещей забега (import_props.py)
+
+
+def cabin():
+    r = Room("Cabin")
+    r.parent = CABIN_CLASS
+    ix, iw, ie = CAB_X + LIN, CAB_W - LIN, CAB_E + LIN       # внутренние грани стен, за колонками
+    ox, y0, y1 = ix + T, iw - T, ie + T                      # внешние грани: север (300), запад, восток
+    cy, wy = (y0 + y1) / 2, y1 - y0
+    r.box("Floor", (2 * ox, wy, 20), (0, cy, -10), "Floor")
+    r.box("Ceiling", (2 * ox, wy, 20), (0, cy, H + 15), "Ceiling")
+    wall_with_door(r, "Wall_N", "y", ix + T / 2, y0, y1, 0)
+    r.box("Wall_S", (T, wy, H), (-(ix + T / 2), cy, H / 2), "Wall")
+    r.box("Wall_W", (2 * ix, T, H), (0, iw - T / 2, H / 2), "Wall")
+    r.box("Wall_E", (2 * ix, T, H), (0, ie + T / 2, H / 2), "Wall")
+    airlock(r, "N", ox=ox)
+    r.mesh("N_Airlock_Beacon", AIRLOCK_BEACON, (ox + VD / 2, 0, H), rot=UPSIDE_DOWN)
+
+    def col(tag, module, x, y, yaw):
+        r.mesh(f"Lining_{tag}", f"{WALL_COLUMNS}/SM_WallColumn{module}", (x, y, 0), yaw)
+
+    # север (лицо колонок на юг, yaw 90): слева от двери колонка с замком, справа портал (за ним привод створки) и шкаф
+    col("N_L1", "Blank", ix, -112.5, 90)
+    col("N_R1", "Blank", ix, 112.5, 90)
+    col("N_R2", "LockerTwoDoors", ix, 187.5, 90)
+    r.mesh("Lining_N_Header", f"{WALL_COLUMNS}/SM_WallColumnHeader", (ix, 0, 0), 90)
+    for sgn, tag in ((-1, "L"), (1, "R")):
+        r.mesh(f"Lining_N_FloorMarker{tag}", FLOOR_MARKER, (CAB_X - 12, sgn * (DW / 2 - 12), 0), 90)
+    # кодовый замок — клавиатура набора пульта (control-console-parts, клин 8,6 × 15,4 см) на лице колонки:
+    # основание к колонке, клавиши в каюту, экран вверху
+    r.mesh("Lock_Keypad", "Bridge/ControlConsoleParts/SM_Keypad", (CAB_X - 0.5, -112.5, 125),
+           rot=rot_from_axes((0, -1, 0), UP, (-1, 0, 0)))
+    # юг: капсула закрывает колонки — глухие панели
+    for k, y in enumerate((-112.5, -37.5, 37.5, 112.5, 187.5)):
+        col(f"S_{k + 1}", "Blank", -ix, y, -90)
+    # запад (yaw 0): два шкафа для одежды, комоды, глухая панель с зеркалом
+    for k, (x, module) in enumerate(((-187.5, "LockerTwoDoors"), (-112.5, "LockerTwoDoors"), (-37.5, "Drawers"),
+                                     (37.5, "Blank"), (112.5, "Drawers"), (187.5, "Blank"))):
+        col(f"W_{k + 1}", module, x, iw, 0)
+    r.box("Mirror_Frame", (66, 1.5, 106), (37.5, CAB_W + 0.75, 150), "Furniture")
+    r.box("Mirror", (60, 1.5, 100), (37.5, CAB_W + 1.5, 150), "Dark")
+    # восток (yaw 180): три открытые полки с вещами, комод, шкафчик
+    for k, (x, module) in enumerate(((-187.5, "Blank"), (-112.5, "Shelf"), (-37.5, "Shelf"), (37.5, "Shelf"),
+                                     (112.5, "Drawers"), (187.5, "Locker"))):
+        col(f"E_{k + 1}", module, x, ie, 180)
+    # вещи быта на полу ниш полок (ниша 0,98–1,52 м, глубина 0,40 от лица колонки)
+    shelf_y = CAB_E + 18
+    for name, x, yaw in (("FamilyPhoto", -128, 200), ("RubberDuck", -95, 150), ("DogTag", -52, 170),
+                         ("VoiceRecorder", -22, 190), ("RationTin", 22, 0), ("DuctTape", 52, 30)):
+        r.meshes.append((f"Shelf_{name}", f"{ITEMS}/{name}/SM_{name}", (x, shelf_y, 98), (0, yaw, 0)))
+    # спальная капсула у южной стены, открытой стороной на север, как в жилой комнате; свет под её крышей
+    px, py = -CAB_X + 50, 37.5
+    r.mesh("Sleep", "Living/SleepCapsule/SM_SleepCapsule", (px, py, 0), yaw=-90)
+    r.light("Sleep_Light", (px, py, 150), 250, 350, (0.45, 0.90, 0.95))
+    r.mesh("Stool", "Common/DiningSet/SM_Stool", (130, 170, 0), yaw=20)
+    # свет каюты: тёплый, один источник на шве двух светящихся панелей
+    r.light("Room_Light1", (0, CAB_W + TILE * 2.5, H - 30), 900, 800, (1.0, 0.90, 0.78))
+    for i in range(6):
+        for j in range(5):
+            k = "Light" if (i, j) in ((2, 2), (3, 2)) else "Vent" if (i, j) == (0, 2) else ""
+            yaw = 90 * ((i * 7 + j * 3) % 4) if not k else 0
+            r.mesh(f"CeilingTile{k}_{i:02d}_{j:02d}", TILES + k,
+                   (-CAB_X + TILE / 2 + TILE * i, CAB_W + TILE / 2 + TILE * j, H), rot=(0, yaw, 180))
+    return r
+
+
 ROOMS = {"Living": living, "Bridge": bridge, "Lab": lab, "LifeSupport": life_support, "Engine": engine,
-         "Medbay": medbay, "Cargo": cargo, "Mess": mess, "Computer": computer}
+         "Medbay": medbay, "Cargo": cargo, "Mess": mess, "Computer": computer, "Cabin": cabin}
 
 
 # ---------- колонки-шкафы вдоль стен ----------
@@ -960,7 +1086,7 @@ def build_blueprint(room, mats):
         for a in call(SC, "find_actors", {"name": bp_name, "tag": "", "collision_channels": []}) or []:
             call(SC, "remove_from_scene", {"actor": a})
         call(AS, "delete", {"path": path})
-    bp = call(BP, "create", {"folder_path": f"{ROOT}/Rooms", "asset_name": bp_name, "asset_type": {"refPath": ROOM_CLASS}})
+    bp = call(BP, "create", {"folder_path": f"{ROOT}/Rooms", "asset_name": bp_name, "asset_type": {"refPath": room.parent}})
     cdo = call(BP, "get_default_object", {"blueprint": bp})
 
     def paint(comp, mat):
@@ -984,11 +1110,14 @@ def build_blueprint(room, mats):
         call(OB, "set_properties", {"instance": comp, "values": json.dumps({"RelativeLocation": dict(zip("xyz", pos))})})
     for name, asset, center, (pitch, yaw, roll) in room.meshes:
         comp = call(AC, "add_component", {"owner": cdo, "component_type": {"refPath": "/Script/Engine.StaticMeshComponent"}, "name": name})
-        call(OB, "set_properties", {"instance": comp, "values": json.dumps({
+        values = {
             "StaticMesh": {"refPath": f"{asset}.{asset.rsplit('/', 1)[1]}"},
             "RelativeLocation": dict(zip("xyz", center)),
             "RelativeRotation": {"pitch": pitch, "yaw": yaw, "roll": roll},
-        })})
+        }
+        if name in room.scales:
+            values["RelativeScale3D"] = dict(zip("xyz", room.scales[name]))
+        call(OB, "set_properties", {"instance": comp, "values": json.dumps(values)})
     call(BP, "compile_blueprint", {"blueprint": bp})
     call(AS, "save_assets", {"asset_paths": [path]})
     return path
@@ -1042,8 +1171,10 @@ def main():
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
     rooms = [ROOMS[n]() for n in (args or ROOMS)]
     for room in rooms:
-        rows = lining(room)
-        fixtures(room)
+        # у каюты колонки и потолок свои (cabin()): lining() и fixtures() рассчитаны на коробку комнаты
+        rows = lining(room) if room.parent == ROOM_CLASS else {}
+        if room.parent == ROOM_CLASS:
+            fixtures(room)
         names = room.names()
         assert len(names) == len(set(names)), f"{room.name}: имена компонентов повторяются"
         print(f"{room.name}: {len(room.boxes)} коробок, {len(room.cylinders)} цилиндров, {len(room.lights)} источников света, "
@@ -1053,6 +1184,10 @@ def main():
     if "--dry" in sys.argv:
         return
     ensure_not_playing()
+    # Редактор в фоне сам снижает себя до 3 кадров в секунду, а каждый вызов MCP занимает кадр: комната собиралась
+    # 5 минут, все десять — 45 (16.11). Без этого ограничения — около минуты на комнату. В настройки не сохраняется
+    call(OB, "set_properties", {"instance": {"refPath": "/Script/UnrealEd.Default__EditorPerformanceSettings"},
+                                "values": json.dumps({"bThrottleCPUWhenNotForeground": False})})
     start_level = call(SC, "get_current_level", {})
     mats = ensure_materials()
     ensure_level()

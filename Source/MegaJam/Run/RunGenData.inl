@@ -34,7 +34,7 @@ static const TCHAR* const GRunNotebookName = TEXT("Notebook");
 static const TCHAR* const GRunWeaponName = TEXT("Pipe Wrench");
 
 static const TCHAR* const GRunTemplates0[] = {
-	TEXT("Everything you add, the singularity will erase. Only this remains.\nCarry {item}. It breaks the first loop."),
+	TEXT("All systems are green. The engines only need the captain's card. The captain went down to the engine room and never came back.\nIf you are reading this, {item} got you off the bridge too. What you carry decides where a door leads."),
 };
 static const TCHAR* const GRunTemplates1[] = {
 	TEXT("Same rooms, over and over. {Item} is what breaks this loop."),
@@ -61,9 +61,9 @@ static const TCHAR* const GRunTemplates5[] = {
 	TEXT("Engines. {Item}, {item2}, {item3}. Nothing else but this notebook. Drop {leader} when the time comes."),
 };
 static const TCHAR* const GRunTemplates6[] = {
-	TEXT("Remember how you got to the bridge."),
-	TEXT("The engines are humming. Now remember how you got to the bridge."),
-	TEXT("It's fixed. Remember how you got to the bridge, and do it once more."),
+	TEXT("Take his card. Keep the notebook and the card, nothing else. Remember how you got to the bridge."),
+	TEXT("The captain's card. Now remember how you got to the bridge: the notebook, the card and nothing more."),
+	TEXT("He never made it back. You will. The notebook, the card, nothing else - and any door is the bridge."),
 };
 
 static const FRunTemplateList GRunTemplates[] = {

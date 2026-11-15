@@ -48,8 +48,7 @@
    "Duct Tape"
   ],
   "chain_room_types": {
-   "notebook only": "Bridge",
-   "empty pocket": "Living",
+   "nothing that matters": "Bridge",
    "L": "Living",
    "L,K1": "Lab",
    "K1": "Cargo",
@@ -57,8 +56,9 @@
    "K1,K2": "Computer",
    "K1,K2,K3": "Engine"
   },
-  "notebook_first": "Everything you add, the singularity will erase. Only this remains.\nCarry the snow globe. It breaks the first loop.",
-  "decompression_level": 3
+  "notebook_first": "All systems are green. The engines only need the captain's card. The captain went down to the engine room and never came back.\nIf you are reading this, the snow globe got you off the bridge too. What you carry decides where a door leads.",
+  "decompression_level": 3,
+  "hide_spot": 1
  },
  "run_items": [
   "Snow Globe",
@@ -184,47 +184,14 @@
   "switches": 24,
   "anomaly": "none",
   "items": [
-   "Notebook",
-   "Pipe Wrench",
-   "Snow Globe",
-   "Pressure Gauge",
-   "Fuse",
-   "Rubber Duck",
-   "Family Photo"
+   "Snow Globe"
   ],
-  "notes": [
-   {
-    "kind": "next_key",
-    "items": [
-     "Flashlight",
-     "Snow Globe"
-    ],
-    "tpl": 0,
-    "text": "The flashlight only shows up for someone carrying the snow globe."
-   },
-   {
-    "kind": "useless",
-    "items": [
-     "Fuse"
-    ],
-    "tpl": 1,
-    "text": "Carried the fuse through a dozen doors. Nothing changed. Drop it."
-   }
-  ]
+  "notes": []
  },
  "looks": [
   {
-   "key": 0,
-   "signature": "{} (empty pocket)",
-   "class": "chain",
-   "level": 0,
-   "type": "Living",
-   "switches": 0,
-   "anomaly": "none"
-  },
-  {
    "key": 4096,
-   "signature": "{} (notebook only)",
+   "signature": "{} (nothing that matters)",
    "class": "chain",
    "level": 0,
    "type": "Bridge",
@@ -7370,60 +7337,15 @@
   }
  ],
  "rooms": {
-  "{} (empty pocket)": {
-   "key": 0,
-   "type": "Living",
-   "switches": 0,
-   "anomaly": "none",
-   "items": [
-    "Family Photo",
-    "Pressure Gauge",
-    "Ration Tin",
-    "Dog Tag"
-   ],
-   "notes": [
-    {
-     "kind": "next_key",
-     "items": [
-      "Flashlight",
-      "Snow Globe"
-     ],
-     "tpl": 0,
-     "text": "The flashlight only shows up for someone carrying the snow globe."
-    }
-   ]
-  },
-  "{} (notebook only)": {
+  "{} (nothing that matters)": {
    "key": 4096,
    "type": "Bridge",
    "switches": 24,
    "anomaly": "none",
    "items": [
-    "Snow Globe",
-    "Pressure Gauge",
-    "Fuse",
-    "Rubber Duck",
-    "Family Photo"
+    "Snow Globe"
    ],
-   "notes": [
-    {
-     "kind": "next_key",
-     "items": [
-      "Flashlight",
-      "Snow Globe"
-     ],
-     "tpl": 0,
-     "text": "The flashlight only shows up for someone carrying the snow globe."
-    },
-    {
-     "kind": "useless",
-     "items": [
-      "Fuse"
-     ],
-     "tpl": 1,
-     "text": "Carried the fuse through a dozen doors. Nothing changed. Drop it."
-    }
-   ]
+   "notes": []
   },
   "{L}": {
    "key": 1,
@@ -7431,10 +7353,10 @@
    "switches": 1,
    "anomaly": "none",
    "items": [
+    "Notebook",
+    "Pipe Wrench",
     "Flashlight",
-    "Voice Recorder",
-    "Pressure Gauge",
-    "Ration Tin"
+    "Voice Recorder"
    ],
    "notes": [
     {
@@ -7562,13 +7484,15 @@
    "type": "Engine",
    "switches": 51,
    "anomaly": "none",
-   "items": [],
+   "items": [
+    "Captain's Card"
+   ],
    "notes": [
     {
      "kind": "finale",
      "items": [],
      "tpl": 2,
-     "text": "It's fixed. Remember how you got to the bridge, and do it once more."
+     "text": "He never made it back. You will. The notebook, the card, nothing else - and any door is the bridge."
     }
    ]
   },

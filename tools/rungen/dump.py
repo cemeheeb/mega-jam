@@ -26,6 +26,8 @@ def item_name(i: int) -> str:
         return C.NOTEBOOK_NAME
     if i == G.SUIT:
         return C.SUIT_NAME
+    if i == G.CARD:
+        return C.CARD_NAME
     return C.WEAPON_NAME if i == G.WEAPON else C.CATALOG[i].name
 
 
@@ -42,10 +44,8 @@ def room_json(rc: G.RoomContent) -> dict:
 
 
 def key_name(layout: G.RunLayout, key: int) -> str:
-    if key == 0:
-        return "{} (empty pocket)"
     if key == G.ANCHOR:
-        return "{} (notebook only)"
+        return "{} (nothing that matters)"
     return "{" + ", ".join(G.role_name(r) for r in range(layout.num_sig) if key & (1 << r)) + "}"
 
 

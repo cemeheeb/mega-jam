@@ -14,10 +14,14 @@ namespace RunGen
 	enum : int32 { RoleL = 0, RoleK1 = 1, RoleK2 = 2, RoleK3 = 3, NumChain = 4, MaxSig = 12, RoleDummy = 99, RoleNotInRun = -1 };
 	enum : int32 { MaskL = 1, MaskK1 = 2, MaskK2 = 4, MaskK3 = 8, FinalMask = 14, Anchor = 1 << MaxSig };
 	enum : int32 { NumSwitches = 6 };
+	/** Тайников проводника в рубке (решение автора 15.11, вечер); сами места — RunStory::HideSpots в RunDirector.cpp. */
+	enum : int32 { NumHideSpots = 3 };
 	// Блокнот, оружие и аптечка вне каталога: слот занимают, набор не меняют (у блокнота — только стартовая рубка, 5.4).
 	// Аптечки раскладывает ведущий забега, генератор и баланс о них не знают (решение автора 14.11)
 	// Suit — скафандр: надевается, слот не занимает, на комнату не влияет (DESIGN 5.3, 5.9)
-	enum : int32 { Notebook = -1, Weapon = -2, Medkit = -3, Suit = -4, PocketSlots = 4, DoorsPerRoom = 4 };
+	// Card — карточка капитана (лор автора 15.11): лежит в двигательном отсеке у тела капитана, слот занимает,
+	// на комнату не влияет; с блокнотом и карточкой дверь ведёт в рубку, там карточкой запускают двигатели
+	enum : int32 { Notebook = -1, Weapon = -2, Medkit = -3, Suit = -4, Card = -5, PocketSlots = 4, DoorsPerRoom = 4 };
 	// Типы отсеков, DESIGN.md 5.1
 	enum : int32 { Bridge = 0, Living = 1, Lab = 2, LifeSupport = 3, Engine = 4, Medbay = 5, Cargo = 6, Mess = 7, Computer = 8, NumRoomTypes = 9 };
 	// Класс комнаты. ClsStart — только стартовая рубка (копия 0)
@@ -26,7 +30,7 @@ namespace RunGen
 	enum : int32 { ThreatNone = 0, ThreatBlackHole, ThreatSmoke, ThreatSlowTime, ThreatFungus, ThreatRobot, ThreatRats, ThreatHuman, NumThreats = 7 };
 	enum : int32 { NoteNotebookFirst = 0, NoteLoopExit, NoteNextKey, NoteUseless, NoteDanger, NoteEngineSet, NoteFinale };
 	// Домены ГСЧ, как в эталоне: 6 свободен, 2 — уровень разгерметизации (с 15.11)
-	enum : uint32 { DRoles = 1, DDecomp = 2, DRoomType = 3, DSwitch = 4, DAnomaly = 5, DItems = 7, DNotes = 8, DGuarantee = 9, DCosmetic = 10, DStart = 11 };
+	enum : uint32 { DRoles = 1, DDecomp = 2, DRoomType = 3, DSwitch = 4, DAnomaly = 5, DHide = 6, DItems = 7, DNotes = 8, DGuarantee = 9, DCosmetic = 10, DStart = 11 };
 
 	MEGAJAM_API uint32 Mix32(uint32 X);
 	MEGAJAM_API uint32 Hash32(std::initializer_list<uint32> Values);
@@ -127,6 +131,8 @@ public:
 	int32 BridgeSwitches;
 	int32 EngineSwitches;
 	FRunNote FirstNote;
+	/** Тайник проводника в рубке: 0..NumHideSpots-1, по зерну. */
+	int32 HideSpot = 0;
 	/** Уровень цепочки с разгерметизацией: 2 ({L,K1}, {K1}) или 3 ({L,K1,K2}, {K1,K2}). Скафандр — на уровне ниже. */
 	int32 DecompLevel = 2;
 	/** Опасные пары значимых предметов: набор ровно из этих двух даёт комнату с аномалией. Для записок. */
@@ -146,7 +152,7 @@ public:
 	bool TargetOf(int32 Key, int32& OutItem) const;
 	/** Комната набора: вид, аномалия, предметы, записки. */
 	FRunRoomContent Room(int32 Key) const;
-	/** Стартовая рубка: комната набора «только блокнот», в которой ещё лежит сам блокнот. */
+	/** Стартовая рубка: комната набора «ничего значимого», в ней только спрятанный проводник (15.11, вечер). */
 	FRunRoomContent StartRoom() const;
 
 private:

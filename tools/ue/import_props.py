@@ -40,10 +40,19 @@ PROPS = [
     # вторая партия (15.11): мебель комнат вместо серых коробок build_rooms.py
     "environment/engine/warp-core", "environment/living/space-toilet", "environment/common/dining-set",
     "environment/cargo/cargo-crates", "environment/medbay/medbay-kit",
+    "environment/medbay/diagnostic-capsule",
+    # третья партия (15.11, ночь): последние серые коробки мебели
+    "environment/medbay/medical-bed", "environment/cargo/cargo-shelf", "environment/common/control-cabinet",
+    "environment/common/storage-tank", "environment/lab/cage-rack", "environment/living/crew-locker",
+    "environment/mess/food-dispenser", "environment/engine/core-pylon",
+    # карта капитана (15.11, вечер): не Tripo, модель и текстуры — tools/blender/props/captains_card.py
+    "items/captains-card",
 ]
 
 # сила свечения (EmissiveStrength) у карточек с картой T_*_Emissive.png: колонна ядра светит, индикатор унитаза тлеет
-GLOW = {"environment/engine/warp-core": 4.0, "environment/living/space-toilet": 2.0}
+GLOW = {"environment/engine/warp-core": 4.0, "environment/living/space-toilet": 2.0,
+        "environment/medbay/diagnostic-capsule": 1.5, "items/captains-card": 2.0,
+        "environment/common/control-cabinet": 2.0, "environment/mess/food-dispenser": 1.5}
 
 
 def pascal(name):

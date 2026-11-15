@@ -1,6 +1,7 @@
 #include "MenuHUD.h"
 
 #include "MenuDirector.h"
+#include "Camera/PlayerCameraManager.h"
 #include "CanvasItem.h"
 #include "CanvasTypes.h"
 #include "Engine/Canvas.h"
@@ -8,7 +9,9 @@
 #include "Engine/Font.h"
 #include "Engine/Texture2D.h"
 #include "Engine/TextureRenderTarget2D.h"
+#include "EngineFontServices.h"
 #include "EngineUtils.h"
+#include "Fonts/FontMeasure.h"
 #include "Fonts/SlateFontInfo.h"
 #include "GameFramework/PlayerController.h"
 #include "Kismet/KismetRenderingLibrary.h"
@@ -47,6 +50,25 @@ namespace
 		Tile.BlendMode = SE_BLEND_AlphaBlend;      // как Translucent, но пишет и прозрачность: слою меню она нужна
 		Canvas->DrawItem(Tile);
 	}
+}
+
+bool AMenuHUD::VideoUnderMouse(int32& Row, int32& Step) const
+{
+	float X = 0.f, Y = 0.f;
+	if (!PlayerOwner || !PlayerOwner->GetMousePosition(X, Y))
+	{
+		return false;
+	}
+	for (int32 I = 0; I < VideoLayout.Rows.Num(); ++I)
+	{
+		if (VideoLayout.Rows[I].IsInside(FVector2D(X, Y)))
+		{
+			Row = I;
+			Step = X < VideoLayout.ValueLeft ? 0 : (X < VideoLayout.ValueMid ? -1 : 1);
+			return true;
+		}
+	}
+	return false;
 }
 
 int32 AMenuHUD::ItemUnderMouse() const
@@ -91,6 +113,27 @@ void AMenuHUD::DrawHUD()
 	const float T = D->GetClock();
 	const float Dt = GetWorld()->GetDeltaSeconds();
 
+	// концовка: пунктов меню нет — титры (точки в пространстве у AMenuDirector) и затемнение
+	if (D->IsEnding())
+	{
+		DrawCredits(D, S);
+		const float EndFade = D->GetFade();
+		if (EndFade > 0.001f)
+		{
+			DrawRect(FLinearColor(0.f, 0.f, 0.f, EndFade), 0.f, 0.f, SX, SY);
+		}
+		// проверка без рук (-EndingShots): кадры сцены
+		static const float ShotAt[] = { 2.0f, 9.5f, 12.5f, 14.5f, 18.0f, 21.5f, 23.0f, 25.0f, 27.0f };
+		if (MenuShots < UE_ARRAY_COUNT(ShotAt) && FParse::Param(FCommandLine::Get(), TEXT("EndingShots")) && T > ShotAt[MenuShots])
+		{
+			FScreenshotRequest::RequestScreenshot(FPaths::ProjectSavedDir() / FString::Printf(TEXT("Screenshots/Ending/ending_%d.png"), MenuShots),
+				false, false);
+			UE_LOG(LogTemp, Display, TEXT("Menu: ending shot %d at %.3f s"), MenuShots, T);
+			++MenuShots;
+		}
+		return;
+	}
+
 	// мышь двигается — выделяется пункт под ней; клавиши выделяют сами (ведущий меню)
 	float MX = 0.f, MY = 0.f;
 	if (PlayerOwner && PlayerOwner->GetMousePosition(MX, MY))
@@ -99,8 +142,15 @@ void AMenuHUD::DrawHUD()
 		if (!Mouse.Equals(LastMouse, 0.5f))
 		{
 			LastMouse = Mouse;
-			const int32 Item = ItemUnderMouse();
-			if (Item >= 0)
+			int32 Row = -1, Step = 0;
+			if (D->IsVideoOpen())
+			{
+				if (VideoUnderMouse(Row, Step))
+				{
+					D->HoverVideo(Row);
+				}
+			}
+			else if (const int32 Item = ItemUnderMouse(); Item >= 0)
 			{
 				D->Hover(Item);
 			}
@@ -206,10 +256,27 @@ void AMenuHUD::DrawHUD()
 		Ui->DrawItem(Tile);
 	}
 
+	// настройки видео: панель над пунктами, слева; та же, что в меню на Tab (FVideoMenu::Draw)
+	if (D->IsVideoOpen())
+	{
+		if (!bVideoFontLoaded)
+		{
+			bVideoFontLoaded = true;
+			VideoFont = MegaJamUI::LoadFileFont(this, TEXT("ChakraPetch-Medium.ttf"), 9);
+		}
+		VideoU = SY / 720.f;
+		UFont* Font = VideoFont ? VideoFont.Get() : GEngine->GetMediumFont();
+		D->GetVideo().Draw(Ui, Font, X0 - 20.f * S, SY * 0.1f, 400.f * VideoU, VideoU, Alpha, &VideoLayout);   // низ панели — над пунктами
+	}
+	else
+	{
+		VideoLayout.Rows.Reset();
+	}
+
 	// подсказка
 	FLinearColor Hint = Paper;
 	Hint.A = Alpha(0.38f * ItemsAppear);
-	DrawMenuText(Ui, TEXT("W / S  CHOOSE      ENTER  SELECT"), FVector2D(X0, Y0 + AMenuDirector::ItemCount * Step + 26.f * S),
+	DrawMenuText(Ui, D->IsVideoOpen() ? TEXT("W / S  CHOOSE      A / D  CHANGE      ENTER  SELECT      ESC  BACK") : TEXT("W / S  CHOOSE      ENTER  SELECT"), FVector2D(X0, Y0 + AMenuDirector::ItemCount * Step + 26.f * S),
 		12.f * S, TEXT("Regular"), 300, Hint);
 
 	// Слой — на экран: красный канал уходит от линзы, синий — к ней, зелёный на месте. Под курсором каналы сходятся,
@@ -283,5 +350,118 @@ void AMenuHUD::DrawHUD()
 	if (Fade > 0.001f)
 	{
 		DrawRect(FLinearColor(0.f, 0.f, 0.f, Fade), 0.f, 0.f, SX, SY);
+	}
+}
+
+float AMenuHUD::CharWidth(const FSlateFontInfo& Info, const FString& Str)
+{
+	// ширина строки по измерителю шрифтов Slate (тот же, что у холста): сумма продвижений с кернингом и разрядкой.
+	// Ширина, которую холст отдаёт после рисования, у некоторых букв больше продвижения — отсюда были щели «Clau de».
+	if (Str.IsEmpty())
+	{
+		return 0.f;
+	}
+	const FString Key = FString::Printf(TEXT("%s|%d|%d|%s"), *Info.TypefaceFontName.ToString(), FMath::RoundToInt32(Info.Size * 10.f), Info.LetterSpacing, *Str);
+	if (const float* Hit = CharWidths.Find(Key))
+	{
+		return *Hit;
+	}
+	float W = 0.f;
+	if (FEngineFontServices::IsInitialized())
+	{
+		if (const TSharedPtr<FSlateFontMeasure> Measure = FEngineFontServices::Get().GetFontMeasure())
+		{
+			W = FVector2D(Measure->Measure(Str, Info)).X;
+		}
+	}
+	CharWidths.Add(Key, W);
+	return W;
+}
+
+void AMenuHUD::DrawReveal(const FString& Text, FVector2D At, float Size, FName Face, int32 Spacing, const FLinearColor& Color,
+	float Raster, float Age, float Life, const AMenuDirector* D, float Depth)
+{
+	constexpr float CharStep = 0.045f, CharIn = 0.35f;
+	if (Size < 3.f)
+	{
+		return;
+	}
+	// шрифт растрируется один раз — в размере, с которым титр появился, — и дальше только плавно уменьшается масштабом.
+	// Когда размер шрифта менялся по ряду (96, 80, 72…), на каждой смене буквы перестраивались и строка дёргалась (автор).
+	const float Font = FMath::Max(8.f, FMath::RoundToFloat(Raster));
+	const float Scale = Size / Font;
+	FSlateFontInfo Info(GEngine->GetLargeFont(), Font, Face);
+	Info.LetterSpacing = Spacing;
+	const APlayerCameraManager* Cam = PlayerOwner ? PlayerOwner->PlayerCameraManager.Get() : nullptr;
+	const FVector CamLoc = Cam ? Cam->GetCameraLocation() : FVector::ZeroVector;
+	const FVector CamFwd = Cam ? Cam->GetCameraRotation().Vector() : FVector::ForwardVector;
+	const float LineH = Size * 1.33f;   // высота строки в пикселях (размер шрифта — в пунктах)
+	for (int32 C = 0; C < Text.Len(); ++C)
+	{
+		const FString Ch = Text.Mid(C, 1);
+		if (Ch == TEXT(" "))
+		{
+			continue;
+		}
+		const float In = FMath::Clamp((Age - C * CharStep) / CharIn, 0.f, 1.f);
+		const float Out = 1.f - FMath::Clamp((Age - Life - C * CharStep * 0.5f) / 0.5f, 0.f, 1.f);
+		float A = In * Out;
+		if (A <= 0.f)
+		{
+			continue;
+		}
+		// место буквы — ширина строки до неё (с кернингом)
+		const float W = CharWidth(Info, Ch) * Scale;
+		const float X = At.X + CharWidth(Info, Text.Left(C)) * Scale;
+		// корабль перед буквой: четыре точки буквы — сколько из них за кораблём, настолько буква прозрачнее
+		int32 Hidden = 0;
+		for (const FVector2D& Pt : { FVector2D(0.3f, 0.45f), FVector2D(0.7f, 0.45f), FVector2D(0.3f, 0.85f), FVector2D(0.7f, 0.85f) })
+		{
+			FVector Pos, Dir;
+			Deproject(X + W * Pt.X, At.Y + LineH * Pt.Y, Pos, Dir);
+			const float Along = Depth / FMath::Max(FVector::DotProduct(Dir, CamFwd), 0.1f);
+			Hidden += D->IsBehindShip(CamLoc, CamLoc + Dir * Along) ? 1 : 0;
+		}
+		A *= 1.f - Hidden / 4.f;
+		if (A <= 0.01f)
+		{
+			continue;
+		}
+		const float Ease = 1.f - FMath::Pow(1.f - In, 3.f);
+		FCanvasTextItem Item(FVector2D(X - (1.f - Ease) * 0.3f * Size, At.Y), FText::FromString(Ch), Info,
+			FLinearColor(Color.R, Color.G, Color.B, Color.A * A));
+		Item.Scale = FVector2D(Scale, Scale);
+		const float Sh = FMath::Max(1.f, Size / 30.f);
+		Item.EnableShadow(FLinearColor(0.f, 0.f, 0.f, 0.65f * A), FVector2D(Sh, Sh));
+		Canvas->DrawItem(Item);
+	}
+}
+
+void AMenuHUD::DrawCredits(const AMenuDirector* D, float S)
+{
+	const APlayerCameraManager* Cam = PlayerOwner ? PlayerOwner->PlayerCameraManager.Get() : nullptr;
+	if (!Cam || !Canvas)
+	{
+		return;
+	}
+	// титр — плоскость, обращённая к камере: перспектива для него — просто масштаб Focal / глубина
+	const float TanX = FMath::Tan(FMath::DegreesToRadians(Cam->GetFOVAngle() * 0.5f));
+	const float Focal = Canvas->ClipX * 0.5f / FMath::Max(TanX, 0.01f);
+	const FVector CamLoc = Cam->GetCameraLocation();
+	const FVector CamFwd = Cam->GetCameraRotation().Vector();
+	TArray<AMenuDirector::FCreditView> Views;
+	D->GetCredits(Views);
+	for (const AMenuDirector::FCreditView& V : Views)
+	{
+		const float Depth = FVector::DotProduct(V.At - CamLoc, CamFwd);
+		if (Depth <= 10.f)
+		{
+			continue;   // точка за камерой
+		}
+		const FVector P = Project(V.At);
+		const float Name = V.Height * Focal / Depth;   // высота имени на экране сейчас
+		const float Raster = V.Size * Canvas->ClipY;   // размер имени в момент появления
+		DrawReveal(V.Caption, FVector2D(P.X, P.Y - 0.59f * Name), 0.33f * Name, TEXT("Regular"), 520, Teal, 0.33f * Raster, V.Age, V.Life, D, Depth);
+		DrawReveal(V.Name, FVector2D(P.X, P.Y), Name, TEXT("Bold"), 40, Paper, Raster, V.Age - 0.2f, V.Life, D, Depth);
 	}
 }

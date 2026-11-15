@@ -57,6 +57,7 @@ CATALOG: tuple[Item, ...] = (
 NOTEBOOK_NAME = "Notebook"
 WEAPON_NAME = "Pipe Wrench"   # оружие: 5.9, «ломик или разводной ключ»
 SUIT_NAME = "Space Suit"      # скафандр: 5.9, разгерметизация
+CARD_NAME = "Captain's Card"  # карточка капитана: лор автора 15.11, ею в рубке запускают двигатели
 
 # Виды записок (номера совпадают с N_* в generator.py)
 N_NOTEBOOK_FIRST = 0  # первая запись блокнота: проводник
@@ -74,9 +75,12 @@ NOTE_KIND_NAMES = ("notebook_first", "loop_exit", "next_key", "useless",
 # {item2}, {item3} — второй и третий, {prereq} — «the X» или «the X and the Y»,
 # {leader}/{Leader} — проводник. В Unreal это FText::FormatNamed с теми же именами.
 TEMPLATES: dict[int, tuple[str, ...]] = {
+    # лор автора 15.11: первую запись оставил прошлый ты. С 15.11 (вечер) блокнот лежит в первой комнате за
+    # петлёй рубки, куда приводит проводник: запись подтверждает то, что игрок только что понял сам
     N_NOTEBOOK_FIRST: (
-        "Everything you add, the singularity will erase. Only this remains.\n"
-        "Carry {item}. It breaks the first loop.",
+        "All systems are green. The engines only need the captain's card. "
+        "The captain went down to the engine room and never came back.\n"
+        "If you are reading this, {item} got you off the bridge too. What you carry decides where a door leads.",
     ),
     N_LOOP_EXIT: (
         "Same rooms, over and over. {Item} is what breaks this loop.",
@@ -104,10 +108,11 @@ TEMPLATES: dict[int, tuple[str, ...]] = {
         "Engines. {Item}, {item2}, {item3}. Nothing else but this notebook. "
         "Drop {leader} when the time comes.",
     ),
+    # лежит у тела капитана (лор 15.11): двигатель не чинят, а забирают карточку и несут в рубку
     N_FINALE: (
-        "Remember how you got to the bridge.",
-        "The engines are humming. Now remember how you got to the bridge.",
-        "It's fixed. Remember how you got to the bridge, and do it once more.",
+        "Take his card. Keep the notebook and the card, nothing else. Remember how you got to the bridge.",
+        "The captain's card. Now remember how you got to the bridge: the notebook, the card and nothing more.",
+        "He never made it back. You will. The notebook, the card, nothing else - and any door is the bridge.",
     ),
 }
 

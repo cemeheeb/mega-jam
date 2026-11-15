@@ -438,10 +438,12 @@ def floor3():          # on the left side: the lower arm out along the floor, th
     lay('left')
     turn('head', (0, 1, 0), 20)
     arm('L', (0, -1, 0.35), (0, 0, 1), elbow=20, wrist=10)
-    arm('R', (0.4, -0.8, -0.3), (0, 0, 1), elbow=30, wrist=20)
+    # the upper arm goes out in front of the chest and falls onto it (drop_arms sees the body); settle() on the
+    # floor does not, and on the top side it turned this arm through the chest (the author, 15.11)
+    arm('R', (0.2, -1, 0.1), (0, 0, 1), elbow=30, wrist=15)
     leg('L', (0.05, -0.05, -1), (0, 1, 0), knee=15, ankle=30)
     leg('R', (0.5, -0.8, -0.4), (0, 1, 0), knee=70, ankle=30)
-    place('floor', rest=('arm.L', 'arm.R', 'leg.L', 'leg.R'))
+    place('floor', rest=('arm.L', 'leg.L', 'leg.R'))
 
 
 def wall1():           # sitting against the wall, legs out, chin on the chest, arms limp

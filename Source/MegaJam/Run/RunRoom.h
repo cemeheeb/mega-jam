@@ -145,6 +145,8 @@ private:
 
 	UPROPERTY()
 	TObjectPtr<UTextRenderComponent> Sign[4];
+	UPROPERTY()
+	TObjectPtr<UStaticMeshComponent> SignPlate[4];
 
 	int32 Decals = 0;
 	/** Цвет декалей AddSoot; A = 0 — свой цвет материала (чёрная копоть). */

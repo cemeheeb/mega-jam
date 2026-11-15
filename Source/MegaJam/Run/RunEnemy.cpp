@@ -12,6 +12,7 @@
 #include "GameFramework/Pawn.h"
 #include "Kismet/GameplayStatics.h"
 #include "Materials/MaterialInterface.h"
+#include "PhysicsEngine/PhysicsAsset.h"
 #include "RunAudio.h"
 #include "RunDirector.h"
 #include "RunGen.h"
@@ -356,7 +357,14 @@ void ARunEnemy::Tick(float DeltaSeconds)
 	StateT += DeltaSeconds;
 	if (State == EState::Dead)
 	{
-		Place();   // робот заваливается; у остальных играет анимация смерти
+		if (Skel && Kind == ThreatHuman && !bRagdoll && StateT >= 0.3f)
+		{
+			StartRagdoll();
+		}
+		if (!bRagdoll)
+		{
+			Place();   // робот заваливается; у остальных играет анимация смерти
+		}
 		return;
 	}
 	APawn* Pawn = UGameplayStatics::GetPlayerPawn(this, 0);
@@ -484,6 +492,31 @@ void ARunEnemy::Tick(float DeltaSeconds)
 		break;
 	}
 	Place();
+}
+
+void ARunEnemy::StartRagdoll()
+{
+	bRagdoll = true;
+	UPhysicsAsset* Phys = Skel->GetPhysicsAsset();
+	Phys = Phys ? Phys : LoadQuiet<UPhysicsAsset>(TEXT("/Game/Characters/Mannequins/Rigs/PA_Mannequin.PA_Mannequin"));
+	if (!Phys)
+	{
+		bRagdoll = false;   // без физассета остаётся клип, как раньше
+		return;
+	}
+	// лежит на полу и стенах; игрок, камера и лучи взаимодействия проходят сквозь тело
+	Skel->SetCollisionProfileName(TEXT("Ragdoll"));
+	Skel->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
+	Skel->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
+	Skel->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
+	Skel->SetPhysicsAsset(Phys, true);
+	Skel->SetSimulatePhysics(true);
+	Skel->WakeAllRigidBodies();
+	if (const APawn* Pawn = UGameplayStatics::GetPlayerPawn(this, 0))
+	{
+		// чуть назад от удара, чтобы не оседал строго на месте
+		Skel->SetAllPhysicsLinearVelocity((Pos - Pawn->GetActorLocation()).GetSafeNormal2D() * 120.f);
+	}
 }
 
 void ARunEnemy::Place()

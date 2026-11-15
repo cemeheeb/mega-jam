@@ -7,6 +7,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "../Video/VideoMenu.h"
 #include "MenuDirector.generated.h"
 
 class UCameraComponent;
@@ -27,12 +28,17 @@ public:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaSeconds) override;
 
-	enum : int32 { ItemNewGame = 0, ItemQuit = 1, ItemCount = 2 };
+	enum : int32 { ItemNewGame = 0, ItemSettings = 1, ItemQuit = 2, ItemCount = 3 };
 	static FString ItemName(int32 Item);
 	int32 GetSelected() const { return Selected; }
 	/** Мышь навела на пункт (экран меню проверяет это каждый кадр, пока мышь двигается). */
 	void Hover(int32 Item);
 	bool IsLeaving() const { return LeaveAt >= 0.f; }
+	/** Открыты настройки видео (пункт SETTINGS; просьба автора 15.11, вечер). Та же панель, что в меню на Tab. */
+	bool IsVideoOpen() const { return bVideoOpen; }
+	const FVideoMenu& GetVideo() const { return Video; }
+	/** Мышь над строкой настроек: выделить её. */
+	void HoverVideo(int32 Row);
 	/** Затемнение экрана 0..1: появление в начале и уход в игру или из игры. */
 	float GetFade() const;
 	/** Сколько секунд показывается меню: пункты проявляются не сразу. */
@@ -51,6 +57,29 @@ public:
 		return Offset * (LensStrength / FMath::Sqrt(1.f + Len * Len));
 	}
 	const FString& GetTitle() const { return GameTitle; }
+
+	/** Сцена концовки (просьба автора 15.11, ночь): уровень открыт с опцией Ending после победы (или ключ -MenuEnding).
+	 *  Корабль у чёрной дыры запускает двигатели и с разгоном идёт от неё на камеру; у камеры она цепляется к нему
+	 *  и летит впереди, глядя назад, а неподвижные в пространстве титры (рисует AMenuHUD) уходят за корабль, к дыре. */
+	bool IsEnding() const { return bEnding; }
+	/** Титр концовки, который сейчас на экране: подпись, имя, точка в пространстве (левый верх имени), высота имени
+	 *  в пространстве (см; подпись — треть её), возраст. Титр стоит на месте: уменьшается, потому что камера улетает. */
+	struct FCreditView
+	{
+		FString Caption;
+		FString Name;
+		FVector At = FVector::ZeroVector;
+		float Height = 0.f;
+		float Size = 0.f;   // высота имени в момент появления, доля высоты экрана (в этом размере шрифт растрируется)
+		float Age = 0.f;
+		float Life = 0.f;
+	};
+	void GetCredits(TArray<FCreditView>& Out) const;
+	/** Заслоняет ли корабль точку To при взгляде из From: титр за кораблём не рисуется (буква за буквой). */
+	bool IsBehindShip(const FVector& From, const FVector& To) const;
+	static constexpr float EndingIgnite = 2.2f;   // с: двигатели загораются
+	static constexpr float EndingGo = 3.4f;       // с: корабль трогается
+	static constexpr float EndingLength = 29.f;   // с: вся сцена (музыка победы — 30 с)
 
 	/** Название игры над пунктами. Пока автор его не выбрал (DESIGN.md §12), строки нет. */
 	UPROPERTY(EditAnywhere, Category = "Menu")
@@ -149,6 +178,24 @@ private:
 	UPROPERTY(VisibleAnywhere) TObjectPtr<UPostProcessComponent> Post;
 	UPROPERTY(Transient) TObjectPtr<UMaterialInstanceDynamic> SkyMaterial;
 	UPROPERTY(Transient) TObjectPtr<UMaterialInstanceDynamic> LensMaterial;
+	UPROPERTY(VisibleAnywhere) TObjectPtr<class UPointLightComponent> EngineLight;
+	UPROPERTY(Transient) TObjectPtr<UMaterialInstanceDynamic> ShipGlow;
+	bool bEnding = false;
+	bool bIgnited = false;
+	bool bEndingLeft = false;
+	FRotator CamRot = FRotator::ZeroRotator;
+	FVector CamDir = FVector::ForwardVector;
+	bool bCamInit = false;
+	void PlaceShipEnding();
+	/** Путь концовки на сейчас (в осях ведущего): где корабль, где камера и сколько она уже пролетела. */
+	void EndingPath(FVector& ShipPos, FVector& CamPos, float& CamTravel) const;
+	// титры концовки: точка в пространстве и высота имени у каждого (ставятся при появлении), рисует их AMenuHUD
+	TArray<FVector> CreditAnchor;
+	TArray<float> CreditHeight;
+	TArray<bool> CreditPlaced;
+	void TickCredits();
+	void EndEnding();
+	void OnDebugEnding();
 
 	/** Меши и материал по путям /Game/Game/Menu, параметры неба, свет и постобработка — из свойств выше. */
 	void ApplyLook();
@@ -159,6 +206,8 @@ private:
 	void OnAccept();
 	void OnClick();
 	void OnBack();
+	void OnLeft();
+	void OnRight();
 	void Activate(int32 Item);
 	void Leave();
 
@@ -171,4 +220,10 @@ private:
 	FVector2D LensTarget = FVector2D(0.5f, 0.5f);
 	/** Проверка без рук: -MenuMouse=0.8,0.3 ставит линзу в это место и не слушает мышь. */
 	bool bLensFixed = false;
+	FVideoMenu Video;
+	bool bVideoOpen = false;
+	/** Яркость из настроек, уже применённая к экспозиции сцены меню: её видно сразу, пока двигаешь полосу. */
+	float AppliedBrightness = 0.f;
+	/** Проверка без рук: -MenuVideo открывает настройки на 3-й секунде (снимки — вместе с -MenuShot). */
+	bool bVideoAtStart = false;
 };

@@ -7,9 +7,9 @@
 Сигнатура хранится как маска ролей: бит 0 — проводник L, 1–3 — ключи K1–K3, биты с 4-го —
 лишние значимые предметы E1, E2, ... (их число задаёт Config.extras). Опасных предметов нет:
 аномалию несёт набор целиком. Пустышки в маску не попадают. Ключ комнаты = маска, а при пустой
-маске добавляется бит ANCHOR, если в кармане блокнот. Только блокнот (ANCHOR) — капитанская
-рубка, это первая петля; совсем пустой карман (ключ 0) — жилая комната. Всего ключей 0..127,
-счётчики копий можно держать в массиве.
+маске ключ — ANCHOR: без значимых предметов (пустой карман, блокнот, оружие, пустышки) любая дверь ведёт
+в капитанскую рубку, это первая петля (решение автора 15.11, вечер: раньше так было только с одним блокнотом,
+а совсем пустой карман вёл в жилую комнату). Счётчики копий можно держать в массиве.
 """
 
 from dataclasses import dataclass
@@ -35,10 +35,11 @@ def role_name(r: int) -> str:
 
 RM_L, RM_K1, RM_K2, RM_K3 = 1, 2, 4, 8
 FINAL_MASK = RM_K1 | RM_K2 | RM_K3
-ANCHOR = 1 << MAX_SIG   # 4096: ключ «только блокнот»
+ANCHOR = 1 << MAX_SIG   # 4096: ключ «ничего значимого» — рубка
 NOTEBOOK = -1           # id блокнота в кармане (вне каталога)
 WEAPON = -2             # id оружия: занимает слот, на комнату не влияет (5.3, вопрос 12.3)
 SUIT = -4               # id скафандра: надевается, слот не занимает, на комнату не влияет (5.3, 5.9). −3 — аптечка игры
+CARD = -5               # id карточки капитана (лор автора 15.11): в двигательном отсеке, слот занимает, на комнату не влияет
 POCKET_SLOTS = 4
 
 # Типы отсеков, 5.1
@@ -66,10 +67,14 @@ N_NOTEBOOK_FIRST, N_LOOP_EXIT, N_NEXT_KEY, N_USELESS, N_DANGER, N_ENGINE_SET, N_
 # В комнату входят через одну из них, остальные три не раскрыты. В стартовой рубке не раскрыты все четыре.
 DOORS_PER_ROOM = 4
 
-# Домены ГСЧ. Номер 6 свободен: раньше им выбиралось число дверей. Номер 2 (раньше типы уровней цепочки) —
-# с 15.11 уровень разгерметизации.
-D_ROLES, D_DECOMP, D_ROOM_TYPE, D_SWITCH, D_ANOMALY, _D_FREE_6, D_ITEMS, D_NOTES, \
+# Домены ГСЧ. Номер 6 раньше выбирал число дверей, с 15.11 (вечер) — тайник проводника в рубке. Номер 2 (раньше
+# типы уровней цепочки) — с 15.11 уровень разгерметизации.
+D_ROLES, D_DECOMP, D_ROOM_TYPE, D_SWITCH, D_ANOMALY, D_HIDE, D_ITEMS, D_NOTES, \
     D_GUARANTEE, D_COSMETIC, D_START, D_PLAYER = range(1, 13)
+
+# Тайников проводника в рубке (решение автора 15.11, вечер): в рубке лежит только проводник, спрятанный в одном
+# из этих мест; какое — решает зерно. Сами места — в RunDirector.cpp (RunStory::HideSpots).
+NUM_HIDE_SPOTS = 3
 
 # Цепочка: уровень петли -> роль предмета, который из неё выводит
 CHAIN_TARGET = (L, K1, K2, K3)
@@ -81,15 +86,13 @@ def popcount(x: int) -> int:
     return bin(x).count("1")
 
 
-def room_key(role_mask: int, has_notebook: bool) -> int:
-    if role_mask:
-        return role_mask
-    return ANCHOR if has_notebook else 0
+def room_key(role_mask: int, has_notebook: bool = False) -> int:
+    """has_notebook больше не влияет (15.11, вечер): без значимых предметов дверь всегда ведёт в рубку."""
+    return role_mask if role_mask else ANCHOR
 
 
 def chain_level(key: int) -> int:
-    """Уровень петли: 0 — без значимых предметов (рубка-петля при одном блокноте,
-    жилая при пустом кармане), 1 {L}, 2 {L,K1}/{K1}, 3 {L,K1,K2}/{K1,K2},
+    """Уровень петли: 0 — без значимых предметов (рубка-петля), 1 {L}, 2 {L,K1}/{K1}, 3 {L,K1,K2}/{K1,K2},
     4 двигательный отсек. -1 — догадка."""
     if key in (0, ANCHOR):
         return 0
@@ -117,7 +120,7 @@ def room_class(key: int) -> int:
 
 def all_keys(num_sig: int, max_items: int = POCKET_SLOTS) -> list[int]:
     """Все ключи, которые можно получить карманом на 4 слота при num_sig значимых предметах."""
-    keys = [0, ANCHOR]
+    keys = [ANCHOR]
     keys += [m for m in range(1, 1 << num_sig) if popcount(m) <= max_items]
     return keys
 
@@ -200,6 +203,8 @@ class RunLayout:
                                                 + (cfg.extra_weight,) * len(self.extras))
 
         self.first_note = Note(N_NOTEBOOK_FIRST, (self.role_item[L],), 0)
+        # тайник проводника в рубке
+        self.hide_spot = hash32(self.seed, D_HIDE) % NUM_HIDE_SPOTS
 
         # Разгерметизация (решение автора 15.11, схема ассистента в DESIGN 5.9): ворота правильного пути.
         # Комнаты уровня 2 ({L,K1}, {K1} — там K2) или 3 ({L,K1,K2}, {K1,K2} — там K3) без скафандра не открываются;
@@ -241,8 +246,6 @@ class RunLayout:
         """(тип отсека, маска переключателей). Детерминирована от seed и key."""
         if key == ANCHOR:
             return BRIDGE, self.bridge_switches
-        if key == 0:
-            return LIVING, 0
         if key == FINAL_MASK:
             return ENGINE, self.engine_switches
         t = ORDINARY_TYPES[hash32(self.seed, D_ROOM_TYPE, key) % len(ORDINARY_TYPES)]
@@ -336,9 +339,9 @@ class RunLayout:
 
     def target_of(self, key: int) -> int | None:
         """Предмет правильного пути, который лежит в комнате этого набора, или None.
-        Рубка (только блокнот) — проводник L; {L} — K1; {L,K1} и {K1} — K2; {L,K1,K2} и {K1,K2} — K3.
-        В жилой комнате пустого кармана и в двигательном отсеке таких предметов нет."""
-        if key == 0 or room_class(key) != CLS_CHAIN:
+        Рубка (ничего значимого) — проводник L; {L} — K1; {L,K1} и {K1} — K2; {L,K1,K2} и {K1,K2} — K3.
+        В двигательном отсеке таких предметов нет."""
+        if room_class(key) != CLS_CHAIN:
             return None
         return self.role_item[CHAIN_TARGET[chain_level(key)]]
 
@@ -349,25 +352,34 @@ class RunLayout:
         cls = room_class(key)
         if cls == CLS_ENGINE:
             rng = Rng(self.seed, D_NOTES, key)
-            return RoomContent(key, t, sw, NO_ANOMALY, (), (self._note(rng, N_FINALE, ()),))
+            return RoomContent(key, t, sw, NO_ANOMALY, (CARD,), (self._note(rng, N_FINALE, ()),))
+
+        if key == ANCHOR:
+            # Рубка (решение автора 15.11, вечер): только проводник, спрятанный (hide_spot), без записок и прочего.
+            # Игрок выходит без него и попадает в ту же рубку — понимает, что он в петле; находит проводника,
+            # выходит с ним — и видит новую комнату. Читать для этого ничего не нужно. ГСЧ не тратит.
+            return RoomContent(key, t, sw, NO_ANOMALY, (self.role_item[L],), ())
 
         irng = Rng(self.seed, D_ITEMS, key)
         items: list[int] = []
+        if key == RM_L:
+            items += [NOTEBOOK, WEAPON]            # первая новая комната: блокнот и ключ переехали сюда из рубки
         target = self.target_of(key)
         if target is not None:
             items.append(target)
         if self.suit_lies_in(key):
             items.append(SUIT)                     # ГСЧ не тратит: раскладка прочих предметов та же
         n_fill = cfg.filler_min + irng.below(cfg.filler_max - cfg.filler_min + 1)   # rng: сколько прочих
+        if key == RM_L:
+            n_fill = max(1, n_fill - 2)            # вещей столько же, сколько было до блокнота и ключа
         items += self._draw_filler(irng, n_fill)                                    # rng: какие
         notes = self._chain_notes(key) if cls == CLS_CHAIN else self._guess_notes(key)
         return RoomContent(key, t, sw, self.anomaly_of(key), tuple(items), notes)
 
     def start_room(self) -> RoomContent:
-        """Рубка в начале забега — это комната набора «только блокнот», в которой ещё лежит сам блокнот.
-        Взяв блокнот и раскрыв дверь, игрок попадает в неё же: первая петля."""
-        r = self.room(ANCHOR)
-        return RoomContent(r.key, r.room_type, r.switches, r.anomaly, (NOTEBOOK, WEAPON) + r.items, r.notes)
+        """Рубка в начале забега — комната набора «ничего значимого»: раскрыв дверь без проводника,
+        игрок попадает в неё же, это первая петля. С 15.11 (вечер) блокнот и ключ лежат в комнате {L}."""
+        return self.room(ANCHOR)
 
     # ---------- описание для дампа ----------
 
@@ -380,11 +392,12 @@ class RunLayout:
             "chain": [C.CATALOG[ri[r]].name for r in CHAIN_TARGET],
             "final_set": [C.CATALOG[ri[r]].name for r in (K1, K2, K3)],
             "chain_room_types": {name: ROOM_TYPE_NAMES[self.look(k)[0]] for name, k in (
-                ("notebook only", ANCHOR), ("empty pocket", 0), ("L", RM_L), ("L,K1", RM_L | RM_K1),
+                ("nothing that matters", ANCHOR), ("L", RM_L), ("L,K1", RM_L | RM_K1),
                 ("K1", RM_K1), ("L,K1,K2", RM_L | RM_K1 | RM_K2), ("K1,K2", RM_K1 | RM_K2),
                 ("K1,K2,K3", FINAL_MASK))},
             "notebook_first": self.first_note.text(),
             "decompression_level": self.decomp_level,
+            "hide_spot": self.hide_spot,
         }
 
 
@@ -447,8 +460,6 @@ def validate_layout(layout: RunLayout) -> list[str]:
             err.append(f"key {key}: bridge rule broken")
         if (t == ENGINE) != (key == FINAL_MASK):
             err.append(f"key {key}: engine rule broken")
-        if key == 0 and t != LIVING:
-            err.append("empty pocket does not lead to living quarters")
         if room_class(key) != CLS_GUESS:
             if (t, sw) in seen_looks:
                 err.append(f"right-path keys {seen_looks[(t, sw)]} and {key} look identical")
@@ -466,7 +477,7 @@ def validate_layout(layout: RunLayout) -> list[str]:
         if rc != layout.room(key):
             err.append(f"key {key}: content not deterministic")
         target = layout.target_of(key)
-        want_target = None if key == 0 or cls != CLS_CHAIN else ri[CHAIN_TARGET[lvl]]
+        want_target = None if cls != CLS_CHAIN else ri[CHAIN_TARGET[lvl]]
         if target != want_target:
             err.append(f"key {key}: wrong right-path item for this set")
         if len(set(rc.items)) != len(rc.items):
@@ -474,7 +485,7 @@ def validate_layout(layout: RunLayout) -> list[str]:
         for it in rc.items:
             if it in chain_items and it != target:
                 err.append(f"key {key}: right-path item {role_name(layout.role_of(it))} lies in a wrong room")
-            if it != SUIT and layout.role_of(it) == NOT_IN_RUN:
+            if it not in (SUIT, CARD, NOTEBOOK, WEAPON) and layout.role_of(it) == NOT_IN_RUN:
                 err.append(f"key {key}: item not in this run")
         if target is not None and target not in rc.items:
             err.append(f"key {key}: right-path item is missing")
@@ -487,7 +498,7 @@ def validate_layout(layout: RunLayout) -> list[str]:
             err.append(f"key {key}: anomaly on the right path")
         if rc.anomaly != layout.anomaly_of(key):
             err.append(f"key {key}: anomaly differs from the set's anomaly")
-        if cls == CLS_CHAIN:
+        if cls == CLS_CHAIN and key != ANCHOR:   # в рубке записок нет: из петли выводят без чтения
             want_kind, want_items = layout._ahead_note(lvl)
             if not any(n.kind == want_kind and n.items == want_items for n in rc.notes):
                 err.append(f"key {key}: room lacks the next-link note")
@@ -499,6 +510,13 @@ def validate_layout(layout: RunLayout) -> list[str]:
         if has_suit != (room_class(key) == CLS_CHAIN and chain_level(key) == layout.decomp_level - 1):
             err.append(f"key {key}: suit {'misplaced' if has_suit else 'missing'}")
     start = layout.start_room()
-    if start.items != (NOTEBOOK, WEAPON) + layout.room(ANCHOR).items or ri[L] not in start.items:
-        err.append("start room is not the notebook-only room with the notebook and L in it")
+    if start != layout.room(ANCHOR) or start.items != (ri[L],) or start.notes:
+        err.append("start room is not the bridge with only L in it")
+    first = layout.room(RM_L).items
+    if first[:2] != (NOTEBOOK, WEAPON) or ri[K1] not in first:
+        err.append("the {L} room lacks the notebook, the wrench or K1")
+    if not 0 <= layout.hide_spot < NUM_HIDE_SPOTS:
+        err.append("hide spot out of range")
+    if layout.pocket_key([]) != ANCHOR or layout.pocket_key([NOTEBOOK, WEAPON] + list(layout.dummies[:2])) != ANCHOR:
+        err.append("a pocket with nothing that matters does not lead to the bridge")
     return err

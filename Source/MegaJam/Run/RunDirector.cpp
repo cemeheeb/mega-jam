@@ -11,6 +11,7 @@
 #include "Components/SpotLightComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/TextRenderComponent.h"
 #include "Engine/SkeletalMesh.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/World.h"
@@ -25,10 +26,14 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "Materials/MaterialInterface.h"
 #include "Misc/CommandLine.h"
+#include "Misc/ConfigCacheIni.h"
 #include "Misc/Parse.h"
 #include "Misc/Paths.h"
+#include "PhysicsEngine/PhysicsAsset.h"
 #include "Components/AudioComponent.h"
+#include "Sound/SoundBase.h"
 #include "RunAudio.h"
+#include "RunCabin.h"
 #include "RunEnemy.h"
 #include "RunHUD.h"
 #include "RunItem.h"
@@ -41,6 +46,36 @@ DEFINE_LOG_CATEGORY_STATIC(LogRun, Log, All);
 
 using namespace RunGen;
 using namespace RunEnemyTune;
+
+// Сюжет (лор автора 15.11). Места — от середины комнаты, на уровне пола. Юг — −X: в рубку входят с юга,
+// в кольце консолей там проход к креслу; южные углы консолей кольца — около x = −250.
+namespace RunStory
+{
+	// свой труп: у южной двери рубки, справа от прохода. С 15.11 (вечер, просьба автора) — не тело героя, падающее
+	// рэгдоллом при появлении рубки, а готовый неподвижный мертвец SM_DeadMan (как капитан в двигательном отсеке).
+	// Поза Floor3 — на левом боку (лицом вниз уже лежит капитан, на спине видно чужое лицо). Меш вытянут вдоль своей X
+	// (−121…+65 см от таза): поворот 90° кладёт его вдоль +Y — к восточной стене, в стороне от прохода к креслу
+	const FVector SelfBody(-355.f, 115.f, 0.f);
+	constexpr float SelfBodyYaw = 90.f;
+	const TCHAR* const SelfPose = TEXT("Floor3");
+	// Тайники проводника (решение автора 15.11, вечер: в рубке только он, спрятан, место по зерну — Layout->HideSpot).
+	// Ни один не виден от двери и не лежит на пути к двери: два дальних угла за кольцом консолей (кольцо закрывает пол
+	// за собой) и пол у ног кресла внутри кольца (от южного прохода его закрывает спинка). +11 см — как у любой вещи.
+	// Блокнот и разводной ключ с 15.11 (вечер) лежат в первой комнате за петлёй — набора {L} (генератор).
+	const FVector HideSpots[RunGen::NumHideSpots] = { FVector(350.f, 300.f, 11.f), FVector(350.f, -300.f, 11.f), FVector(150.f, 0.f, 11.f) };
+	const TCHAR* const HideHints[RunGen::NumHideSpots] = {
+		TEXT("I never looked behind the ring of consoles. A far corner, maybe?"),
+		TEXT("I never looked behind the ring of consoles. A far corner, maybe?"),
+		TEXT("I never looked inside the ring of consoles. At the foot of the captain's chair?") };
+	// капитан: на полу двигательного отсека к северо-востоку от ядра, между пилоном и баком охлаждения,
+	// в стороне от прохода к северной двери; карточка рядом с ним
+	const FVector CaptainBody(300.f, 168.f, 0.f);
+	constexpr float CaptainYaw = 0.f;
+	const TCHAR* const CaptainPose = TEXT("Floor2");
+	const FVector CaptainCard(255.f, 100.f, 11.f);
+	// кресло капитана — в середине рубки; «у кресла» — внутри кольца консолей (внутренний край кольца ~186 см)
+	constexpr float PostReach = 195.f;
+}
 
 ARunDirector::ARunDirector()
 {
@@ -57,7 +92,8 @@ void ARunDirector::BeginPlay()
 	Super::BeginPlay();
 
 	uint32 CmdSeed = 0;
-	if (FParse::Value(FCommandLine::Get(), TEXT("RunSeed="), CmdSeed))
+	const bool bCmdSeed = FParse::Value(FCommandLine::Get(), TEXT("RunSeed="), CmdSeed);
+	if (bCmdSeed)
 	{
 		Seed = CmdSeed;
 	}
@@ -67,7 +103,8 @@ void ARunDirector::BeginPlay()
 	}
 	else
 	{
-		Seed = Hash32({ static_cast<uint32>(FDateTime::UtcNow().GetTicks() & 0xFFFFFFFF), static_cast<uint32>(FPlatformTime::Cycles()) });
+		// случайный корабль — шестизначный: зерно и есть код двери каюты, его запоминают и набирают на клавиатуре
+		Seed = 100000U + Hash32({ static_cast<uint32>(FDateTime::UtcNow().GetTicks() & 0xFFFFFFFF), static_cast<uint32>(FPlatformTime::Cycles()) }) % 900000U;
 	}
 	bShowTest = FParse::Param(FCommandLine::Get(), TEXT("RunShow"));
 	bSelfTest = bAutoPlayTest || bShowTest || FParse::Param(FCommandLine::Get(), TEXT("RunSelfTest"));
@@ -90,25 +127,49 @@ void ARunDirector::BeginPlay()
 	Post->RegisterComponent();
 	bShowDebug = bDebugAtStart || FParse::Param(FCommandLine::Get(), TEXT("RunDebug"));
 
-	Layout = MakeUnique<FRunLayout>(Seed);
-	// Стартовая рубка — комната набора «только блокнот», в которой ещё лежит сам блокнот.
-	FRunKeyState& StartKey = Keys.Add(Anchor);
-	StartKey.Content = Layout->StartRoom();
-	for (int32 It : StartKey.Content.Items)
+	// Каюта (решение автора 15.11, вечер): обычная игра начинается в ней, код двери задаёт зерно. Самопроверки,
+	// -RunSeed и -RunNoCabin начинают сразу в рубке; -RunCabinTest — самопроверка каюты.
+	if (GConfig)
 	{
-		AddPlaced(StartKey, It);
+		GConfig->GetString(TEXT("MegaJam.Ship"), TEXT("LastCode"), LastCode, GGameUserSettingsIni);
+		if (!LastCode.IsNumeric() || LastCode.Contains(TEXT(".")) || LastCode.Contains(TEXT("-")))
+		{
+			LastCode.Reset();   // не цифры (так хранили код словами до решения автора) — прошлого кода нет
+		}
 	}
-	AddMedkit(StartKey);
-	StartKey.NoteRead.Init(false, StartKey.Content.Notes.Num());
-	FRunRoomState Start;
-	Start.Key = Anchor;
-	Start.bVisited = true;
-	SeenKeys.Add(Anchor);   // в стартовой рубке игрок уже был
-	Rooms.Add(Start);
-	CurrentRoom = 0;
-	SpawnRoom(0, GetActorLocation(), -1);
-	UE_LOG(LogRun, Display, TEXT("Run: seed=%u"), Seed);
-	BuildSolution();
+	const bool bCabinTest = FParse::Param(FCommandLine::Get(), TEXT("RunCabinTest"));
+	const bool bUseCabin = bCabinTest || (!bCmdSeed && !bSelfTest && !FParse::Param(FCommandLine::Get(), TEXT("RunNoCabin")));
+	StartLayout();   // в каюте раскладка уже есть (случайное зерно): код двери может её заменить
+	if (bUseCabin)
+	{
+		if (UClass* CabinClass = StaticLoadClass(ARunCabin::StaticClass(), nullptr, TEXT("/Game/Game/Rooms/BP_Room_Cabin.BP_Room_Cabin_C")))
+		{
+			FActorSpawnParameters Params;
+			Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+			// рубка потом встанет на место актора ведущего, как без каюты
+			Cabin = GetWorld()->SpawnActor<ARunCabin>(CabinClass, GetActorLocation() - RunCabinGeo::BridgeOffset(), FRotator::ZeroRotator, Params);
+		}
+		if (Cabin)
+		{
+			Cabin->Director = this;
+			RoomName = TEXT("Your Cabin");
+			RoomTitleAt = GetWorld()->GetTimeSeconds();
+			if (bCabinTest)
+			{
+				CabinTestStep = 0;
+				CabinTestAt = GetWorld()->GetTimeSeconds() + 3.f;
+			}
+		}
+		else
+		{
+			UE_LOG(LogRun, Error, TEXT("Run: нет блюпринта каюты BP_Room_Cabin, начинаю в рубке"));
+		}
+	}
+	if (!Cabin)
+	{
+		SpawnRoom(0, GetActorLocation(), -1);
+	}
+	UE_LOG(LogRun, Display, TEXT("Run: seed=%u cabin=%d last code='%s'"), Seed, Cabin ? 1 : 0, *LastCode);
 	for (const FString& Line : Solution)
 	{
 		UE_LOG(LogRun, Display, TEXT("Run: solution: %s"), *Line);
@@ -130,15 +191,14 @@ void ARunDirector::BuildSolution()
 	Solution.Reset();
 	Solution.Add(FString::Printf(TEXT("SOLUTION, seed %u. Any door works: only the pocket matters. Junk items and the notebook do not change the room."), Seed));
 	Solution.Add(TEXT("Shortest way:"));
-	Solution.Add(FString::Printf(TEXT("  1. Bridge: take Notebook + %s"), *L));
-	Solution.Add(FString::Printf(TEXT("  2. door -> %s: take %s"), *TypeOf(MaskL), *K1));
+	Solution.Add(FString::Printf(TEXT("  1. Bridge: take %s (hidden: %s)"), *L, HideHint()));
+	Solution.Add(FString::Printf(TEXT("  2. door -> %s: take Notebook + %s"), *TypeOf(MaskL), *K1));
 	Solution.Add(FString::Printf(TEXT("  3. door -> %s: take %s (pocket is full now)"), *TypeOf(MaskL | MaskK1), *K2));
 	Solution.Add(FString::Printf(TEXT("  4. door -> %s: drop %s, take %s"), *TypeOf(MaskL | MaskK1 | MaskK2), *L, *K3));
-	Solution.Add(TEXT("  5. door -> Engine: engines fixed. Drop everything except Notebook"));
-	Solution.Add(TEXT("  6. door -> Bridge: the end"));
+	Solution.Add(TEXT("  5. door -> Engine: drop everything except Notebook (junk may stay), take the Captain's Card"));
+	Solution.Add(TEXT("  6. door -> Bridge: [E] at the captain's chair - the end"));
 	Solution.Add(TEXT("All safe pockets (what matters in the pocket -> room, what lies there):"));
-	Solution.Add(FString::Printf(TEXT("  [Notebook only] -> Bridge: %s"), *L));
-	Solution.Add(TEXT("  [nothing at all] -> Living: nothing needed"));
+	Solution.Add(FString::Printf(TEXT("  [nothing that matters] -> Bridge: %s"), *L));
 	Solution.Add(FString::Printf(TEXT("  [%s] -> %s: %s"), *L, *TypeOf(MaskL), *K1));
 	Solution.Add(FString::Printf(TEXT("  [%s, %s] -> %s: %s"), *L, *K1, *TypeOf(MaskL | MaskK1), *K2));
 	Solution.Add(FString::Printf(TEXT("  [%s] -> %s: %s"), *K1, *TypeOf(MaskK1), *K2));
@@ -200,12 +260,14 @@ void ARunDirector::SetupPlayer()
 {
 	APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
 	APawn* Pawn = PC ? PC->GetPawn() : nullptr;
-	if (!Pawn || !RoomActor)
+	if (!Pawn || (!RoomActor && !Cabin))
 	{
 		return;
 	}
-	// игрок приходит в себя в стартовой рубке, к югу от поста капитана, лицом на север
-	Pawn->SetActorLocation(RoomActor->GetActorLocation() + FVector(-200.f, 0.f, 100.f), false, nullptr, ETeleportType::TeleportPhysics);
+	// игрок приходит в себя в каюте у спальной капсулы, лицом к двери; без каюты — в стартовой рубке у южной двери,
+	// лицом на север: справа лежит его же тело (лор 15.11)
+	Pawn->SetActorLocation(Cabin ? Cabin->WakeLocation() : RoomActor->GetActorLocation() + FVector(-405.f, -15.f, 100.f),
+		false, nullptr, ETeleportType::TeleportPhysics);
 	PC->SetControlRotation(FRotator(-10.f, 0.f, 0.f));
 
 	// герой вместо манекена шаблона: скелет тот же (SK_Mannequin), поэтому смещение меша и анимации шаблона подходят
@@ -323,7 +385,7 @@ void ARunDirector::SetupPlayer()
 		InputComponent->BindKey(EKeys::E, IE_Pressed, this, &ARunDirector::OnInteract);
 		InputComponent->BindKey(EKeys::LeftMouseButton, IE_Pressed, this, &ARunDirector::OnUse);
 		InputComponent->BindKey(EKeys::F, IE_Pressed, this, &ARunDirector::OnAttack);
-		InputComponent->BindKey(EKeys::Enter, IE_Pressed, this, &ARunDirector::OnConfirm);
+		InputComponent->BindKey(EKeys::Enter, IE_Pressed, this, &ARunDirector::OnConfirm).bExecuteWhenPaused = true;   // и в настройках видео
 		// пауза: Esc в сборке; в редакторе Esc останавливает игру, поэтому есть ещё P. Клавиши паузы работают и на паузе.
 		InputComponent->BindKey(EKeys::Escape, IE_Pressed, this, &ARunDirector::OnPause).bExecuteWhenPaused = true;
 		InputComponent->BindKey(EKeys::P, IE_Pressed, this, &ARunDirector::OnPause).bExecuteWhenPaused = true;
@@ -346,17 +408,31 @@ void ARunDirector::SetupPlayer()
 		InputComponent->BindKey(EKeys::Up, IE_Pressed, this, &ARunDirector::OnBookmarkPrev).bExecuteWhenPaused = true;
 		InputComponent->BindKey(EKeys::Down, IE_Pressed, this, &ARunDirector::OnBookmarkNext).bExecuteWhenPaused = true;
 		InputComponent->BindKey(EKeys::Tab, IE_Pressed, this, &ARunDirector::OnToggleJournal).bExecuteWhenPaused = true;
+		InputComponent->BindKey(EKeys::O, IE_Pressed, this, &ARunDirector::OnVideoKey).bExecuteWhenPaused = true;
 		InputComponent->BindKey(EKeys::C, IE_Pressed, this, &ARunDirector::OnCrouchKey);
 		// рывок-уклонение; прыжок шаблона на Space выключен (SetupPlayer): в отсеках он не нужен
 		InputComponent->BindKey(EKeys::SpaceBar, IE_Pressed, this, &ARunDirector::OnDodge);
 		InputComponent->BindKey(EKeys::LeftAlt, IE_Pressed, this, &ARunDirector::OnDodge);
 		InputComponent->BindKey(EKeys::T, IE_Pressed, this, &ARunDirector::TakeOffSuit).bExecuteWhenPaused = true;
-		// не F1–F12: в редакторе это клавиши режимов вида (F1 — каркас, F2 — без света, F3 — со светом)
+#if WITH_EDITOR
+		// Отладка — только в редакторе, в упакованной игре этих клавиш нет (автор 15.11, ночь: «главное не забыть
+		// выключить все дебажное перед деплоем»). Не F1–F12: в редакторе это режимы вида, на Mac — громкость и яркость.
+		// H — строка отладки; K — сразу победа и концовка, без прохождения.
 		InputComponent->BindKey(EKeys::H, IE_Pressed, this, &ARunDirector::OnToggleDebug);
+		InputComponent->BindKey(EKeys::K, IE_Pressed, this, &ARunDirector::OnDebugEnding);
+#endif
 	}
 	PC->ClientSetHUD(ARunHUD::StaticClass());
 	bPlayerReady = true;
-	Say(TEXT("You wake up on the bridge. Something is very wrong with the doors."), 7.f);
+	if (Cabin)
+	{
+		Say(TEXT("My cabin? I don't remember falling asleep. And the door is locked with a code."), 8.f);
+		ShowTip(TEXT("[E] at the keypad left of the door"), 8.f);
+	}
+	else
+	{
+		Say(TEXT("Someone is lying by the bridge door. Same suit, same face... That is me."), 8.f);
+	}
 }
 
 void ARunDirector::SpawnRoom(int32 RoomId, const FVector& Location, int32 ArrivalDoor)
@@ -375,6 +451,7 @@ void ARunDirector::SpawnRoom(int32 RoomId, const FVector& Location, int32 Arriva
 	RoomActor->RoomId = RoomId;
 	RoomActor->Director = this;
 	RoomActor->SetArrivalDoor(ArrivalDoor);
+	ArrivalHere = ArrivalDoor;   // обучение: метка двери назад в опасной комнате
 	SpawnRoomContents();
 	// выгоревшая комната: сразу после появления, пока по полу никто не ходил (сетка обхода строится позже)
 	const int32 Key = Rooms[RoomId].Key;
@@ -383,8 +460,12 @@ void ARunDirector::SpawnRoom(int32 RoomId, const FVector& Location, int32 Arriva
 		const FIntVector Burn = RoomActor->ApplyBurn(Hash32({ Seed, 301U, static_cast<uint32>(Key) }));
 		UE_LOG(LogRun, Display, TEXT("Run: burned room=%d key=%d: burnt %d, sooted %d, decals %d"), RoomId, Key, Burn.X, Burn.Y, Burn.Z);
 	}
-	// мертвецы: в стартовой рубке (она же финальная) их нет; -RunCorpses=N — столько в каждой комнате, для проверки
-	if (Rooms.Num() == 0 || Key != Rooms[0].Key || FParse::Param(FCommandLine::Get(), TEXT("RunCorpsesStart")))
+	// мертвецы: в рубке и двигательном отсеке — только тела сюжета (SpawnStoryBodies); -RunCorpses=N — столько
+	// в каждой комнате, для проверки
+	if (SpawnStoryBodies(Key))
+	{
+	}
+	else if (Rooms.Num() == 0 || Key != Rooms[0].Key || FParse::Param(FCommandLine::Get(), TEXT("RunCorpsesStart")))
 	{
 		FRunKeyState& Bodies = KeyState(Key);
 		if (Bodies.bCorpsesPlaced)
@@ -415,6 +496,482 @@ void ARunDirector::SpawnRoom(int32 RoomId, const FVector& Location, int32 Arriva
 	}
 	SpawnThreats(ArrivalDoor);
 	UpdateDoorSigns();
+}
+
+bool ARunDirector::SpawnStoryBodies(int32 Key)
+{
+	if (Key == Anchor)
+	{
+		// рубка: у южной двери лежит мертвец — «это ты» (RunStory::SelfPose)
+		if (RoomActor)
+		{
+			FRunCorpsePlace Self;
+			Self.Pose = RunStory::SelfPose;
+			Self.Local = RunStory::SelfBody;
+			Self.Yaw = RunStory::SelfBodyYaw;
+			RoomActor->SpawnCorpses({ Self });
+		}
+		return true;
+	}
+	if (RoomClass(Key) == ClsEngine)
+	{
+		// двигательный отсек: тело капитана, карточка рядом (SpawnRoomContents); больше никого
+		FRunKeyState& State = KeyState(Key);
+		if (!State.bCorpsesPlaced)
+		{
+			State.bCorpsesPlaced = true;
+			FRunCorpsePlace Captain;
+			Captain.Pose = RunStory::CaptainPose;
+			Captain.Local = RunStory::CaptainBody;
+			Captain.Yaw = RunStory::CaptainYaw;
+			State.Corpses = { Captain };
+		}
+		RoomActor->SpawnCorpses(State.Corpses);
+		return true;
+	}
+	return false;
+}
+
+const TCHAR* ARunDirector::HideHint() const
+{
+	return Layout ? RunStory::HideHints[FMath::Clamp(Layout->HideSpot, 0, NumHideSpots - 1)] : TEXT("");
+}
+
+bool ARunDirector::IsAtCaptainPost() const
+{
+	const APawn* Pawn = UGameplayStatics::GetPlayerPawn(this, 0);
+	return Pawn && RoomActor && Layout && Rooms.IsValidIndex(CurrentRoom) && Rooms[CurrentRoom].Key == Anchor
+		&& FVector::Dist2D(Pawn->GetActorLocation(), RoomActor->GetActorLocation()) < RunStory::PostReach;
+}
+
+void ARunDirector::LaunchShip()
+{
+	Phase = ERunPhase::Won;
+	RunEndAt = GetWorld()->GetTimeSeconds();
+	// концовка (просьба автора 15.11, ночь): голос договаривает, кадр гаснет, и сцена меню показывает,
+	// как корабль уходит от чёрной дыры, с титрами (AMenuDirector, опция уровня Ending)
+	RestartAt = RunEndAt + EndingDelay;
+	SetInspecting(false);
+	UE_LOG(LogRun, Display, TEXT("Run: WON doors=%d notes=%d damage=%.0f health=%.0f medkits=%d seconds=%.0f"), GetDoorsOpened(), NotesRead,
+		DamageTaken, Health, MedkitsUsed, GetRunSeconds());
+	RunAudio::Play(this, TEXT("EnginesOnline"));   // музыка победы — уже в сцене концовки
+	Say(TEXT("The card clicks into the slot. The engines roar. THE SHIP IS SAVED."), 8.f);
+}
+
+// ---------- каюта и код двери (решение автора 15.11, вечер) ----------
+
+void ARunDirector::StartLayout()
+{
+	Keys.Reset();
+	Rooms.Reset();
+	SeenKeys.Reset();
+	NextUid = 1;
+	Layout = MakeUnique<FRunLayout>(Seed);
+	// Стартовая рубка — комната набора «ничего значимого»: в ней только проводник, в тайнике по зерну, и больше
+	// ничего, даже аптечки (решение автора 15.11, вечер). Выйдя без него, игрок попадает в неё же — петля.
+	FRunKeyState& StartKey = Keys.Add(Anchor);
+	StartKey.Content = Layout->StartRoom();
+	for (int32 It : StartKey.Content.Items)
+	{
+		FRunPlacedItem& P = AddPlaced(StartKey, It);
+		if (It == Layout->RoleItem[RoleL])
+		{
+			P.bHasPos = true;
+			P.LocalPos = RunStory::HideSpots[FMath::Clamp(Layout->HideSpot, 0, NumHideSpots - 1)];
+			// Автор, 16.11: «над предметом красуется надпись и её легко увидеть, высокий шанс что игрок из любопытства
+			// её подберет и не поймет смысла игры… у этой одной спрятанной вещицы не будем рисовать лейбл». Подпись
+			// видна издалека и выдавала тайник раньше, чем игрок прошёл петлю; подсказка [E] вблизи остаётся
+			P.bNoLabel = true;
+		}
+	}
+	StartKey.NoteRead.Init(false, StartKey.Content.Notes.Num());
+	FRunRoomState Start;
+	Start.Key = Anchor;
+	Start.bVisited = true;
+	SeenKeys.Add(Anchor);   // в стартовой рубке игрок уже был
+	Rooms.Add(Start);
+	CurrentRoom = 0;
+	BuildSolution();
+}
+
+void ARunDirector::OpenCodeEntry()
+{
+	APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
+	if (bCodeOpen || !PC || !Cabin || Cabin->IsUnlocked())
+	{
+		return;
+	}
+	if (bMenuOpen)
+	{
+		SetMenuOpen(false);
+	}
+	bCodeOpen = true;
+	CodeText.Reset();
+	CodeError.Reset();
+	if (!CodeInput)
+	{
+		// свой компонент ввода поверх остальных: пока окно открыто, буквы не срабатывают как действия (E, G, Tab...)
+		CodeInput = NewObject<UInputComponent>(this, TEXT("CodeInput"));
+		CodeInput->Priority = 100;
+		CodeInput->bBlockInput = true;
+		CodeInput->BindKey(EKeys::AnyKey, IE_Pressed, this, &ARunDirector::OnCodeKey);
+		CodeInput->BindKey(EKeys::AnyKey, IE_Repeat, this, &ARunDirector::OnCodeKey);
+		CodeInput->RegisterComponent();
+	}
+	PC->PushInputComponent(CodeInput);
+	PC->SetIgnoreMoveInput(true);
+	PC->SetIgnoreLookInput(true);
+	RunAudio::Play(this, TEXT("UiClick"));
+}
+
+void ARunDirector::CloseCodeEntry()
+{
+	if (!bCodeOpen)
+	{
+		return;
+	}
+	bCodeOpen = false;
+	if (APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
+	{
+		PC->PopInputComponent(CodeInput);
+		PC->SetIgnoreMoveInput(false);
+		PC->SetIgnoreLookInput(false);
+	}
+}
+
+void ARunDirector::OnCodeKey(FKey Key)
+{
+	if (!bCodeOpen)
+	{
+		return;
+	}
+	if (Key == EKeys::Enter)
+	{
+		SubmitCode();
+		return;
+	}
+	if (Key == EKeys::Escape)
+	{
+		CloseCodeEntry();
+		return;
+	}
+	if (Key == EKeys::BackSpace)
+	{
+		CodeText.LeftChopInline(1);
+		CodeError.Reset();
+		return;
+	}
+	if (Key == EKeys::Up && !LastCode.IsEmpty())
+	{
+		CodeText = LastCode;   // код прошлого корабля
+		CodeError.Reset();
+		return;
+	}
+	// код — только цифры (решение автора): цифры над буквами и цифры цифрового блока; остальные клавиши молчат
+	static const FKey Digits[10][2] = {
+		{ EKeys::Zero, EKeys::NumPadZero }, { EKeys::One, EKeys::NumPadOne }, { EKeys::Two, EKeys::NumPadTwo },
+		{ EKeys::Three, EKeys::NumPadThree }, { EKeys::Four, EKeys::NumPadFour }, { EKeys::Five, EKeys::NumPadFive },
+		{ EKeys::Six, EKeys::NumPadSix }, { EKeys::Seven, EKeys::NumPadSeven }, { EKeys::Eight, EKeys::NumPadEight },
+		{ EKeys::Nine, EKeys::NumPadNine } };
+	for (int32 I = 0; I < 10; ++I)
+	{
+		if (Key == Digits[I][0] || Key == Digits[I][1])
+		{
+			if (CodeText.Len() < 10)   // больше 10 цифр в зерно (uint32) не помещается
+			{
+				CodeText.AppendChar(TEXT('0') + I);
+				CodeError.Reset();
+				RunAudio::Play(this, TEXT("UiClick"), 0.35f);
+			}
+			return;
+		}
+	}
+}
+
+void ARunDirector::SubmitCode()
+{
+	uint32 NewSeed = Seed;   // пустой код — новый корабль: случайное шестизначное зерно уже выбрано при старте
+	if (!CodeText.IsEmpty())
+	{
+		const uint64 Value = FCString::Strtoui64(*CodeText, nullptr, 10);
+		if (Value > MAX_uint32)
+		{
+			CodeError = TEXT("No ship has a code that long.");
+			RunAudio::Play(this, TEXT("AirlockRefused"));
+			return;
+		}
+		NewSeed = static_cast<uint32>(Value);
+	}
+	if (NewSeed != Seed)
+	{
+		Seed = NewSeed;
+		StartLayout();   // другой корабль: раскладка заново, в рубке пока никто не был
+		for (const FString& Line : Solution)
+		{
+			UE_LOG(LogRun, Display, TEXT("Run: solution: %s"), *Line);
+		}
+	}
+	LastCode = GetShipCode();
+	if (GConfig)
+	{
+		GConfig->SetString(TEXT("MegaJam.Ship"), TEXT("LastCode"), *LastCode, GGameUserSettingsIni);
+		GConfig->Flush(false, GGameUserSettingsIni);
+	}
+	CloseCodeEntry();
+	Cabin->Unlock();
+	RunAudio::Play(this, TEXT("UiConfirm"));
+	Say(FString::Printf(TEXT("The lock clicks open. Ship code: %s. Remember it to come back to this ship."), *LastCode), 10.f);
+	UE_LOG(LogRun, Display, TEXT("Run: cabin code accepted seed=%u typed='%s'"), Seed, *CodeText);
+}
+
+void ARunDirector::LeaveCabin(ARunCabin* From)
+{
+	if (!From || From != Cabin)
+	{
+		return;
+	}
+	// рубка встаёт так, что её южный тамбур — тот, в котором стоит игрок; створка рубки открыта, как при прибытии
+	SpawnRoom(0, From->GetActorLocation() + RunCabinGeo::BridgeOffset(), 1);
+	Cabin = nullptr;
+	From->Destroy();
+	RunStartAt = GetWorld()->GetTimeSeconds();
+	RoomTitleAt = GetWorld()->GetTimeSeconds();
+	RunAudio::Play(this, TEXT("AirlockShift"));
+	Say(TEXT("Someone is lying by the bridge door. Same suit, same face... That is me."), 8.f);
+	LogRoom(TEXT("from cabin"));
+}
+
+// -RunCabinTest: проснуться, подойти к замку, набрать неверный код, потом код зерна 42, выйти в тамбур, дождаться рубки.
+// С -RunShots — снимки в Saved/Screenshots/Cabin.
+void ARunDirector::TickCabinTest()
+{
+	const float Now = GetWorld()->GetTimeSeconds();
+	APawn* Pawn = UGameplayStatics::GetPlayerPawn(this, 0);
+	APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
+	if (Now < CabinTestAt || !Pawn || !PC)
+	{
+		return;
+	}
+	CabinTestAt = Now + 1.2f;
+	auto Shot = [](const FString& Name)
+	{
+		if (FParse::Param(FCommandLine::Get(), TEXT("RunShots")))
+		{
+			FScreenshotRequest::RequestScreenshot(FPaths::ProjectSavedDir() / TEXT("Screenshots/Cabin") / (Name + TEXT(".png")), true, false);
+		}
+	};
+	auto Type = [this](const FString& Text)
+	{
+		static const TCHAR* const Digits[10] = { TEXT("Zero"), TEXT("One"), TEXT("Two"), TEXT("Three"), TEXT("Four"),
+			TEXT("Five"), TEXT("Six"), TEXT("Seven"), TEXT("Eight"), TEXT("Nine") };
+		for (TCHAR C : Text)
+		{
+			OnCodeKey(C == TEXT(' ') ? EKeys::SpaceBar : FChar::IsDigit(C) ? FKey(Digits[C - TEXT('0')])
+				: FKey(FName(FString::Chr(FChar::ToUpper(C)))));
+		}
+	};
+	auto Move = [&](const FVector& Local, float Yaw)
+	{
+		Pawn->SetActorLocation(Cabin->GetActorLocation() + Local, false, nullptr, ETeleportType::TeleportPhysics);
+		PC->SetControlRotation(FRotator(-10.f, Yaw, 0.f));
+	};
+	const int32 Step = CabinTestStep++;
+	if (!Cabin && Step < 9)
+	{
+		UE_LOG(LogRun, Error, TEXT("Run: cabin test: каюты нет (нет блюпринта BP_Room_Cabin?)"));
+		CabinTestStep = -1;
+		return;
+	}
+	switch (Step)
+	{
+	case 0: Shot(TEXT("cabin_wake")); UE_LOG(LogRun, Display, TEXT("Run: cabin test wake goal='%s' prompt='%s'"), *GetGoal(), *GetPrompt()); break;
+	case 1: Move(FVector(37.5f, -5.f, 100.f), -90.f); break;   // лицом к зеркалу на западной стене
+	case 2: Shot(TEXT("mirror")); break;
+	case 3: Move(FVector(110.f, -40.f, 100.f), -35.f); break;
+	case 4: UE_LOG(LogRun, Display, TEXT("Run: cabin test at keypad prompt='%s'"), *GetPrompt()); Shot(TEXT("cabin_keypad")); OnInteract(); break;
+	// буквы и пробел окно не принимает; 11 девяток обрезаются до 10, и такого зерна нет — ошибка
+	case 5: Type(TEXT("abc 99999999999")); OnCodeKey(EKeys::Enter);
+		UE_LOG(LogRun, Display, TEXT("Run: cabin test bad code text='%s' open=%d error='%s'"), *CodeText, bCodeOpen ? 1 : 0, *CodeError); Shot(TEXT("code_error")); break;
+	case 6: CodeText.Reset(); Type(TEXT("42")); Shot(TEXT("code_typed")); break;
+	case 7: OnCodeKey(EKeys::Enter);
+		UE_LOG(LogRun, Display, TEXT("Run: cabin test code open=%d unlocked=%d seed=%u code='%s'"), bCodeOpen ? 1 : 0, Cabin->IsUnlocked() ? 1 : 0, Seed, *GetShipCode()); break;
+	case 8: Move(FVector(120.f, 0.f, 100.f), 0.f); Shot(TEXT("door_open")); break;
+	case 9: if (Cabin && !Cabin->IsLeaving()) { Move(FVector(470.f, 0.f, 100.f), 0.f); } break;
+	case 10:
+		if (Cabin)
+		{
+			static int32 Waits = 0;   // ждать смены каюты на рубку, но не вечно
+			UE_LOG(LogRun, Display, TEXT("Run: cabin test waiting, leaving=%d"), Cabin->IsLeaving() ? 1 : 0);
+			if (++Waits < 8)
+			{
+				CabinTestStep = Step;
+			}
+			else
+			{
+				UE_LOG(LogRun, Error, TEXT("Run: cabin test: рубка не появилась"));
+				CabinTestStep = 99;
+			}
+			break;
+		}
+		UE_LOG(LogRun, Display, TEXT("Run: cabin test bridge room=%d key=%d seed=%u code='%s' items=%d"), CurrentRoom,
+			Rooms.IsValidIndex(CurrentRoom) ? Rooms[CurrentRoom].Key : -1, Seed, *GetShipCode(), ItemActors.Num());
+		Shot(TEXT("bridge_arrival"));
+		break;
+	case 11:
+		Pawn->SetActorLocation(RoomActor->GetActorLocation() + FVector(-405.f, -15.f, 100.f), false, nullptr, ETeleportType::TeleportPhysics);
+		PC->SetControlRotation(FRotator(-10.f, 20.f, 0.f));
+		break;
+	case 12: Shot(TEXT("bridge_room")); UE_LOG(LogRun, Display, TEXT("Run: cabin test goal='%s'"), *GetGoal()); break;
+	default:
+		UE_LOG(LogRun, Display, TEXT("Run: cabin test done"));
+		CabinTestStep = -1;
+		if (!GIsEditor)
+		{
+			FPlatformMisc::RequestExit(false);
+		}
+		break;
+	}
+}
+
+// ---------- обучение ----------
+
+FString ARunDirector::GetGoal() const
+{
+	if (Phase != ERunPhase::Playing)
+	{
+		return FString();
+	}
+	if (Cabin)
+	{
+		return TEXT("LEAVE YOUR CABIN");
+	}
+	if (!bOffBridge && !HasCard())
+	{
+		return TEXT("GET OFF THE BRIDGE");
+	}
+	if (!bFirstNoteRead)
+	{
+		return TEXT("FIND OUT WHAT HAPPENED");
+	}
+	if (HasCard())
+	{
+		return TEXT("START THE ENGINES - the captain's chair on the bridge");
+	}
+	return bEngineFixed ? TEXT("TAKE THE CAPTAIN'S CARD - engine room") : TEXT("FIND THE CAPTAIN'S CARD - he went to the engine room");
+}
+
+FString ARunDirector::GetStep() const
+{
+	if (Phase != ERunPhase::Playing || !Layout || !Rooms.IsValidIndex(CurrentRoom))
+	{
+		return FString();
+	}
+	if (Cabin)
+	{
+		return Cabin->IsUnlocked() ? TEXT("The door is open. Time to find out where I am.")
+			: TEXT("Locked. There is a keypad left of the door [E].\nNo code? Leave it empty and press [Enter]: a new ship.");
+	}
+	const int32 Key = Rooms[CurrentRoom].Key;
+	if (bAnomalyHere)
+	{
+		return TEXT("This room is wrong and it hurts. Back out the way I came in (WAY BACK).");
+	}
+	if (EnemyActors.Num() > 0)
+	{
+		return HasWeapon() ? TEXT("Fight it - [LMB] hit, [Space] dodge - or back out the way I came in (WAY BACK).")
+			: TEXT("I have nothing to fight with. Back out the way I came in (WAY BACK).");
+	}
+	if (!bOffBridge && Key == Anchor && !HasCard())
+	{
+		// петля рубки (решение автора 15.11, вечер): сначала понять, что ходишь по кругу, потом найти проводника
+		if (Pocket.Contains(Layout->RoleItem[RoleL]))
+		{
+			return TEXT("This does not belong on the bridge. What if I carry it through a door?");
+		}
+		if (BridgeLoops == 0)
+		{
+			return TEXT("I need to get off the bridge. Any door will do.");
+		}
+		if (BridgeLoops == 1)
+		{
+			return TEXT("Every door brings me back to this bridge. I am walking in a loop.\nSomething here must be keeping me in. I should search the bridge.");
+		}
+		return FString::Printf(TEXT("Still the same bridge. %s"), HideHint());
+	}
+	if (!bFirstNoteRead)
+	{
+		// блокнот лежит в первой комнате за петлёй (набор {L}); ушёл без него — не держать на этом шаге
+		if (const FRunKeyState* State = Keys.Find(Key))
+		{
+			if (State->Items.ContainsByPredicate([](const FRunPlacedItem& P) { return P.Item == Notebook; }))
+			{
+				return TEXT("My notebook is here. I should take it [E].");
+			}
+		}
+	}
+	else if (HasNotebook() && !bMenuSeen)
+	{
+		return TEXT("Let me read my notebook [Tab].");
+	}
+	if (HasCard())
+	{
+		if (Key == Anchor)
+		{
+			return TEXT("The captain's chair, in the middle. The card goes in there [E].");
+		}
+		// без значимых вещей любая дверь ведёт в рубку (15.11, вечер); пустышки не мешают, но советуем выбросить всё
+		return Layout->RoleMask(Pocket) != 0 ? TEXT("Only the notebook and the card. Everything else goes: [1]-[4] takes an item in hand, [G] drops it.")
+			: TEXT("Nothing that matters in my pocket now. Any door should take me to the bridge.");
+	}
+	if (RoomClass(Key) == ClsEngine)
+	{
+		return Pocket.Num() >= PocketSlots ? TEXT("My pocket is full. Drop what I no longer need [G], then take the captain's card [E].")
+			: TEXT("The captain's card. I need it [E].");
+	}
+	if (bEngineFixed)
+	{
+		return TEXT("The card is still in the engine room. Same pocket as then - same room.");
+	}
+	if (const FRunKeyState* State = Keys.Find(Key))
+	{
+		for (bool bRead : State->NoteRead)
+		{
+			if (!bRead)
+			{
+				return TEXT("There are notes here [E]. Maybe they say what to carry next.");
+			}
+		}
+	}
+	return TEXT("Carry what the notes name, drop the junk [G], try a door. What I carry decides where it leads.");
+}
+
+bool ARunDirector::GetBackDoor(FVector& Out) const
+{
+	if (Phase != ERunPhase::Playing || ArrivalHere < 0 || !RoomActor || bBusy || !(bAnomalyHere || EnemyActors.Num() > 0))
+	{
+		return false;
+	}
+	Out = RoomActor->VestibuleCenter(ArrivalHere) + FVector(0.f, 0.f, 120.f);
+	return true;
+}
+
+bool ARunDirector::IsTrainingOn()
+{
+	bool bOn = true;
+	if (GConfig)
+	{
+		GConfig->GetBool(TEXT("MegaJam.Training"), TEXT("Enabled"), bOn, GGameUserSettingsIni);
+	}
+	return bOn;
+}
+
+void ARunDirector::SetTrainingOn(bool bOn)
+{
+	if (GConfig)
+	{
+		GConfig->SetBool(TEXT("MegaJam.Training"), TEXT("Enabled"), bOn, GGameUserSettingsIni);
+		GConfig->Flush(false, GGameUserSettingsIni);
+	}
 }
 
 // Аварийный свет (решение автора 15.11): чистый случай по зерну и набору, доля — EmergencyLightPercent.
@@ -1360,7 +1917,7 @@ static const TCHAR* DisplayRoomName(int32 Type)
 	return Type >= 0 && Type < UE_ARRAY_COUNT(Names) ? Names[Type] : TEXT("UNKNOWN");
 }
 
-// Табло над дверями: раскрытая дверь показывает отсек, куда ведёт; нераскрытая мерцает прочерками.
+// Табло только над обратной дверью: отсек, откуда пришёл. Над остальными табло нет — они ведут по карману.
 void ARunDirector::UpdateDoorSigns()
 {
 	for (int32 D = 0; D < DoorsPerRoom; ++D)
@@ -1402,6 +1959,12 @@ void ARunDirector::OnPause()
 	{
 		return;
 	}
+	if (bMenuOpen && bVideoOpen)
+	{
+		bVideoOpen = false;   // Esc из настроек видео — обратно в меню
+		RunAudio::Play(this, TEXT("UiClick"));
+		return;
+	}
 	if (bMenuOpen)
 	{
 		SetMenuOpen(false);   // Esc из меню на Tab закрывает меню, а не открывает паузу поверх
@@ -1430,10 +1993,44 @@ void ARunDirector::OnQuitKey()
 // После смерти или победы: новый забег по клавише, не дожидаясь таймера.
 void ARunDirector::OnConfirm()
 {
-	if (Phase != ERunPhase::Playing && GetWorld()->GetTimeSeconds() > RunEndAt + 1.f)
+	if (IsVideoOpen())
+	{
+		bVideoOpen = !Video.Activate();   // Enter на «Back» закрывает настройки
+		RunAudio::Play(this, TEXT("UiConfirm"));
+		return;
+	}
+	if (Phase == ERunPhase::Won && GetWorld()->GetTimeSeconds() > RunEndAt + 1.f)
+	{
+		StartEnding();
+	}
+	else if (Phase != ERunPhase::Playing && GetWorld()->GetTimeSeconds() > RunEndAt + 1.f)
 	{
 		RestartRun();
 	}
+}
+
+void ARunDirector::OnDebugEnding()
+{
+	if (Phase == ERunPhase::Playing)
+	{
+		UE_LOG(LogRun, Display, TEXT("Run: debug K - skip to the ending"));
+		LaunchShip();
+	}
+}
+
+void ARunDirector::StartEnding()
+{
+	UGameplayStatics::SetGamePaused(this, false);
+	UGameplayStatics::OpenLevel(this, TEXT("Lvl_Menu"), true, TEXT("Ending"));
+}
+
+float ARunDirector::GetWinFade() const
+{
+	if (Phase != ERunPhase::Won || !GetWorld())
+	{
+		return 0.f;
+	}
+	return FMath::Clamp((GetWorld()->GetTimeSeconds() - RunEndAt - (EndingDelay - 1.5f)) / 1.3f, 0.f, 1.f);
 }
 
 void ARunDirector::ShowTip(const FString& Text, float Seconds)
@@ -1454,10 +2051,10 @@ FString ARunDirector::GetTip() const
 
 void ARunDirector::OnDoorApproach()
 {
-	if (!bTipDoor && Pocket.Num() > 0 && Phase == ERunPhase::Playing)
+	if (!bTipDoor && bOffBridge && Pocket.Num() > 0 && Phase == ERunPhase::Playing)
 	{
-		bTipDoor = true;
-		ShowTip(TEXT("Doors lead where your pocket decides."), 8.f);
+		bTipDoor = true;   // до выхода из петли правило ещё не открыто: его называет сам герой в первой новой комнате
+		ShowTip(TEXT("What I carry decides where a door leads."), 8.f);
 	}
 }
 
@@ -1477,6 +2074,16 @@ bool ARunDirector::GetPromptAnchor(FVector& Out) const
 	{
 		return false;
 	}
+	if (HasCard() && IsAtCaptainPost())
+	{
+		Out = RoomActor->GetActorLocation() + FVector(0.f, 0.f, 110.f);   // кресло капитана
+		return true;
+	}
+	if (Cabin)
+	{
+		Out = Cabin->KeypadLocation() + FVector(0.f, 0.f, 25.f);   // панель замка у двери каюты
+		return !GetPrompt().IsEmpty();
+	}
 	if (const ARunItem* A = NearestItem())
 	{
 		Out = A->GetActorLocation();
@@ -1495,7 +2102,7 @@ void ARunDirector::WriteProgress(const FString& Text)
 		if (Pocket.Contains(Notebook))
 		{
 			bJournalUnread = true;
-			ShowTip(TEXT("You write it down. [Tab] notebook"), 5.f);
+			ShowTip(TEXT("I write it down. [Tab] notebook"), 5.f);
 		}
 	}
 }
@@ -1616,8 +2223,9 @@ FRunEnemyState* ARunDirector::FindEnemy(int32 Id)
 	return Enemies.FindByPredicate([Id](const FRunEnemyState& E) { return E.Id == Id; });
 }
 
-// Игрок уходит через дверь Door. Кто стоит с ним в тамбуре — проходит вместе с ним. Человек, который не успел,
-// идёт следом и войдёт в ту же дверь чуть позже. Остальные остаются в своей комнате там, где стояли.
+// Игрок уходит через дверь Door. Кто стоит с ним в тамбуре — проходит вместе с ним. Остальные, человек тоже,
+// остаются в своей комнате там, где стояли: не успел заскочить в закрывающуюся дверь — погоня кончена (автор, 15.11;
+// раньше человек шёл следом и входил в ту же дверь через 3 с).
 void ARunDirector::MoveEnemies(int32 Door, int32 NewKey, const FVector& NewLocation)
 {
 	const float Now = GetWorld()->GetTimeSeconds();
@@ -1635,13 +2243,10 @@ void ARunDirector::MoveEnemies(int32 Door, int32 NewKey, const FVector& NewLocat
 				E->LocalPos = Actor->GetFloorPos() - NewLocation;   // тамбур у комнат общий: место в мире то же
 				++Through;
 			}
-			else if (E->Kind == ThreatHuman)
-			{
-				E->ArriveAt = Now;   // отметка «идёт следом», время ставится ниже
-			}
 			else
 			{
 				E->LocalPos = Local;
+				E->ArriveAt = -1.f;
 				++Stayed;
 			}
 		}
@@ -1698,7 +2303,7 @@ void ARunDirector::TickFollowers()
 			E.LocalPos = RunRoomGeo::Dir(D) * (RunRoomGeo::OuterFace(D) + RunRoomGeo::VestibuleDepth - 70.f);
 			SpawnEnemyActor(E, 0.6f);
 			RoomActor->OpenFor(D, 4.f);
-			Say(TEXT("The door slides open again. The other you steps through."), 4.f);
+			Say(TEXT("Damn it, it followed me!"), 4.f);
 			UE_LOG(LogRun, Display, TEXT("Run: follower id=%d arrived in room=%d door=%s"), E.Id, CurrentRoom, RunRoomGeo::DoorName(D));
 		}
 	}
@@ -1734,7 +2339,7 @@ void ARunDirector::OnAttack()
 		{
 			NextAttackAt = Now + 1.f;
 			RunAudio::Play(this, TEXT("UiDeny"));
-			Say(TEXT("You have nothing to fight with."), 2.f);
+			Say(TEXT("Hell, nothing to fight with!"), 2.f);
 		}
 		return;
 	}
@@ -1910,12 +2515,17 @@ void ARunDirector::ResolveSwing()
 		UE_LOG(LogRun, Display, TEXT("Run: attack hit id=%d kind=%s health=%d"), E->Id, ARunEnemy::DisplayName(E->Kind), E->Health);
 		if (E->Health <= 0)
 		{
-			Say(E->Kind == ThreatHuman ? TEXT("The other you goes down and does not get up.")
+			Say(E->Kind == ThreatHuman ? TEXT("The other me goes down and does not get up.")
 				: E->Kind == ThreatRobot ? TEXT("The robot sparks and goes still.") : TEXT("One rat less."), 3.f);
 			const int32 Id = E->Id;
 			Enemies.RemoveAll([Id](const FRunEnemyState& S) { return S.Id == Id; });
 			EnemyActors.Remove(Actor);
 			TestKillAt = Actor->GetFloorPos();
+			if (FParse::Param(FCommandLine::Get(), TEXT("RunSelfTest")) && FParse::Param(FCommandLine::Get(), TEXT("RunShots")))
+			{
+				TestKillShotAt = GetWorld()->GetTimeSeconds() + 2.f;
+				TestKillShotStep = 0;
+			}
 			Actor->Die();   // анимация смерти; тело остаётся лежать и исчезает само
 		}
 		else
@@ -2031,6 +2641,10 @@ void ARunDirector::HurtPlayer(const FString& Text, const FVector& From, float Da
 		RestartAt = Now + 12.f;
 		RunEndAt = Now;
 		DeathCause = Text;
+		// обучение: что делать в следующий раз
+		DeathAdvice = bAnomalyHere ? TEXT("This room was wrong. Next time walk straight back out through the door you came in - it always leads back.")
+			: EnemyActors.Num() > 0 || GetFollowers() > 0 ? TEXT("Dodge with [Space] - it strikes where you stood. Hit back with the wrench, or just leave the room.")
+			: TEXT("The notes tell what to carry, and which pairs of things lead into deadly rooms.");
 		SetInspecting(false);
 		if (ACharacter* Fallen = bNoDeathAnim ? nullptr : Cast<ACharacter>(UGameplayStatics::GetPlayerPawn(this, 0)))
 		{
@@ -2095,7 +2709,7 @@ void ARunDirector::PutOnSuit()
 	}
 	Helmet->SetVisibility(true);
 	RunAudio::Play(this, TEXT("SuitOn"));
-	Say(TEXT("You pull on the space suit. The helmet seals with a hiss."), 5.f);
+	Say(TEXT("I pull on the space suit. The helmet seals with a hiss."), 5.f);
 	UE_LOG(LogRun, Display, TEXT("Run: suit on"));
 	if (!bTipSuit)
 	{
@@ -2106,7 +2720,7 @@ void ARunDirector::PutOnSuit()
 
 void ARunDirector::TakeOffSuit()
 {
-	if (!bSuitOn || Phase != ERunPhase::Playing || bBusy || !RoomActor || bMenuPause)
+	if (!bSuitOn || Phase != ERunPhase::Playing || bBusy || !RoomActor || bMenuPause || IsVideoOpen())
 	{
 		return;
 	}
@@ -2136,7 +2750,7 @@ void ARunDirector::TakeOffSuit()
 	CurrentKeyState().Items.Add(P);
 	SpawnItemActor(Suit, -1, RoomActor->GetActorLocation() + P.LocalPos, P.Uid);
 	RunAudio::Play(this, TEXT("SuitOff"));
-	Say(TEXT("You step out of the space suit and leave it standing."), 3.f);
+	Say(TEXT("I step out of the space suit and leave it standing."), 3.f);
 	UE_LOG(LogRun, Display, TEXT("Run: suit off"));
 }
 
@@ -2272,6 +2886,10 @@ void ARunDirector::SpawnRoomContents()
 			// скафандр в рост на места предметов не помещается: на свободный пол, всегда в одно место комнаты
 			Loc = FreeFloorPoints(-1, 1)[0] + FVector(0, 0, 11.f);
 		}
+		else if (P.Item == Card)
+		{
+			Loc = Origin + RunStory::CaptainCard;   // у тела капитана (SpawnStoryBodies)
+		}
 		else if (ItemSpots.Num() > 0)
 		{
 			Loc = ItemSpots[(Shift + Spot) % ItemSpots.Num()] + FVector(0, 0, 11.f);
@@ -2280,7 +2898,11 @@ void ARunDirector::SpawnRoomContents()
 		{
 			Loc = Origin + FVector(-150.f + 60.f * Spot, 250.f, 11.f);
 		}
-		SpawnItemActor(P.Item, -1, Loc, P.Uid);
+		ARunItem* Spawned = SpawnItemActor(P.Item, -1, Loc, P.Uid);
+		if (P.bNoLabel && Spawned && Spawned->Label)
+		{
+			Spawned->Label->SetVisibility(false);
+		}
 	}
 	for (int32 I = 0; I < State.Content.Notes.Num(); ++I)
 	{
@@ -2331,20 +2953,23 @@ void ARunDirector::DoSwap()
 		RoomActor->SetArrivalDoor(Door);   // створка открыта; новый переход — когда игрок выйдет из тамбура и вернётся
 		RoomActor->SetDoorSign(Door, TEXT("HULL BREACH"));
 		RunAudio::Play(this, TEXT("AirlockRefused"));
-		Say(TEXT("The airlock reads your pocket and stays shut: HULL BREACH beyond. SUIT REQUIRED."), 6.f);
+		Say(TEXT("The airlock reads my pocket and stays shut: HULL BREACH beyond. I need a suit."), 6.f);
 		UE_LOG(LogRun, Display, TEXT("Run: airlock refused key=%d: hull breach, no suit"), Peek);
 		return;
 	}
 	if (To < 0)
 	{
-		// нераскрытая дверь: комнату определяет карман в этот момент, дальше дверь не меняется (5.2)
+		// любая дверь, кроме обратной: комнату определяет карман в этот момент. Закрывшись, дверь снова
+		// не определена (автор, 15.11, вечер): запомнилась бы — с новой вещью пришлось бы искать нераскрытую
 		const int32 Key = Layout->PocketKey(Pocket);
 		FRunRoomState State;
 		State.Key = Key;
 		State.Doors[RunRoomGeo::Opposite(Door)] = From;              // обратный путь ведёт туда, откуда пришёл
 		To = Rooms.Add(State);
-		Rooms[From].Doors[Door] = To;
 	}
+	// для мыслей героя при входе (EnterRoom): назад ли он шёл и та же ли вышла комната
+	bCameBack = Rooms[To].bVisited;   // только обратная дверь ведёт в уже пройденную комнату; остальные — в новую
+	PrevRoomKey = Rooms[From].Key;
 	const FVector NewLocation = RoomActor->GetActorLocation() + RunRoomGeo::NeighborOffset(Door);
 	ARunRoom* Old = RoomActor;
 	MoveEnemies(Door, Rooms[To].Key, NewLocation);
@@ -2363,10 +2988,70 @@ void ARunDirector::EnterRoom(int32 RoomId)
 	const FRunRoomContent& Content = KeyState(State.Key).Content;
 	const bool bFirst = !State.bVisited;
 	State.bVisited = true;
+	bAnomalyHere = false;
+	const bool bWasOffBridge = bOffBridge;
+	const TArray<int32> Plain = PlainPocket();
+	const bool bPocketSame = Plain == PocketAtEntry;
+	PocketAtEntry = Plain;
 	LogRoom(bFirst ? TEXT("new") : TEXT("back"));
+	if (State.Key == Anchor && bFirst && !HasCard() && !bOffBridge)
+	{
+		// петля рубки (решение автора 15.11, вечер): без значимых вещей любая дверь ведёт сюда же. Сначала игрок сам
+		// видит, что вернулся, — ту же рубку, то же тело у двери; со второго раза — подсказка, где тайник
+		++BridgeLoops;
+		if (BridgeLoops == 1)
+		{
+			Say(TEXT("The bridge again? The same body by the door... I walked in a circle."), 7.f);
+		}
+		else if (BridgeLoops == 2)
+		{
+			Say(HideHint(), 8.f);
+		}
+	}
+	if (State.Key != Anchor && !bOffBridge)
+	{
+		// первая комната за петлёй — набора {L}: проводник вывел, здесь блокнот и ключ
+		bOffBridge = true;
+		Say(TEXT("A different room, finally! It was the thing in my pocket. The doors... they read what I carry."), 8.f);
+		ShowTip(TEXT("My notebook! Take it [E]"), 8.f);
+	}
 	bRoomFamiliar = SeenKeys.Contains(State.Key);
 	SeenKeys.Add(State.Key);
 	RoomTitleAt = GetWorld()->GetTimeSeconds();
+	// закономерность, которую герой замечает сам (каждая — один раз; звучит в конце, если в комнате нет угрозы):
+	// обратная дверь ведёт назад; тот же карман — та же комната; карман сменился, а комната та же — вещь не в счёт;
+	// новая вещь — новая комната
+	FString Thought;
+	bool* ThoughtFlag = nullptr;
+	if (bWasOffBridge && State.Key != Anchor)
+	{
+		if (bCameBack)
+		{
+			if (!bThoughtBack)
+			{
+				Thought = TEXT("Back where I was. The door I walked in through always leads back.");
+				ThoughtFlag = &bThoughtBack;
+			}
+		}
+		else if (State.Key == PrevRoomKey)
+		{
+			if (bPocketSame && !bThoughtSame)
+			{
+				Thought = TEXT("The same room again? Of course: same pocket, same room.");
+				ThoughtFlag = &bThoughtSame;
+			}
+			else if (!bPocketSame && !bThoughtJunk)
+			{
+				Thought = TEXT("The same room, even though my pocket changed. So that thing does not count for the doors. Junk.");
+				ThoughtFlag = &bThoughtJunk;
+			}
+		}
+		else if (!bRoomFamiliar && !bThoughtNew)
+		{
+			Thought = TEXT("Somewhere new again. Something new in my pocket - a new room behind the door.");
+			ThoughtFlag = &bThoughtNew;
+		}
+	}
 	if (!bRoomFamiliar && RoomClass(State.Key) == ClsChain && State.Key != Anchor && State.Key != 0)
 	{
 		// первый раз в безопасной комнате правильного пути: что было в кармане и куда привело
@@ -2383,36 +3068,31 @@ void ARunDirector::EnterRoom(int32 RoomId)
 
 	if (RoomClass(State.Key) == ClsEngine)
 	{
+		// лор 15.11: двигатель цел, запускает его карточка капитана, а капитан лежит здесь
 		if (!bEngineFixed)
 		{
 			bEngineFixed = true;
-			RunAudio::Play(this, TEXT("EnginesOnline"));
-			WriteProgress(TEXT("The engines are running again. One thing left: get back to the bridge."));
-			Say(TEXT("The warp engines hum back to life. Now get back to the bridge."), 8.f);
+			WriteProgress(TEXT("Found the captain by the warp core. His card starts the engines - from the captain's chair on the bridge."));
+			Say(TEXT("The captain. By the warp core. His card is still on him."), 8.f);
 		}
 		return;
 	}
-	if (bEngineFixed && Content.RoomType == Bridge)
+	if (Content.RoomType == Bridge && HasCard())
 	{
-		// концовка наступает раньше, чем сработает аномалия в этой рубке
-		Phase = ERunPhase::Won;
-		RunEndAt = GetWorld()->GetTimeSeconds();
-		RestartAt = RunEndAt + 90.f;   // экран победы с титрами держится, пока игрок не нажмёт клавишу
-		SetInspecting(false);
-		UE_LOG(LogRun, Display, TEXT("Run: WON doors=%d notes=%d damage=%.0f health=%.0f medkits=%d seconds=%.0f"), GetDoorsOpened(), NotesRead,
-			DamageTaken, Health, MedkitsUsed, GetRunSeconds());
-		RunAudio::Play(this, TEXT("Win"), 0.8f);
-		Say(TEXT("You are on the bridge. The ship tears itself free. YOU ESCAPED."), 8.f);
+		// рубка бывает только у набора «только блокнот»: с карточкой игрок вернулся, осталось сесть в кресло
+		Say(TEXT("The bridge. Now the card goes into the captain's chair."), 6.f);
+		ShowTip(TEXT("Walk up to the captain's chair in the middle and press [E]"), 8.f);
 		return;
 	}
 	const int32 Kind = ThreatKindOf(State.Key);
+	bAnomalyHere = ARunThreat::IsAnomaly(Kind);
 	if (Layout->NeedsSuit(State.Key))
 	{
-		Say(TEXT("Hull breach. No air in here, only the hiss of your suit."), 6.f);
+		Say(TEXT("Hull breach. No air in here, only the hiss of my suit."), 6.f);
 	}
 	else if (ARunThreat::IsAnomaly(Kind))
 	{
-		Say(FString::Printf(TEXT("%s. This room is wrong. Nothing stops you from walking back out."), ARunThreat::DisplayName(Kind)), 6.f);
+		Say(FString::Printf(TEXT("%s. This room is wrong. I can just walk back out the way I came."), ARunThreat::DisplayName(Kind)), 6.f);
 	}
 	else if (EnemyActors.Num() > 0)
 	{
@@ -2422,9 +3102,11 @@ void ARunDirector::EnterRoom(int32 RoomId)
 			bHuman |= A && A->Kind == ThreatHuman;
 			bRobot |= A && A->Kind == ThreatRobot;
 		}
-		Say(bHuman ? TEXT("Someone is in the room. It has your face. It will not stop following you.")
-			: bRobot ? TEXT("A maintenance robot turns towards you. It will not leave this room.")
-			: TEXT("Rats. Huge ones. They leap - do not stand still."), 6.f);
+		// при встрече с врагом — коротко и с ругательством (просьба автора 15.11, ночь: «речь сухая»); мат заменён
+		// мягким damn / hell: правила джема запрещают «inappropriate content» (решение автора)
+		Say(bHuman ? TEXT("Damn! That's me. Get a door between us!")
+			: bRobot ? TEXT("Oh hell, a robot! It stays here. I don't have to.")
+			: TEXT("Rats! Huge damn rats. Keep moving!"), 5.f);
 		if (!bTipDodge)
 		{
 			bTipDodge = true;
@@ -2436,12 +3118,107 @@ void ARunDirector::EnterRoom(int32 RoomId)
 			ShowTip(TEXT("[LMB] or [F] hit with the wrench"), 6.f);
 		}
 	}
+	else if (ThoughtFlag)
+	{
+		*ThoughtFlag = true;
+		Say(Thought, 7.f);
+		UE_LOG(LogRun, Display, TEXT("Run: thought \"%s\""), *Thought);
+	}
+}
+
+TArray<int32> ARunDirector::PlainPocket() const
+{
+	TArray<int32> Out;
+	for (int32 It : Pocket)
+	{
+		if (It >= 0)          // блокнот, ключ, аптечка, карточка (отрицательные) двери не меняют
+		{
+			Out.Add(It);
+		}
+	}
+	Out.Sort();
+	return Out;
 }
 
 void ARunDirector::Say(const FString& Text, float Seconds)
 {
 	Message = Text;
-	MessageUntil = GetWorld()->GetTimeSeconds() + Seconds;
+	// субтитр держится, пока звучит голос (у медленной подачи он бывает длиннее заданного времени)
+	const float Voice = Speak(Text);
+	MessageUntil = GetWorld()->GetTimeSeconds() + FMath::Max(Seconds, Voice > 0.f ? Voice + 0.6f : 0.f);
+}
+
+namespace RunVoice
+{
+	struct FLine
+	{
+		const TCHAR* Text;
+		const TCHAR* Sound;
+		bool bStep;
+	};
+	const FLine Lines[] = {
+#include "RunVoiceData.inl"
+	};
+}
+
+FName ARunDirector::VoiceFor(const FString& Text, bool* bOutStep)
+{
+	static TMap<FString, int32> Index;
+	if (Index.IsEmpty())
+	{
+		for (int32 I = 0; I < UE_ARRAY_COUNT(RunVoice::Lines); ++I)
+		{
+			Index.Add(RunVoice::Lines[I].Text, I);
+		}
+	}
+	const int32* Hit = Index.Find(Text);
+	if (!Hit)
+	{
+		return NAME_None;
+	}
+	if (bOutStep)
+	{
+		*bOutStep = RunVoice::Lines[*Hit].bStep;
+	}
+	return FName(RunVoice::Lines[*Hit].Sound);
+}
+
+float ARunDirector::Speak(const FString& Text)
+{
+	const FName Name = VoiceFor(Text);
+	USoundBase* Sound = Name.IsNone() ? nullptr : RunAudio::Find(Name);
+	if (!Sound)
+	{
+		return 0.f;
+	}
+	if (VoiceComp.IsValid())
+	{
+		VoiceComp->Stop();
+	}
+	VoiceComp = UGameplayStatics::SpawnSound2D(this, Sound, 1.f);
+	const float Seconds = Sound->GetDuration();
+	VoiceUntil = GetWorld()->GetTimeSeconds() + Seconds;
+	UE_LOG(LogRun, Display, TEXT("Run: voice %s (%.1f s)"), *Name.ToString(), Seconds);
+	return Seconds;
+}
+
+void ARunDirector::TickVoice(float Now)
+{
+	// строка шага вслух: сменилась — запомнить; прозвучит, когда освободится голос, если шаг к тому времени тот же
+	const FString Step = GetStep();
+	if (Step != StepSeen)
+	{
+		StepSeen = Step;
+		bool bStep = false;
+		const bool bVoiced = !VoiceFor(Step, &bStep).IsNone() && bStep && !StepsVoiced.Contains(Step);
+		StepPending = bVoiced ? Step : FString();
+	}
+	if (!StepPending.IsEmpty() && Now >= VoiceUntil + 0.5f && Phase == ERunPhase::Playing)
+	{
+		StepsVoiced.Add(StepPending);
+		Speak(StepPending);
+		StepPending.Reset();
+	}
 }
 
 FString ARunDirector::GetMessage() const
@@ -2478,6 +3255,16 @@ FString ARunDirector::GetPrompt() const
 	if (Phase != ERunPhase::Playing || bBusy)
 	{
 		return FString();
+	}
+	if (HasCard() && IsAtCaptainPost())
+	{
+		return TEXT("[E] Insert the captain's card");
+	}
+	if (Cabin)
+	{
+		const APawn* Pawn = UGameplayStatics::GetPlayerPawn(this, 0);
+		return !Cabin->IsUnlocked() && !bCodeOpen && Pawn && Cabin->IsNearKeypad(Pawn->GetActorLocation())
+			? FString(TEXT("[E] Enter the door code")) : FString();
 	}
 	if (const ARunItem* A = NearestItem())
 	{
@@ -2516,6 +3303,12 @@ void ARunDirector::AddBookmark(const FString& Text)
 // Вверх, вниз в меню: к соседней закладке; блокнот раскрывается на её развороте.
 void ARunDirector::StepBookmark(int32 Step)
 {
+	if (IsVideoOpen())
+	{
+		Video.Move(Step);   // в настройках видео стрелки вверх и вниз выбирают строку
+		RunAudio::Play(this, TEXT("UiClick"));
+		return;
+	}
 	if (!IsReading() || Bookmarks.Num() == 0 || !HasNotebook())
 	{
 		return;
@@ -2529,6 +3322,19 @@ void ARunDirector::OnInteract()
 {
 	if (Phase != ERunPhase::Playing || bBusy)
 	{
+		return;
+	}
+	if (HasCard() && IsAtCaptainPost())
+	{
+		LaunchShip();
+		return;
+	}
+	if (Cabin)
+	{
+		if (!GetPrompt().IsEmpty())
+		{
+			OpenCodeEntry();   // в каюте вещей нет: E — только панель замка
+		}
 		return;
 	}
 	ARunItem* A = NearestItem();
@@ -2563,7 +3369,7 @@ void ARunDirector::OnInteract()
 		if (Pocket.Num() >= PocketSlots)
 		{
 			RunAudio::Play(this, TEXT("UiDeny"));
-			Say(TEXT("Pocket is full."), 2.f);
+			Say(TEXT("My pocket is full."), 2.f);
 			return;
 		}
 		const int32 Item = A->ItemId;
@@ -2588,10 +3394,27 @@ void ARunDirector::OnInteract()
 			bFirstNoteRead = true;
 			const FString Text = Layout->FirstNote.Text();
 			Journal.Insert(Text, 0);
+			// обучение: правила корабля — страницей блокнота, их записал прошлый ты (лор 15.11)
+			Journal.Insert(TEXT("How the ship works now. I learned it the hard way.\n"
+				"- A door leads where your pocket decides. Same things in the pocket - same room, whichever door you take.\n"
+				"- Nothing that matters in the pocket - and every door leads back to the bridge.\n"
+				"- The notebook, the wrench and junk change nothing. Notes tell what to carry next and which pairs are deadly.\n"
+				"- A wrong room hurts. Walk back out the way you came: that door always leads back.\n"
+				"- The pocket holds four things. [1]-[4] takes one in hand, [G] drops it."), 1);
 			Bookmarks.Insert(Text, 0);
 			Bookmark = Bookmark >= 0 ? Bookmark + 1 : 0;
 			Say(Text, 10.f);
 			ShowTip(TEXT("[Tab] opens the notebook"), 8.f);
+		}
+		else if (Item == Layout->RoleItem[RoleL] && !bOffBridge && Rooms[CurrentRoom].Key == Anchor)
+		{
+			// проводник из тайника рубки (15.11, вечер): единственная вещь здесь — с ней и пробовать дверь
+			Say(TEXT("This does not belong on the bridge. What happens if I take it through a door?"), 6.f);
+		}
+		else if (Item == Card)
+		{
+			WriteProgress(TEXT("I have the captain's card. Nothing that matters in the pocket, only the notebook and the card - then any door leads to the bridge."));
+			ShowTip(TEXT("Keep only the notebook and the card: [1]-[4] take an item in hand, [G] drop it"), 9.f);
 		}
 		else if (Item == Medkit && !bTipMedkit)
 		{
@@ -2606,7 +3429,7 @@ void ARunDirector::OnInteract()
 		else if (IsFlashlight(Item) && !bTipLight)
 		{
 			bTipLight = true;
-			ShowTip(TEXT("The flashlight goes to your left hand. [V] switches it on and off"), 7.f);
+			ShowTip(TEXT("The flashlight goes to my left hand. [V] switches it on and off"), 7.f);
 		}
 		else if (Pocket.Num() >= 2 && !bTipWheel)
 		{
@@ -2671,6 +3494,10 @@ void ARunDirector::SelectSlot(int32 Slot)
 	{
 		return;
 	}
+	if (IsVideoOpen())
+	{
+		return;   // в настройках видео цифры ничего не делают
+	}
 	if (IsReading())
 	{
 		// в меню 1–4 — рассмотреть вещь: она в руке и крупно перед глазами; блокнот и так раскрыт
@@ -2706,6 +3533,11 @@ void ARunDirector::CycleHeld(int32 Step)
 
 void ARunDirector::OnWheelUp()
 {
+	if (IsVideoOpen())
+	{
+		Video.Move(-1);
+		return;
+	}
 	if (IsReading())
 	{
 		TurnPage(-1);
@@ -2718,6 +3550,11 @@ void ARunDirector::OnWheelUp()
 
 void ARunDirector::OnWheelDown()
 {
+	if (IsVideoOpen())
+	{
+		Video.Move(1);
+		return;
+	}
 	if (IsReading())
 	{
 		TurnPage(1);
@@ -2730,7 +3567,7 @@ void ARunDirector::OnWheelDown()
 
 void ARunDirector::OnDropHeld()
 {
-	if (bMenuPause)
+	if (bMenuPause || IsVideoOpen())
 	{
 		return;
 	}
@@ -2738,7 +3575,7 @@ void ARunDirector::OnDropHeld()
 	{
 		if (Phase == ERunPhase::Playing && Pocket.Num() > 0)
 		{
-			Say(TEXT("Your hands are empty. Mouse wheel or [1]-[4] takes an item in hand."), 3.f);
+			Say(TEXT("My hands are empty. Mouse wheel or [1]-[4] takes an item in hand."), 3.f);
 		}
 		return;
 	}
@@ -2764,7 +3601,7 @@ void ARunDirector::UseMedkit(int32 Slot)
 {
 	if (Health >= MaxHealth)
 	{
-		Say(TEXT("You are not hurt. Better keep the medkit."), 2.5f);
+		Say(TEXT("I am not hurt. Better keep the medkit."), 2.5f);
 		return;
 	}
 	const float Before = Health;
@@ -2774,7 +3611,7 @@ void ARunDirector::UseMedkit(int32 Slot)
 	RunAudio::Play(this, TEXT("MedkitUse"));
 	RemoveFromPocket(Slot);
 	UE_LOG(LogRun, Display, TEXT("Run: medkit used health=%.0f -> %.0f"), Before, Health);
-	Say(TEXT("You patch yourself up. It helps."), 3.f);
+	Say(TEXT("I patch myself up. Better."), 3.f);
 }
 
 // Правая кнопка: рассмотреть вещь в руке или убрать её от глаз. Блокнот при этом раскрывается для чтения.
@@ -2793,7 +3630,7 @@ void ARunDirector::OnInspect()
 	{
 		if (Pocket.Num() > 0)
 		{
-			Say(TEXT("Your hands are empty. Mouse wheel or [1]-[4] takes an item in hand."), 3.f);
+			Say(TEXT("My hands are empty. Mouse wheel or [1]-[4] takes an item in hand."), 3.f);
 		}
 		return;
 	}
@@ -2828,6 +3665,12 @@ void ARunDirector::SetInspecting(bool bOn)
 
 void ARunDirector::TurnPage(int32 Step)
 {
+	if (IsVideoOpen())
+	{
+		Video.Change(Step);   // в настройках видео влево и вправо меняют значение
+		RunAudio::Play(this, TEXT("UiClick"));
+		return;
+	}
 	if (IsReading())
 	{
 		JournalPage = FMath::Max(0, JournalPage + Step);
@@ -2848,16 +3691,18 @@ void ARunDirector::OnToggleJournal()
 void ARunDirector::SetMenuBlend(float Alpha)
 {
 	Alpha = FMath::Clamp(Alpha, 0.f, 1.f);
-	if (!Post || Alpha == MenuBlend)
+	const float Bright = FVideoMenu::GetBrightness();   // яркость из настроек видео: поправка экспозиции
+	if (!Post || (Alpha == MenuBlend && Bright == AppliedBrightness))
 	{
 		return;
 	}
 	MenuBlend = Alpha;
+	AppliedBrightness = Bright;
 	// фон под меню: на 1,6 ступени темнее, почти без цвета, с виньеткой и размытием — текст блокнота не спорит с комнатой.
 	// Размытие — глубина резкости: фокус у самой камеры, широкий «сенсор» и открытая диафрагма, всё дальше расплывается
 	const bool bOn = Alpha > 0.f;
 	FPostProcessSettings& P = Post->Settings;
-	P.AutoExposureBias = ExposureBias - 1.6f * Alpha;
+	P.AutoExposureBias = ExposureBias + Bright - 1.6f * Alpha;
 	P.bOverride_ColorSaturation = bOn;
 	P.ColorSaturation = FVector4(1.f, 1.f, 1.f, FMath::Lerp(1.f, 0.2f, Alpha));
 	P.bOverride_VignetteIntensity = bOn;
@@ -2872,6 +3717,20 @@ void ARunDirector::SetMenuBlend(float Alpha)
 	P.DepthOfFieldMinFstop = 0.7f;
 }
 
+void ARunDirector::OnVideoKey()
+{
+	if (!IsReading())
+	{
+		return;
+	}
+	bVideoOpen = !bVideoOpen;
+	if (bVideoOpen)
+	{
+		Video.Open();
+	}
+	RunAudio::Play(this, TEXT("UiClick"));
+}
+
 void ARunDirector::SetMenuOpen(bool bOpen)
 {
 	bOpen = bOpen && Phase == ERunPhase::Playing;
@@ -2883,6 +3742,7 @@ void ARunDirector::SetMenuOpen(bool bOpen)
 		if (HasNotebook())
 		{
 			bJournalUnread = false;
+			bMenuSeen = true;   // обучение: шаг «открой блокнот» пройден
 		}
 	}
 	if (bOpen != bMenuOpen)
@@ -2893,6 +3753,10 @@ void ARunDirector::SetMenuOpen(bool bOpen)
 		{
 			UGameplayStatics::SetGamePaused(this, bOpen);
 		}
+	}
+	if (!bOpen)
+	{
+		bVideoOpen = false;
 	}
 	bMenuOpen = bOpen;
 }
@@ -3180,6 +4044,47 @@ void ARunDirector::Tick(float DeltaSeconds)
 		FScreenshotRequest::RequestScreenshot(FPaths::ProjectSavedDir() / TEXT("Screenshots/Burned/player_dead.png"), true, false);
 		UE_LOG(LogRun, Display, TEXT("Run: test shot of the dead player, phase=%d"), static_cast<int32>(Phase));
 	}
+	if (TestKillShotAt > 0.f && GetWorld()->GetTimeSeconds() >= TestKillShotAt)
+	{
+		APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
+		APawn* P = UGameplayStatics::GetPlayerPawn(this, 0);
+		if (!PC || !P)
+		{
+			TestKillShotAt = -1.f;
+		}
+		else if (TestKillShotStep == 0)
+		{
+			// сверху и со стороны героя; сам герой на кадре спрятан, иначе чужая камера видит его спину
+			const FVector From = TestKillAt + (P->GetActorLocation() - TestKillAt).GetSafeNormal2D() * 140.f + FVector(0.f, 0.f, 250.f);
+			ACameraActor* Cam = GetWorld()->SpawnActor<ACameraActor>(From, (TestKillAt + FVector(0.f, 0.f, 15.f) - From).Rotation());
+			Cam->GetCameraComponent()->bConstrainAspectRatio = false;
+			Cam->GetCameraComponent()->SetFieldOfView(80.f);
+			PC->SetViewTargetWithBlend(Cam, 0.f);
+			P->SetActorHiddenInGame(true);
+			TestKillCam = Cam;
+			TestKillShotStep = 1;
+			TestKillShotAt += 0.3f;
+		}
+		else if (TestKillShotStep == 1)
+		{
+			const FString Path = FPaths::ProjectSavedDir() / FString::Printf(TEXT("Screenshots/Burned/seed%u_killed_enemy.png"), static_cast<uint32>(Seed));
+			FScreenshotRequest::RequestScreenshot(Path, true, false);
+			UE_LOG(LogRun, Display, TEXT("Run: test shot %s"), *Path);
+			TestKillShotStep = 2;
+			TestKillShotAt += 0.3f;
+		}
+		else
+		{
+			PC->SetViewTargetWithBlend(P, 0.f);
+			P->SetActorHiddenInGame(false);
+			if (TestKillCam.IsValid())
+			{
+				TestKillCam->Destroy();
+			}
+			TestKillShotStep = 0;
+			TestKillShotAt = -1.f;
+		}
+	}
 	Super::Tick(DeltaSeconds);
 	const float Now = GetWorld()->GetTimeSeconds();
 	if (!bPlayerReady)
@@ -3187,6 +4092,7 @@ void ARunDirector::Tick(float DeltaSeconds)
 		SetupPlayer();
 		return;
 	}
+	TickVoice(Now);
 	if (ACharacter* Ch = Cast<ACharacter>(UGameplayStatics::GetPlayerPawn(this, 0)))
 	{
 		if (BaseWalkSpeed <= 0.f)
@@ -3297,12 +4203,23 @@ void ARunDirector::Tick(float DeltaSeconds)
 	}
 	if (Phase != ERunPhase::Playing && Now >= RestartAt && !bSelfTest)
 	{
-		RestartRun();
+		if (Phase == ERunPhase::Won)
+		{
+			StartEnding();
+		}
+		else
+		{
+			RestartRun();
+		}
 		return;
 	}
 	if (bSelfTest)
 	{
 		TickSelfTest();
+	}
+	if (CabinTestStep >= 0)
+	{
+		TickCabinTest();
 	}
 	if (GripTestStep >= 0)
 	{
@@ -3358,34 +4275,48 @@ void ARunDirector::TickSelfTest()
 	// 105 — подойти к оружию, 110 — подойти к предмету-ловушке, 111 — отчёт об угрозах, 112 — ждать,
 	// 120 — встать вплотную к ближайшему противнику и ударить, −1 — встать в центр комнаты, 0..3 — войти в тамбур двери
 	// 130 — инвентарь: блокнот раскрыть и полистать, аптечку взять в руку и применить после ушиба
-	static const int32 PathSteps[] = { 100, 101, 130, -1, 0, -1, 0, 102, 101, -1, 0, -1, 1, 103, -1, 3, 104 };
-	static const int32 AnomalySteps[] = { 100, 101, 110, 101, -1, 0, -1, 111, 112, 112, 112, 1, -1, 111, 104 };
+	// С 15.11 (вечер) в рубке только проводник (в тайнике), блокнот, ключ и вещи-ловушки — в комнате {L} за ним:
+	// сценарии сначала берут проводника (102, 101) и проходят в неё (−1, 0, −1). Ловушку берут там (у зерна 42 она там есть).
+	// Путь: две петли рубки с пустым карманом, проводник, комната {L}, блокнот, инвентарь, выбросить всё — снова рубка
+	static const int32 PathSteps[] = { -1, 0, -1, 0, -1, 102, 101, -1, 0, -1, 100, 101, 130, -1, 1, 103, -1, 3, 104 };
+	static const int32 AnomalySteps[] = { 102, 101, -1, 0, -1, 110, 101, -1, 0, -1, 111, 112, 112, 112, 1, -1, 111, 104 };
 	// выгоревшая комната (-RunBurned=1): камера в каждом дверном проёме (113), снимок окна игры (114),
 	// камера обратно за героя (115). Снимки — Saved/Screenshots/Burned/seed<зерно>_t<угроза>_key<набор>_<дверь>.png; с ключом -RunShots — и без пожара
 	// 116 — снимок с камеры игрока (в дыму и при -RunEmergency=1), 117 — присесть или встать (только в дыму:
 	// видно ли под слоем), 118 — фонарик в руку (только при -RunEmergency=1)
-	static const int32 BurnedSteps[] = { 100, 101, 110, 101, -1, 0, -1, 111, 113, 114, 113, 114, 113, 114, 113, 114, 115,
+	static const int32 BurnedSteps[] = { 102, 101, -1, 0, -1, 110, 101, -1, 0, -1, 111, 113, 114, 113, 114, 113, 114, 113, 114, 115,
 		116, 117, 116, 117, 118, 116, 1, -1, 104 };
 	// 122 — замах ключом и кадр в его середине, 123 — рывок и кадр в нём (только с -RunShots)
-	static const int32 EnemySteps[] = { 100, 101, 105, 101, 110, 101, -1, 0, -1, 111, 116, 122, 116, 123, 116, 124, 112, 112, 1, -1, 111,
+	static const int32 EnemySteps[] = { 102, 101, -1, 0, -1, 105, 101, 110, 101, -1, 0, -1, 111, 116, 122, 116, 123, 116, 124, 112, 112, 1, -1, 111,
 		112, 112, 112, 112, 112, 112, 112, 112, 112, 112, 111, 120, 120, 120, 120, 120, 111,
 		-1, 0, -1, 111, 120, 120, 120, 120, 120, 120, 120, 120, 111, 199, 199, 125, 116, 104 };   // 125, 116 — кадр убитого после боя
 	// полный забег по шпаргалке (-RunWin): 200+R — подойти к предмету роли R, 210 — выбросить проводника,
 	// 220 — выбросить всё, кроме блокнота, 106 — отчёт о состоянии
 	// 230 — надеть скафандр, если он в комнате (уровни 1 и 2: разгерметизация на 2 или 3)
-	static const int32 WinSteps[] = { 100, 101, 200, 101, -1, 0, -1, 201, 101, 230, -1, 0, -1, 202, 101, 230, -1, 0, -1,
-		210, 203, 101, -1, 0, -1, 106, 220, -1, 0, -1, 106, 104 };
+	// 240 — подойти к карточке капитана (двигательный отсек), 241 — к креслу в рубке и [E] (лор 15.11)
+	// 150, 151 — камера на своё тело в рубке и на капитана, 152 — снимок в Saved/Screenshots/Story (только с -RunShots)
+	// петля рубки с пустым карманом (−1, 0, −1), проводник из тайника (200), комната {L}: блокнот (100) и K1 (201)
+	static const int32 WinSteps[] = { 150, 152, 115, -1, 0, -1, 200, 101, -1, 0, -1, 100, 101, 201, 101, 230, -1, 0, -1, 202, 101, 230, -1, 0, -1,
+		210, 203, 101, -1, 0, -1, 106, 151, 152, 115, 220, 240, 101, -1, 0, -1, 106, 241, 106, 104 };
 	// показ для снимков (-RunShow; в редакторе — ключ запуска самого редактора): прочитать записки рубки,
 	// аптечка в руке после ушиба, осмотр, меню на Tab (144 — снимок в Saved/Screenshots/Menu, 145 — закладка выше).
 	// 199 — пауза, каждое состояние держится несколько секунд
-	static const int32 ShowSteps[] = { 100, 101, 140, -1, 141, 199, 199, 199, 199, 199, 199, 199, 142, 199, 199, 199, 144, 199, 199, 199,
-		143, 199, 199, 144, 199, 145, 199, 199, 144, 199, 143, 146, 199, 199, 144, 199, 199, 199 };
+	static const int32 ShowSteps[] = { 102, 101, -1, 0, -1, 100, 101, 140, -1, 141, 199, 199, 199, 199, 199, 199, 199, 142, 199, 199, 199, 144, 199, 199, 199,
+		143, 199, 199, 144, 199, 145, 199, 199, 144, 199, 147, 199, 199, 144, 147, 199, 143, 146, 199, 199, 144, 199, 199, 199 };
+	// кадры тайника проводника (-RunHideTest -RunShots, 15.11 вечер): 160 — снимок (вид героя на старте, потом вблизи),
+	// 161 — камера в 1,6 м от проводника, со стороны середины рубки; затем взять его
+	static const int32 HideSteps[] = { 112, 160, 161, 160, 115, 102, 101, 104 };
 	const int32* Steps = PathSteps;
 	int32 NumSteps = UE_ARRAY_COUNT(PathSteps);
 	if (bShowTest)
 	{
 		Steps = ShowSteps;
 		NumSteps = UE_ARRAY_COUNT(ShowSteps);
+	}
+	else if (FParse::Param(FCommandLine::Get(), TEXT("RunHideTest")))
+	{
+		Steps = HideSteps;
+		NumSteps = UE_ARRAY_COUNT(HideSteps);
 	}
 	else if (bWinTest)
 	{
@@ -3433,6 +4364,82 @@ void ARunDirector::TickSelfTest()
 			Phase == ERunPhase::Won ? TEXT("WON") : Phase == ERunPhase::Dead ? TEXT("DEAD") : TEXT("playing"), Pocket.Num(), Journal.Num(), Health);
 		break;
 	case 200: case 201: case 202: case 203: GoToItem(Layout->RoleItem[Step - 200]); break;
+	case 240: GoToItem(Card); break;
+	case 150:
+	case 151:
+		if (FParse::Param(FCommandLine::Get(), TEXT("RunShots")))
+		{
+			const FVector Mid = RoomActor->GetActorLocation();
+			const FVector Target = Mid + (Step == 150 ? RunStory::SelfBody + FVector(0.f, 0.f, 20.f) : RunStory::CaptainBody + FVector(-20.f, -30.f, 20.f));
+			const FVector From = Mid + (Step == 150 ? FVector(-170.f, -110.f, 190.f) : FVector(70.f, 10.f, 210.f));
+			ACameraActor* Cam = Cast<ACameraActor>(TestCam.Get());
+			if (!Cam)
+			{
+				Cam = GetWorld()->SpawnActor<ACameraActor>(From, (Target - From).Rotation());
+				Cam->GetCameraComponent()->bConstrainAspectRatio = false;
+				Cam->GetCameraComponent()->SetFieldOfView(80.f);
+				TestCam = Cam;
+			}
+			Cam->SetActorLocationAndRotation(From, (Target - From).Rotation());
+			if (APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
+			{
+				PC->SetViewTargetWithBlend(Cam, 0.f);
+			}
+			TestNextAt = Now + 1.5f;
+		}
+		break;
+	case 152:
+		if (FParse::Param(FCommandLine::Get(), TEXT("RunShots")))
+		{
+			static int32 StoryShot = 0;
+			const FString Path = FPaths::ProjectSavedDir() / FString::Printf(TEXT("Screenshots/Story/story_%d.png"), StoryShot++);
+			FScreenshotRequest::RequestScreenshot(Path, true, false);
+			UE_LOG(LogRun, Display, TEXT("Run: test shot %s"), *Path);
+			TestNextAt = Now + 0.6f;
+		}
+		break;
+	case 160:
+	{
+		static int32 HideShot = 0;
+		const FString Path = FPaths::ProjectSavedDir() / FString::Printf(TEXT("Screenshots/Hide/seed%u_spot%d_%s.png"),
+			static_cast<uint32>(Seed), Layout->HideSpot, HideShot++ == 0 ? TEXT("start") : TEXT("close"));
+		FScreenshotRequest::RequestScreenshot(Path, true, false);
+		UE_LOG(LogRun, Display, TEXT("Run: test shot %s step='%s'"), *Path, *GetStep());
+		TestNextAt = Now + 0.6f;
+		break;
+	}
+	case 161:
+		for (ARunItem* A : ItemActors)
+		{
+			if (A && !A->IsNote() && A->ItemId == Layout->RoleItem[RoleL])
+			{
+				const FVector Target = A->GetActorLocation();
+				const FVector Mid = RoomActor->GetActorLocation();
+				const FVector From = Target + (FVector(Mid.X, Mid.Y, Target.Z) - Target).GetSafeNormal() * 160.f + FVector(0.f, 0.f, 130.f);
+				ACameraActor* Cam = Cast<ACameraActor>(TestCam.Get());
+				if (!Cam)
+				{
+					Cam = GetWorld()->SpawnActor<ACameraActor>(From, (Target - From).Rotation());
+					Cam->GetCameraComponent()->bConstrainAspectRatio = false;
+					Cam->GetCameraComponent()->SetFieldOfView(80.f);
+					TestCam = Cam;
+				}
+				Cam->SetActorLocationAndRotation(From, (Target - From).Rotation());
+				if (APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
+				{
+					PC->SetViewTargetWithBlend(Cam, 0.f);
+				}
+				UE_LOG(LogRun, Display, TEXT("Run: test hide spot %d at %s"), Layout->HideSpot, *(Target - Mid).ToString());
+				TestNextAt = Now + 1.5f;
+				break;
+			}
+		}
+		break;
+	case 241:
+		MoveTo(RoomActor->GetActorLocation() + FVector(-150.f, 0.f, 0.f));   // в южном проходе кольца, у помоста
+		UE_LOG(LogRun, Display, TEXT("Run: test at the captain's post=%d card=%d prompt='%s'"), IsAtCaptainPost() ? 1 : 0, HasCard() ? 1 : 0, *GetPrompt());
+		OnInteract();
+		break;
 	case 230:
 		// скафандр в этой комнате — подойти и надеть (разгерметизация уровнем дальше). -RunNoSuit — не надевать:
 		// проверка, что шлюз без него не пускает
@@ -3536,6 +4543,7 @@ void ARunDirector::TickSelfTest()
 		break;
 	}
 	case 145: StepBookmark(-1); UE_LOG(LogRun, Display, TEXT("Run: show bookmark=%d"), GetBookmark()); break;
+	case 147: OnVideoKey(); UE_LOG(LogRun, Display, TEXT("Run: show video settings=%d"), IsVideoOpen() ? 1 : 0); break;   // настройки видео в меню
 	case 199: break;
 	case 130:
 	{

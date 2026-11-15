@@ -92,13 +92,10 @@ namespace RunGen
 		return static_cast<int32>(FMath::CountBits64(static_cast<uint64>(static_cast<uint32>(X))));
 	}
 
-	int32 RoomKey(int32 RoleMask, bool bHasNotebook)
+	int32 RoomKey(int32 RoleMask, bool /*bHasNotebook*/)
 	{
-		if (RoleMask != 0)
-		{
-			return RoleMask;
-		}
-		return bHasNotebook ? Anchor : 0;
+		// 15.11 (вечер): без значимых предметов любая дверь ведёт в рубку, с блокнотом или без
+		return RoleMask != 0 ? RoleMask : Anchor;
 	}
 
 	int32 ChainLevel(int32 Key)
@@ -142,7 +139,7 @@ namespace RunGen
 
 	TArray<int32> AllKeys(int32 NumSig)
 	{
-		TArray<int32> Keys = { 0, Anchor };
+		TArray<int32> Keys = { Anchor };
 		for (int32 M = 1; M < (1 << NumSig); ++M)
 		{
 			if (PopCount(M) <= PocketSlots)
@@ -171,6 +168,10 @@ namespace RunGen
 		if (Item == Suit)
 		{
 			return TEXT("Space Suit");
+		}
+		if (Item == Card)
+		{
+			return TEXT("Captain's Card");
 		}
 		return Item == Weapon ? FString(GRunWeaponName) : FString(GRunCatalog[Item].Name);
 	}
@@ -355,6 +356,7 @@ FRunLayout::FRunLayout(uint32 InSeed, const FRunConfig& InCfg)
 	FirstNote.Kind = NoteNotebookFirst;
 	FirstNote.Items = { RoleItem[RoleL] };
 	FirstNote.Tpl = 0;
+	HideSpot = static_cast<int32>(Hash32({ Seed, DHide }) % static_cast<uint32>(NumHideSpots));
 
 	// Разгерметизация (решение автора 15.11): ворота правильного пути на уровне 2 или 3, скафандр — уровнем ниже
 	DecompLevel = 2 + static_cast<int32>(Hash32({ Seed, DDecomp }) & 1U);
@@ -417,12 +419,6 @@ void FRunLayout::Look(int32 Key, int32& OutType, int32& OutSwitches) const
 	{
 		OutType = Bridge;
 		OutSwitches = BridgeSwitches;
-		return;
-	}
-	if (Key == 0)
-	{
-		OutType = Living;
-		OutSwitches = 0;
 		return;
 	}
 	if (Key == FinalMask)
@@ -573,7 +569,7 @@ bool FRunLayout::SuitLiesIn(int32 Key) const
 
 bool FRunLayout::TargetOf(int32 Key, int32& OutItem) const
 {
-	if (Key == 0 || RoomClass(Key) != ClsChain)
+	if (RoomClass(Key) != ClsChain)
 	{
 		return false;
 	}
@@ -593,10 +589,23 @@ FRunRoomContent FRunLayout::Room(int32 Key) const
 	{
 		FRng Rng({ Seed, DNotes, UKey });
 		Out.Notes.Add(MakeNote(Rng, NoteFinale, {}));
+		Out.Items.Add(Card);   // карточка капитана у его тела (лор 15.11); ГСЧ не тратит
+		return Out;
+	}
+
+	if (Key == Anchor)
+	{
+		// Рубка (решение автора 15.11, вечер): только проводник, спрятанный (HideSpot), без записок и прочего. ГСЧ не тратит
+		Out.Items.Add(RoleItem[RoleL]);
 		return Out;
 	}
 
 	FRng IRng({ Seed, DItems, UKey });
+	if (Key == MaskL)
+	{
+		Out.Items.Add(Notebook);   // первая новая комната: блокнот и ключ переехали сюда из рубки
+		Out.Items.Add(Weapon);
+	}
 	int32 Target = 0;
 	if (TargetOf(Key, Target))
 	{
@@ -606,7 +615,11 @@ FRunRoomContent FRunLayout::Room(int32 Key) const
 	{
 		Out.Items.Add(Suit);   // ГСЧ не тратит: раскладка прочих предметов та же
 	}
-	const int32 NFill = Cfg.FillerMin + static_cast<int32>(IRng.Below(static_cast<uint32>(Cfg.FillerMax - Cfg.FillerMin + 1)));   // rng: сколько прочих
+	int32 NFill = Cfg.FillerMin + static_cast<int32>(IRng.Below(static_cast<uint32>(Cfg.FillerMax - Cfg.FillerMin + 1)));   // rng: сколько прочих
+	if (Key == MaskL)
+	{
+		NFill = FMath::Max(1, NFill - 2);   // вещей столько же, сколько было до блокнота и ключа
+	}
 	Out.Items.Append(DrawFiller(IRng, NFill));                                                                                  // rng: какие
 	Out.Notes = Cls == ClsChain ? ChainNotes(Key) : GuessNotes(Key);
 	Out.Anomaly = AnomalyOf(Key);
@@ -615,8 +628,5 @@ FRunRoomContent FRunLayout::Room(int32 Key) const
 
 FRunRoomContent FRunLayout::StartRoom() const
 {
-	FRunRoomContent Out = Room(Anchor);
-	Out.Items.Insert(Weapon, 0);
-	Out.Items.Insert(Notebook, 0);
-	return Out;
+	return Room(Anchor);
 }

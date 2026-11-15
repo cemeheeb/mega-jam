@@ -5,6 +5,7 @@ public class MegaJam : ModuleRules
 	public MegaJam(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "Json", "SlateCore" });
+		// RenderCore — рендер-таргет зеркала каюты (ARunCabin): без него не линкуется GWhiteTexture
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "Json", "SlateCore", "RenderCore" });
 	}
 }

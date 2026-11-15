@@ -48,8 +48,7 @@ class LayoutTest(unittest.TestCase):
 
     def test_look_rules(self):
         lay = G.RunLayout(77)
-        self.assertEqual(lay.look(G.ANCHOR)[0], G.BRIDGE)       # только блокнот — рубка, первая петля
-        self.assertEqual(lay.look(0), (G.LIVING, 0))            # пустой карман — жилая
+        self.assertEqual(lay.look(G.ANCHOR)[0], G.BRIDGE)       # ничего значимого — рубка, первая петля
         self.assertEqual(lay.look(G.FINAL_MASK)[0], G.ENGINE)
         self.assertEqual(lay.start_room().room_type, G.BRIDGE)
         for k in lay.all_keys():
@@ -68,9 +67,9 @@ class LayoutTest(unittest.TestCase):
     def test_pocket_key(self):
         lay = G.RunLayout(3)
         d = lay.dummies[0]
-        self.assertEqual(lay.pocket_key([]), 0)
-        self.assertEqual(lay.pocket_key([d]), 0)              # пустышки не влияют
-        self.assertEqual(lay.pocket_key([G.NOTEBOOK, d, d]), G.ANCHOR)
+        self.assertEqual(lay.pocket_key([]), G.ANCHOR)         # 15.11 (вечер): пустой карман — тоже рубка
+        self.assertEqual(lay.pocket_key([d]), G.ANCHOR)        # пустышки не влияют
+        self.assertEqual(lay.pocket_key([G.NOTEBOOK, G.WEAPON, d, d]), G.ANCHOR)
         k = [lay.role_item[r] for r in (G.K1, G.K2, G.K3)]
         self.assertEqual(lay.pocket_key([G.NOTEBOOK] + k), G.FINAL_MASK)
         self.assertEqual(lay.pocket_key(k + [k[0]]), G.FINAL_MASK)  # без учёта повторов
@@ -108,7 +107,7 @@ class LayoutTest(unittest.TestCase):
         def lying_note(key):  # пустышку назвали половиной опасной пары
             rc = orig(key)
             note = G.Note(G.N_DANGER, (lay.dummies[0], lay.role_item[G.L]), 0)
-            return replace(rc, notes=rc.notes + (note,)) if key == G.ANCHOR else rc
+            return replace(rc, notes=rc.notes + (note,)) if key == G.RM_L else rc
         lay.room = lying_note
         self.assertTrue(any("false note" in e for e in G.validate_layout(lay)))
 
@@ -126,7 +125,7 @@ class LayoutTest(unittest.TestCase):
 
         lay2 = G.RunLayout(12)
         orig_look = lay2.look
-        lay2.look = lambda key: (G.LIVING, 0) if key == G.ANCHOR else orig_look(key)  # блокнот не в рубку
+        lay2.look = lambda key: (G.LIVING, 0) if key == G.ANCHOR else orig_look(key)  # пустой карман не в рубку
         self.assertTrue(any("bridge rule" in e for e in G.validate_layout(lay2)))
 
     def test_catalog(self):
@@ -178,23 +177,27 @@ class SimTest(unittest.TestCase):
         for s in range(1, 51):
             p = sim.Sim(G.RunLayout(s))
             p.enter(0)
-            start_items = list(p.room.items)
-            p.pick(G.NOTEBOOK)
+            leader = p.L.role_item[G.L]
+            self.assertEqual(p.room.items, [leader])  # 15.11 (вечер): в рубке только проводник
             seen = []
-            for _ in range(3):                      # три двери подряд с одним блокнотом
+            for _ in range(3):                      # три двери подряд с пустым карманом — петля рубки
                 p.cur = 0
                 p.reveal(p.unrevealed()[0])
                 seen.append((p.room.look, list(p.room.items), p.room.notes))
             self.assertEqual(seen[0], seen[1])
             self.assertEqual(seen[1], seen[2])
-            self.assertEqual(seen[0][1], [i for i in start_items if i != G.NOTEBOOK])   # блокнот не вернулся
+            self.assertEqual(seen[0], (p.world.rooms[0].look, [leader], ()))           # та же рубка с тем же проводником
             self.assertEqual(seen[0][0][0], G.BRIDGE)
-            self.assertIn(p.L.role_item[G.L], seen[0][1])                               # проводник лежит в рубке
-            dropped = p.room.items[-1]
-            p.pick(dropped)
-            p.drop(dropped)                          # выброшенное остаётся в комнате набора
-            p.cur = 0
-            self.assertIn(dropped, p.room.items)
+            p.pick(leader)
+            p.reveal(p.unrevealed()[0])             # с проводником — комната {L}: блокнот, ключ, K1
+            self.assertEqual(p.room.key, G.RM_L)
+            self.assertEqual(p.room.items[:2], [G.NOTEBOOK, G.WEAPON])
+            self.assertIn(p.L.role_item[G.K1], p.room.items)
+            p.drop(leader)                           # выброшенное остаётся в комнате набора
+            self.assertIn(leader, p.world.items_of[G.RM_L])
+            p.reveal(p.unrevealed()[0])              # снова ничего значимого — рубка, проводника в ней уже нет
+            self.assertEqual(p.room.look[0], G.BRIDGE)
+            self.assertNotIn(leader, p.room.items)
 
     def test_right_path_is_safe(self):
         """Игрок по запискам урона не получает и всегда доходит до конца."""

@@ -48,8 +48,7 @@
    "Voice Recorder"
   ],
   "chain_room_types": {
-   "notebook only": "Bridge",
-   "empty pocket": "Living",
+   "nothing that matters": "Bridge",
    "L": "LifeSupport",
    "L,K1": "Mess",
    "K1": "Mess",
@@ -57,8 +56,9 @@
    "K1,K2": "Living",
    "K1,K2,K3": "Engine"
   },
-  "notebook_first": "Everything you add, the singularity will erase. Only this remains.\nCarry the circuit board. It breaks the first loop.",
-  "decompression_level": 3
+  "notebook_first": "All systems are green. The engines only need the captain's card. The captain went down to the engine room and never came back.\nIf you are reading this, the circuit board got you off the bridge too. What you carry decides where a door leads.",
+  "decompression_level": 3,
+  "hide_spot": 0
  },
  "run_items": [
   "Circuit Board",
@@ -184,47 +184,14 @@
   "switches": 17,
   "anomaly": "none",
   "items": [
-   "Notebook",
-   "Pipe Wrench",
-   "Circuit Board",
-   "Snow Globe",
-   "Data Cartridge",
-   "Rubber Duck",
-   "Ration Tin"
+   "Circuit Board"
   ],
-  "notes": [
-   {
-    "kind": "next_key",
-    "items": [
-     "Coolant Valve",
-     "Circuit Board"
-    ],
-    "tpl": 0,
-    "text": "The coolant valve only shows up for someone carrying the circuit board."
-   },
-   {
-    "kind": "loop_exit",
-    "items": [
-     "Circuit Board"
-    ],
-    "tpl": 1,
-    "text": "I walked these rooms for hours before I got it. Carry the circuit board and the doors let you go."
-   }
-  ]
+  "notes": []
  },
  "looks": [
   {
-   "key": 0,
-   "signature": "{} (empty pocket)",
-   "class": "chain",
-   "level": 0,
-   "type": "Living",
-   "switches": 0,
-   "anomaly": "none"
-  },
-  {
    "key": 4096,
-   "signature": "{} (notebook only)",
+   "signature": "{} (nothing that matters)",
    "class": "chain",
    "level": 0,
    "type": "Bridge",
@@ -7370,68 +7337,15 @@
   }
  ],
  "rooms": {
-  "{} (empty pocket)": {
-   "key": 0,
-   "type": "Living",
-   "switches": 0,
-   "anomaly": "none",
-   "items": [
-    "Ration Tin",
-    "Pressure Gauge",
-    "Flashlight",
-    "Data Cartridge"
-   ],
-   "notes": [
-    {
-     "kind": "next_key",
-     "items": [
-      "Coolant Valve",
-      "Circuit Board"
-     ],
-     "tpl": 2,
-     "text": "Looked everywhere for the coolant valve. It was never there until I picked up the circuit board."
-    },
-    {
-     "kind": "loop_exit",
-     "items": [
-      "Circuit Board"
-     ],
-     "tpl": 0,
-     "text": "Same rooms, over and over. The circuit board is what breaks this loop."
-    }
-   ]
-  },
-  "{} (notebook only)": {
+  "{} (nothing that matters)": {
    "key": 4096,
    "type": "Bridge",
    "switches": 17,
    "anomaly": "none",
    "items": [
-    "Circuit Board",
-    "Snow Globe",
-    "Data Cartridge",
-    "Rubber Duck",
-    "Ration Tin"
+    "Circuit Board"
    ],
-   "notes": [
-    {
-     "kind": "next_key",
-     "items": [
-      "Coolant Valve",
-      "Circuit Board"
-     ],
-     "tpl": 0,
-     "text": "The coolant valve only shows up for someone carrying the circuit board."
-    },
-    {
-     "kind": "loop_exit",
-     "items": [
-      "Circuit Board"
-     ],
-     "tpl": 1,
-     "text": "I walked these rooms for hours before I got it. Carry the circuit board and the doors let you go."
-    }
-   ]
+   "notes": []
   },
   "{L}": {
    "key": 1,
@@ -7439,10 +7353,10 @@
    "switches": 4,
    "anomaly": "none",
    "items": [
+    "Notebook",
+    "Pipe Wrench",
     "Coolant Valve",
-    "Rubber Duck",
-    "Family Photo",
-    "Pressure Gauge"
+    "Rubber Duck"
    ],
    "notes": [
     {
@@ -7580,13 +7494,15 @@
    "type": "Engine",
    "switches": 40,
    "anomaly": "none",
-   "items": [],
+   "items": [
+    "Captain's Card"
+   ],
    "notes": [
     {
      "kind": "finale",
      "items": [],
      "tpl": 2,
-     "text": "It's fixed. Remember how you got to the bridge, and do it once more."
+     "text": "He never made it back. You will. The notebook, the card, nothing else - and any door is the bridge."
     }
    ]
   },

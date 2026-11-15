@@ -33,6 +33,7 @@ private:
 	float MenuBlend = 0.f;
 	/** Затемнение под меню: ровный слой, к краям плотнее. */
 	void DrawShade(float Alpha);
+	void DrawHealthCells(float X, float Y, float W, float H, float S, float Frac, float Lag, const FLinearColor& Color);
 
 	UPROPERTY()
 	TObjectPtr<UTexture2D> PageTexture;

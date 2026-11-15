@@ -5,14 +5,18 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "InputCoreTypes.h"
 #include "RunGen.h"
 #include "RunRoom.h"
+#include "../Video/VideoMenu.h"
 #include "RunDirector.generated.h"
 
+class ARunCabin;
 class ARunEnemy;
 class ARunItem;
 class ARunRoom;
 class ARunThreat;
+class UInputComponent;
 class FRunLayout;
 class USceneComponent;
 class USkeletalMesh;
@@ -27,6 +31,7 @@ struct FRunPlacedItem
 	int32 Spot = -1;   // номер метки в комнате: закреплён за вещью, чтобы остальные не переезжали, когда одну взяли
 	int32 Uid = 0;     // своя у каждой записи: по ней взятая вещь вычёркивается (аптечек в комнате может быть несколько)
 	int32 Niche = -1;  // >= 0: аптечка в аварийной нише, номер ниши по модулю их числа в комнате
+	bool bNoLabel = false;   // без подписи над вещью: проводник в тайнике рубки (подобрали и выбросили — подпись как у всех)
 };
 
 /** Комната набора: вещи и записки. Одна на набор — через какую бы дверь в неё ни вошли,
@@ -45,7 +50,7 @@ struct FRunKeyState
 struct FRunRoomState
 {
 	int32 Key = 0;
-	int32 Doors[4] = { -1, -1, -1, -1 };   // куда ведёт дверь: номер комнаты или −1, если не раскрыта
+	int32 Doors[4] = { -1, -1, -1, -1 };   // номер комнаты есть только у обратной двери; −1 — ведёт по карману
 	bool bVisited = false;
 };
 
@@ -156,12 +161,17 @@ public:
 	int32 GetNotesRead() const { return NotesRead; }
 	/** Сколько секунд идёт забег; после смерти или победы время стоит. */
 	float GetRunSeconds() const;
+	/** Затемнение перед сценой концовки 0..1. */
+	float GetWinFade() const;
 	const FString& GetDeathCause() const { return DeathCause; }
 	uint32 GetSeed() const { return Seed; }
 	bool IsPausedByMenu() const { return bMenuPause; }
 	/** Фон под меню на Tab (0 — нет, 1 — полностью): темнее, бесцветнее, размыт. Экран плавно ведёт число сам,
 	 *  по реальному времени: на паузе время мира стоит. */
 	void SetMenuBlend(float Alpha);
+	/** Настройки видео поверх меню на Tab (`O`; просьба автора 15.11, вечер): вместо разворота блокнота. */
+	bool IsVideoOpen() const { return bVideoOpen && IsReading(); }
+	const FVideoMenu& GetVideo() const { return Video; }
 	/** Где дверь, через которую войдёт преследователь. false — никто следом не идёт. */
 	bool GetFollowerDoor(FVector& Out) const;
 	FString GetDebugLine() const;
@@ -172,6 +182,36 @@ public:
 	/** Сколько преследователей сейчас идёт следом и ещё не вошло. */
 	int32 GetFollowers() const;
 	bool HasWeapon() const { return Pocket.Contains(RunGen::Weapon); }
+	/** Карточка капитана в кармане (лор автора 15.11): с ней в рубке у кресла капитана запускают двигатели. */
+	bool HasCard() const { return Pocket.Contains(RunGen::Card); }
+
+	// --- обучение (просьба автора 15.11: «человек, который не знает, про что игра, не разберётся») ---
+	/** Общая цель забега сейчас: карточка капитана, потом рубка. Пусто — забег окончен. */
+	FString GetGoal() const;
+	/** Что делать прямо сейчас — по состоянию игры, а не по сценарию. Пусто — подсказывать нечего. */
+	FString GetStep() const;
+	/** Комната опасна (аномалия или живой противник), и дверь назад известна: где её тамбур. */
+	bool GetBackDoor(FVector& Out) const;
+	/** Совет на экране смерти: что делать в следующий раз. */
+	const FString& GetDeathAdvice() const { return DeathAdvice; }
+	/** Режим обучения: панель шагов. Хранится в настройках пользователя (GameUserSettings.ini), по умолчанию включён. */
+	static bool IsTrainingOn();
+	static void SetTrainingOn(bool bOn);
+
+	// --- каюта героя (решение автора 15.11, вечер): забег начинается в ней, код двери — зерно забега цифрами ---
+	/** Игрок ещё в каюте: рубки нет, забег не начался. */
+	bool IsInCabin() const { return Cabin != nullptr; }
+	/** Окно ввода кода двери открыто. */
+	bool IsCodeOpen() const { return bCodeOpen; }
+	const FString& GetCodeText() const { return CodeText; }
+	const FString& GetCodeError() const { return CodeError; }
+	/** Код прошлого корабля (из настроек пользователя); пусто — его не было. */
+	const FString& GetLastCode() const { return LastCode; }
+	/** Код этого корабля — само зерно цифрами. Новый корабль получает шесть цифр (100000–999999). */
+	FString GetShipCode() const { return FString::Printf(TEXT("%u"), Seed); }
+	/** Створка каюты за игроком закрылась: поставить рубку на место тамбура, каюту убрать. */
+	void LeaveCabin(ARunCabin* From);
+
 	bool HasFlashlight() const { return FlashlightItem() != TNumericLimits<int32>::Min(); }
 	const FString& GetThreatHint() const { return ThreatHint; }
 	float GetThreatMeter() const { return ThreatMeter; }
@@ -293,6 +333,12 @@ private:
 	UPROPERTY() TObjectPtr<UStaticMeshComponent> Helmet;
 	UPROPERTY() TObjectPtr<class UPostProcessComponent> Post;
 	float MenuBlend = 0.f;
+	/** Яркость из настроек видео, уже применённая к экспозиции (FVideoMenu::GetBrightness). */
+	float AppliedBrightness = 0.f;
+	FVideoMenu Video;
+	bool bVideoOpen = false;
+	/** O в меню на Tab: открыть или закрыть настройки видео. */
+	void OnVideoKey();
 	// --- звук (RunAudio): музыка спокойная и боевая, фон комнаты, сердце при малом здоровье, шаги ---
 	UPROPERTY() TObjectPtr<class UAudioComponent> MusicCalm;
 	UPROPERTY() TObjectPtr<class UAudioComponent> MusicCombat;
@@ -326,7 +372,46 @@ private:
 	int32 JournalPage = 0;
 	float InspectIdle = 0.f;
 	bool bTipHeld = false, bTipMedkit = false;
+	/** Игрок дошёл до двигательного отсека и нашёл тело капитана (лор 15.11: двигатель не чинят, нужна карточка). */
 	bool bEngineFixed = false;
+	// --- сюжет (лор автора 15.11): свой труп с блокнотом и ключом в рубке, тело капитана с карточкой
+	// в двигательном отсеке, запуск двигателей карточкой у кресла капитана ---
+	/** Тела сюжета в комнате, которая только что появилась: в рубке — сам герой, в двигательном отсеке — капитан.
+	 *  true — комната сюжетная, случайные тела в неё не ставятся. */
+	bool SpawnStoryBodies(int32 Key);
+	/** Игрок внутри кольца консолей рубки, у кресла капитана. */
+	bool IsAtCaptainPost() const;
+	/** Карточка вставлена: двигатели запущены, победа. */
+	void LaunchShip();
+	// обучение: меню с блокнотом уже открывали; сколько раз дверь вернула в рубку, пока проводник не вывел
+	// из неё (петля рубки, решение автора 15.11, вечер), и вывел ли уже;
+	// дверь, через которую вошёл в эту комнату; в комнате аномалия (противников считает EnemyActors)
+	bool bMenuSeen = false;
+	int32 BridgeLoops = 0;
+	bool bOffBridge = false;
+	/** Подсказка, где тайник проводника в рубке (по Layout->HideSpot). */
+	const TCHAR* HideHint() const;
+	int32 ArrivalHere = -1;
+	bool bAnomalyHere = false;
+	FString DeathAdvice;
+	// каюта и код двери: окно ввода ловит клавиши своим компонентом ввода поверх остальных (bBlockInput),
+	// поэтому буквы не срабатывают как действия игры
+	UPROPERTY() TObjectPtr<ARunCabin> Cabin;
+	UPROPERTY() TObjectPtr<UInputComponent> CodeInput;
+	bool bCodeOpen = false;
+	FString CodeText;
+	FString CodeError;
+	FString LastCode;
+	/** Раскладка забега по Seed и стартовая рубка в списке комнат (без актора). */
+	void StartLayout();
+	void OpenCodeEntry();
+	void CloseCodeEntry();
+	void OnCodeKey(FKey Key);
+	void SubmitCode();
+	/** Самопроверка каюты (-RunCabinTest): код набирается, дверь, рубка с зерном этого кода. */
+	int32 CabinTestStep = -1;
+	float CabinTestAt = 0.f;
+	void TickCabinTest();
 	bool bFirstNoteRead = false;
 	ERunPhase Phase = ERunPhase::Playing;
 
@@ -477,6 +562,9 @@ private:
 	int32 NotesRead = 0;
 	float RunStartAt = 0.f;
 	float RunEndAt = -1.f;
+	/** Сколько секунд после победы до сцены концовки: голос «The ship is saved» успевает договорить. */
+	static constexpr float EndingDelay = 7.5f;
+	void StartEnding();
 	FString DeathCause;
 	bool bMenuPause = false;
 	bool bWinTest = false;
@@ -495,6 +583,12 @@ private:
 	float DodgeUntil = -100.f;
 	float DodgeReadyAt = 0.f;
 	bool bTipDodge = false;
+	/** Обучение мыслями героя (автор, 15.11, вечер): закономерности он замечает и называет сам, каждую один раз. */
+	bool bCameBack = false;                // последний переход — через обратную дверь
+	int32 PrevRoomKey = -1;                // набор комнаты, из которой вышел
+	TArray<int32> PocketAtEntry;           // карман при входе в прошлую комнату, без блокнота, ключа и аптечки
+	bool bThoughtBack = false, bThoughtSame = false, bThoughtJunk = false, bThoughtNew = false;
+	TArray<int32> PlainPocket() const;
 	bool bNoDeathAnim = false;       // чёрная дыра: героя уносит сама аномалия, падать не нужно
 	void StartSwing();
 	void ResolveSwing();
@@ -504,6 +598,10 @@ private:
 	FVector TestKillAt = FVector::ZeroVector;   // самопроверка: где упал последний убитый противник
 	int32 TestStandShots = 0;       // самопроверка: первый кадр стоящего героя — stand, следующие — later
 	float TestDeathShotAt = -1.f;   // самопроверка с -RunDie: когда снять кадр упавшего героя
+	/** Самопроверка с -RunShots: кадр убитого противника через 2 с после удара (камера, кадр, назад к герою). */
+	float TestKillShotAt = -1.f;
+	int32 TestKillShotStep = 0;
+	TWeakObjectPtr<AActor> TestKillCam;
 
 	float InvulnerableUntil = 0.f;
 	float HurtAt = -100.f;
@@ -522,6 +620,18 @@ private:
 	FString Message;
 	float MessageUntil = 0.f;
 	bool bShowDebug = false;
+
+	// Мысли героя вслух (tools/audio/voice_lines.py -> RunVoiceData.inl): голос ищется по строке реплики или шага.
+	// Реплика (Say) звучит сразу и обрывает прежний голос; строка шага — один раз за забег, когда голос свободен.
+	static FName VoiceFor(const FString& Text, bool* bOutStep = nullptr);
+	/** Произнести строку, если для неё есть голос. Возвращает длину голоса в секундах (0 — голоса нет). */
+	float Speak(const FString& Text);
+	void TickVoice(float Now);
+	TWeakObjectPtr<class UAudioComponent> VoiceComp;
+	float VoiceUntil = 0.f;
+	FString StepSeen;
+	FString StepPending;
+	TSet<FString> StepsVoiced;
 
 	TArray<FString> Solution;
 	void BuildSolution();
@@ -557,6 +667,8 @@ private:
 	void OnRestartKey();
 	void OnQuitKey();
 	void OnConfirm();
+	/** Отладка: K — победа сразу, дальше концовка (только в редакторе). */
+	void OnDebugEnding();
 	void RestartRun();
 	/** Выбросить вещь из слота: ложится перед игроком и остаётся в комнате (5.3). */
 	void DropSlot(int32 Slot);

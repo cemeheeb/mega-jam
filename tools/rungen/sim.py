@@ -182,6 +182,9 @@ class Sim:
 
     def run(self) -> Result:
         self.enter(0)
+        # 15.11 (вечер): в рубке лежит только проводник (спрятан); с ним дверь ведёт в комнату {L}, там блокнот
+        self.pick(self.L.role_item[G.L])
+        self.reveal(self.unrevealed()[0])
         self.pick(G.NOTEBOOK)
         while not self.res.status:
             if self.res.entries >= self.cfg.max_entries:

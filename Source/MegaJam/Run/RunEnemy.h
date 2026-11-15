@@ -131,6 +131,7 @@ private:
 	float LabelZ = 150.f;
 	FString Pips;                         // подпись здоровья; на замахе её сменяет жёлтый знак «!»
 	bool bModel = false;                  // робот: тело — статичный меш с привязкой в центре дна, голова-куб скрыта
+	bool bRagdoll = false;                // убитый человек: тело отдано физике и падает само (StartRagdoll)
 
 	UPROPERTY(VisibleAnywhere) TObjectPtr<UStaticMeshComponent> Body;
 	UPROPERTY(VisibleAnywhere) TObjectPtr<UStaticMeshComponent> Head;
@@ -164,4 +165,7 @@ private:
 	/** Шаг к цели; упёрся надолго — немного идёт вбок. */
 	void Walk(const FVector& WantDir, float Speed, float Dt, const AActor* Ignore);
 	void Place();
+	/** Человек: клип смерти шаблона кончается не лёжа, и тело застывало согнутым (автор, 15.11). После начала клипа
+	 *  тело уходит в рэгдолл на физассете манекена и ложится на пол само. */
+	void StartRagdoll();
 };

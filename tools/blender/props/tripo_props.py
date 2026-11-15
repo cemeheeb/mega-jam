@@ -99,7 +99,34 @@ ASSETS = {
                part("PrivacyScreen", (-0.24, 0.22), ("z", 1.70), ucx="tall", straight=False),
                part("InstrumentTrolley", (0.17, 0.28), ("z", 0.85), ucx=True),
                part("BiohazardBin", (0.43, 0.30), ("z", 0.65), ucx=True)]),
+    # диагностическая капсула медотсека (автор, 15.11, вечер): длина 2,3 м, как основание в карточке; высота и глубина —
+    # по пропорциям Tripo (1,16 × 1,48 м с пультом спереди у торца). Светятся бирюзовые колба и экран
+    "environment/medbay/diagnostic-capsule": dict(name="DiagnosticCapsule", size=2.3, pivot="bottom", rough=0.45, metal=0.15,
+                                                  ucx=True, emissive="teal"),
+    # ---- третья партия (15.11, ночь): последние серые коробки мебели. Лицо у всех в −Y, как у прежних ----
+    # top — высота (м) рабочей поверхности под точкой привязки: модель растягивается по Z, чтобы на ней лежали вещи
+    # и записки комнаты (койка 65 см, стол пульта 1,0 м); ucx "top" — коробка коллизии только до этой поверхности.
+    # core — полоса высоты (доли), по которой берутся середина и габарит корпуса: у клеток вперёд торчит распахнутая
+    # дверца, у пилона вбок — шина; ucx "core" — коробка по этому габариту на всю высоту.
+    "environment/medbay/medical-bed": dict(name="MedicalBed", size=2.0, pivot="bottom", rough=0.6, metal=0.1,
+                                           top=0.65, ucx="top"),
+    "environment/cargo/cargo-shelf": dict(name="CargoShelf", size=(2.6, 0.6, 2.3), pivot="bottom", rough=0.55, metal=0.3, ucx=True),
+    "environment/common/control-cabinet": dict(name="ControlCabinet", size=(1.8, 0.72, 1.6), pivot="bottom", rough=0.5, metal=0.2,
+                                               top=1.0, ucx="top", emissive="teal"),
+    "environment/common/storage-tank": dict(name="StorageTank", size=("z", 2.5), pivot="bottom", rough=0.45, metal=0.5,
+                                            ucx=("prism", 12)),
+    # клетки у Tripo почти кубом в глубину (корпус 96 см при ширине 240): глубина сжата, иначе стеллаж у стены
+    # выходит на метр в комнату
+    "environment/lab/cage-rack": dict(name="CageRack", size=(2.4, 0.78, 1.9), pivot="bottom", rough=0.5, metal=0.4,
+                                      core=(0.0, 0.3), ucx="core"),
+    "environment/living/crew-locker": dict(name="CrewLocker", size=(0.76, 0.5, 2.0), pivot="bottom", rough=0.5, metal=0.2, ucx=True),
+    "environment/mess/food-dispenser": dict(name="FoodDispenser", size=(1.2, 0.8, 2.0), pivot="bottom", rough=0.45, metal=0.2,
+                                            ucx=True, emissive="teal"),
+    "environment/engine/core-pylon": dict(name="CorePylon", size=("z", 3.0), pivot="bottom", rough=0.5, metal=0.3,
+                                          core=(0.0, 0.3), ucx="core"),
 }
+
+CORE = {}    # имя меша -> ((x0, y0), (x1, y1)): габарит корпуса в плане относительно привязки (ASSETS: core)
 
 
 def bounds(me):
@@ -250,8 +277,8 @@ def scale_to(me, size):
     """size: число — по наибольшей стороне; ("z" | "y", длина) — по одной оси, пропорции прежние; (x, y, z) — по осям."""
     lo, hi = bounds(me)
     d = hi - lo
-    if isinstance(size, tuple) and size[0] in ("y", "z"):
-        s = Vector((size[1] / (d.z if size[0] == "z" else d.y),) * 3)
+    if isinstance(size, tuple) and size[0] in ("x", "y", "z"):
+        s = Vector((size[1] / {"x": d.x, "y": d.y, "z": d.z}[size[0]],) * 3)
     elif isinstance(size, tuple):
         s = Vector((size[0] / d.x, size[1] / d.y, size[2] / d.z))
     else:
@@ -325,6 +352,11 @@ def collision(o, kind):
     lo, hi = bounds(o.data)
     if kind is True:
         return [box(f"UCX_{o.name}_00", lo, hi)]
+    if kind == "top":
+        return [box(f"UCX_{o.name}_00", lo, Vector((hi.x, hi.y, top_at_centre(o.data))))]
+    if kind == "core":
+        (x0, y0), (x1, y1) = CORE[o.name]
+        return [box(f"UCX_{o.name}_00", Vector((x0, y0, lo.z)), Vector((x1, y1, hi.z)))]
     if kind == "tall":
         # ширма: коробка на каждую створку — остров высотой больше половины предмета; не тоньше 4 см
         pts = coords(o.data)
@@ -470,7 +502,20 @@ def process(card):
             print(f"   {o.name}: нижняя треть (плафон) — середина ({lc[0] * 100:.1f}, {lc[1] * 100:.1f}) см от привязки, "
                   f"поперечник {(low.max(axis=0) - low.min(axis=0))[:2].max() * 100:.1f} см")
         else:
+            if sp.get("core"):
+                # середина корпуса, а не всего габарита: по вершинам в полосе высоты core
+                pts = coords(o.data)
+                z0, z1 = (lo.z + f * (hi.z - lo.z) for f in sp["core"])
+                band = pts[(pts[:, 2] >= z0) & (pts[:, 2] <= z1)]
+                b0, b1 = band.min(axis=0), band.max(axis=0)
+                c = Vector(((b0[0] + b1[0]) / 2, (b0[1] + b1[1]) / 2, c.z))
+                CORE[o.name] = ((b0[0] - c.x, b0[1] - c.y), (b1[0] - c.x, b1[1] - c.y))
+                print(f"   {o.name}: корпус {(b1[0] - b0[0]) * 100:.1f} x {(b1[1] - b0[1]) * 100:.1f} см")
             o.data.transform(Matrix.Translation((-c.x, -c.y, -lo.z if pivot == "bottom" else -c.z)))
+            if sp.get("top"):
+                was = top_at_centre(o.data)
+                o.data.transform(Matrix.Diagonal((1.0, 1.0, sp["top"] / was, 1.0)))
+                print(f"   {o.name}: поверхность под привязкой была на {was * 100:.1f} см, растянута до {sp['top'] * 100:.0f}")
         lo, hi = bounds(o.data)
         d = hi - lo
         print(f"   {o.name}: {d.x * 100:.1f} x {d.y * 100:.1f} x {d.z * 100:.1f} см, низ {lo.z * 100:.1f}, "

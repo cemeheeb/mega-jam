@@ -40,13 +40,9 @@ namespace
 
 	FString KeyName(int32 Key, int32 NumSig)
 	{
-		if (Key == 0)
-		{
-			return TEXT("{} (empty pocket)");
-		}
 		if (Key == Anchor)
 		{
-			return TEXT("{} (notebook only)");
+			return TEXT("{} (nothing that matters)");
 		}
 		FString S;
 		for (int32 R = 0; R < NumSig; ++R)
@@ -115,7 +111,7 @@ namespace
 		Desc->SetArrayField(TEXT("final_set"), Names({ RI[RoleK1], RI[RoleK2], RI[RoleK3] }));
 		FObj ChainTypes = MakeShared<FJsonObject>();
 		const TPair<const TCHAR*, int32> ChainKeys[] = {
-			{ TEXT("notebook only"), Anchor }, { TEXT("empty pocket"), 0 }, { TEXT("L"), MaskL },
+			{ TEXT("nothing that matters"), Anchor }, { TEXT("L"), MaskL },
 			{ TEXT("L,K1"), MaskL | MaskK1 }, { TEXT("K1"), MaskK1 }, { TEXT("L,K1,K2"), MaskL | MaskK1 | MaskK2 },
 			{ TEXT("K1,K2"), MaskK1 | MaskK2 }, { TEXT("K1,K2,K3"), FinalMask } };
 		for (const auto& P : ChainKeys)
@@ -127,6 +123,7 @@ namespace
 		Desc->SetObjectField(TEXT("chain_room_types"), ChainTypes);
 		Desc->SetStringField(TEXT("notebook_first"), Layout.FirstNote.Text());
 		Desc->SetNumberField(TEXT("decompression_level"), Layout.DecompLevel);
+		Desc->SetNumberField(TEXT("hide_spot"), Layout.HideSpot);
 		Root->SetObjectField(TEXT("layout"), Desc);
 
 		Root->SetArrayField(TEXT("run_items"), Names(Layout.RunItems));

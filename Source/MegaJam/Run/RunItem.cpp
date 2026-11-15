@@ -83,7 +83,7 @@ UStaticMesh* ARunItem::FindModel(const FString& Name, FRotator* OutPose, float* 
 	}
 	// Остальные предметы — по правилу имён (tools/ue/import_props.py): «Coolant Valve» ->
 	// /Game/Items/CoolantValve/SM_CoolantValve. Привязка — центр дна, лежит как смоделирован. Нет модели — кубик.
-	const FString Id = Name.Replace(TEXT(" "), TEXT(""));
+	const FString Id = Name.Replace(TEXT(" "), TEXT("")).Replace(TEXT("'"), TEXT(""));   // «Captain's Card» -> CaptainsCard
 	if (OutPose)
 	{
 		*OutPose = FRotator::ZeroRotator;
@@ -127,6 +127,20 @@ void ARunItem::Setup(int32 InItemId, int32 InNoteIndex, const FString& Caption)
 	if (ItemId == RunGen::Suit)
 	{
 		SetupSuitPlaceholder(Caption);
+		return;
+	}
+	if (ItemId == RunGen::Card)
+	{
+		// карточка капитана (лор 15.11): модели пока нет — оранжевая пластина 11 × 7 см плашмя на опоре
+		Mesh->SetWorldScale3D(FVector(0.11f, 0.07f, 0.006f));
+		SetActorLocation(GetActorLocation() - FVector(0, 0, CubeLift - 0.3f));
+		if (ItemMaterial)
+		{
+			Mesh->SetMaterial(0, ItemMaterial);
+		}
+		Label->SetText(FText::FromString(Caption));
+		Label->SetWorldLocation(GetActorLocation() + FVector(0, 0, 28.f));
+		Label->SetWorldScale3D(FVector(1.f));
 		return;
 	}
 	// записка — плоский листок, предмет — кубик
