@@ -12,7 +12,10 @@
 #include "Kismet/GameplayStatics.h"
 #include "Algo/Find.h"
 #include "Misc/Crc.h"
+#include "Misc/CommandLine.h"
 #include "Misc/PackageName.h"
+#include "Misc/Parse.h"
+#include "RunAudio.h"
 #include "RunDirector.h"
 #include "RunGen.h"
 
@@ -81,6 +84,25 @@ void ARunRoom::BeginPlay()
 			{
 				M->SetMaterial(0, Tiles);
 			}
+		}
+	}
+	// створки шлюзов: модель автора (Tripo, 15.11) вместо оранжевых коробок. Коробка 150 × 10 × 225 см стоит без
+	// поворота, тонкой стороной вдоль X или Y; модель — шириной вдоль X, привязка в середине, своя коробка коллизии
+	if (UStaticMesh* DoorMesh = LoadObject<UStaticMesh>(nullptr, TEXT("/Game/Environment/Common/AirlockDoor/SM_AirlockDoor.SM_AirlockDoor"),
+		nullptr, LOAD_NoWarn | LOAD_Quiet))
+	{
+		for (UStaticMeshComponent* M : Meshes)
+		{
+			const FString N = M->GetName();
+			if (!N.EndsWith(TEXT("_DoorInner")) && !N.EndsWith(TEXT("_DoorOuter")))
+			{
+				continue;
+			}
+			const FVector Size = M->GetStaticMesh() ? M->GetStaticMesh()->GetBoundingBox().GetSize() * M->GetRelativeScale3D() : FVector(150.f, 10.f, 225.f);
+			M->SetStaticMesh(DoorMesh);
+			M->EmptyOverrideMaterials();
+			M->SetRelativeScale3D(FVector(1.f));
+			M->SetRelativeRotation(FRotator(0.f, Size.X < Size.Y ? 90.f : 0.f, 0.f));
 		}
 	}
 	for (int32 D = 0; D < 4; ++D)
@@ -521,6 +543,14 @@ void ARunRoom::Tick(float DeltaSeconds)
 
 		ForcedOpenLeft[D] = FMath::Max(0.f, ForcedOpenLeft[D] - DeltaSeconds);
 		const bool bWantOpen = !bSealed && (bArrival[D] || bApproach || bDoorway || ForcedOpenLeft[D] > 0.f);
+		if (bWantOpen != bLeafWanted[D])
+		{
+			bLeafWanted[D] = bWantOpen;
+			if (Leaf[D] && GetWorld()->GetTimeSeconds() > CreationTime + 0.5f)   // не звучать, пока комната только появилась
+			{
+				RunAudio::PlayAt(this, bWantOpen ? TEXT("DoorOpen") : TEXT("DoorClose"), Leaf[D]->GetComponentLocation(), 0.8f);
+			}
+		}
 		LeafOpen[D] = FMath::Clamp(LeafOpen[D] + (bWantOpen ? 1.f : -1.f) * DeltaSeconds / 0.6f, 0.f, 1.f);
 		if (Leaf[D])
 		{
@@ -923,8 +953,44 @@ FIntVector ARunRoom::ApplyFungus(uint32 Seed)
 	};
 	UInstancedStaticMeshComponent* Stems = MakeIsm(TEXT("/Engine/BasicShapes/Cylinder.Cylinder"), FungusMaterial(TEXT("MI_MushroomStem"), TEXT("MI_Gray_Linen")));
 	UInstancedStaticMeshComponent* Caps = MakeIsm(TEXT("/Engine/BasicShapes/Sphere.Sphere"), FungusMaterial(TEXT("MI_MushroomCap"), TEXT("MI_Gray_Door")));
+	// модели кучек (автор, Tripo, 15.11): пять мешей SM_Fungus1–5; есть они — ставятся вместо фигур, реже и крупнее
+	TArray<UInstancedStaticMeshComponent*> Models;
+	for (int32 I = 1; I <= 5; ++I)
+	{
+		const FString Path = FString::Printf(TEXT("/Game/Environment/Common/FungusClusters/SM_Fungus%d.SM_Fungus%d"), I, I);
+		if (UStaticMesh* Model = LoadObject<UStaticMesh>(nullptr, *Path, nullptr, LOAD_NoWarn | LOAD_Quiet))
+		{
+			UInstancedStaticMeshComponent* C = MakeIsm(TEXT("/Engine/BasicShapes/Cube.Cube"), nullptr);
+			C->SetStaticMesh(Model);
+			C->EmptyOverrideMaterials();
+			Models.Add(C);
+		}
+	}
 	auto Cluster = [&](const FVector& At, uint32 H, float Spread, int32 Count, float Scale)
 	{
+		if (Models.Num() > 0)
+		{
+			// кучка из модели заменяет три-четыре гриба из фигур
+			const int32 N = FMath::Max(1, (Count + 2) / 3);
+			for (int32 K = 0; K < N; ++K)
+			{
+				const uint32 Hk = Hash32({ H, 71U, static_cast<uint32>(K) });
+				const float R = Spread * FMath::Sqrt(Unit(Hash32({ Hk, 2U })));
+				const FVector P = At + FRotator(0.f, 360.f * Unit(Hash32({ Hk, 1U })), 0.f).Vector() * R;
+				bool bClear = true;
+				for (const FVector& A : Avoid)
+				{
+					bClear &= FVector::Dist2D(A, P) > 55.f;
+				}
+				if (!bClear)
+				{
+					continue;
+				}
+				const float S = Scale * (0.5f + 0.6f * Unit(Hash32({ Hk, 3U }))) * (1.f - 0.3f * R / FMath::Max(Spread, 1.f));
+				Models[Hash32({ Hk, 4U }) % Models.Num()]->AddInstance(FTransform(FRotator(0.f, 360.f * Unit(Hash32({ Hk, 5U })), 0.f), P, FVector(S)), true);
+			}
+			return;
+		}
 		for (int32 K = 0; K < Count; ++K)
 		{
 			const uint32 Hk = Hash32({ H, 70U, static_cast<uint32>(K) });
@@ -1041,5 +1107,313 @@ FIntVector ARunRoom::ApplyFungus(uint32 Seed)
 		L->SetIntensity(L->Intensity * 0.7f);
 	}
 	DecalColor = FLinearColor(0.f, 0.f, 0.f, 0.f);
-	return FIntVector(Overgrown, Stems->GetInstanceCount(), Decals);
+	int32 Instances = Stems->GetInstanceCount();
+	for (const UInstancedStaticMeshComponent* M : Models)
+	{
+		Instances += M->GetInstanceCount();
+	}
+	return FIntVector(Overgrown, Instances, Decals);
+}
+
+// ---------- мертвецы ----------
+
+void ARunRoom::SpawnCorpses(const TArray<FRunCorpsePlace>& Places)
+{
+	for (const FRunCorpsePlace& P : Places)
+	{
+		UStaticMesh* Mesh = LoadObject<UStaticMesh>(nullptr, *FString::Printf(TEXT("/Game/Characters/DeadMan/SM_DeadMan_%s.SM_DeadMan_%s"), *P.Pose, *P.Pose),
+			nullptr, LOAD_NoWarn | LOAD_Quiet);
+		if (!Mesh)
+		{
+			continue;
+		}
+		UStaticMeshComponent* C = NewObject<UStaticMeshComponent>(this);
+		C->SetStaticMesh(Mesh);
+		C->SetMobility(EComponentMobility::Movable);
+		C->SetCollisionProfileName(TEXT("NoCollision"));
+		C->SetReceivesDecals(false);
+		C->SetupAttachment(GetRootComponent());
+		C->RegisterComponent();
+		C->SetWorldLocationAndRotation(GetActorLocation() + P.Local, FRotator(0.f, P.Yaw, 0.f));
+	}
+}
+
+int32 ARunRoom::ApplyCorpses(uint32 Seed, int32 Count, const TArray<FVector>& Occupied, TArray<FRunCorpsePlace>& Out)
+{
+	using RunGen::Hash32;
+	if (Count < 0)
+	{
+		static const int32 Odds[] = { 0, 0, 1, 1, 1, 1, 2, 2, 2, 3 };   // в среднем чуть больше одного тела на комнату
+		Count = Odds[Hash32({ Seed, 1U }) % UE_ARRAY_COUNT(Odds)];
+	}
+	if (Count <= 0)
+	{
+		return 0;
+	}
+	const FVector Origin = GetActorLocation();
+	FCollisionQueryParams Params(FName(TEXT("RunCorpse")), false);
+	if (const APawn* Pawn = UGameplayStatics::GetPlayerPawn(this, 0))
+	{
+		Params.AddIgnoredActor(Pawn);
+	}
+	const auto Free = [&](const FVector& At, float R)
+	{
+		return !GetWorld()->OverlapBlockingTestByChannel(FVector(At.X, At.Y, Origin.Z + 20.f + R), FQuat::Identity, ECC_WorldStatic,
+			FCollisionShape::MakeSphere(R), Params);
+	};
+	TArray<FVector> Keep = GetSpots(TEXT("ItemSpot"));
+	Keep.Append(GetSpots(TEXT("NoteSpot")));
+	const auto NearKeep = [&](const FVector& At, float R)
+	{
+		for (const FVector& K : Keep)
+		{
+			if (FVector::Dist2D(K, At) < R)
+			{
+				return true;
+			}
+		}
+		for (int32 D = 0; D < 4; ++D)
+		{
+			if (FVector::Dist2D(Origin + Dir(D) * InnerFace(D), At) < 190.f)   // проход к двери свободен
+			{
+				return true;
+			}
+		}
+		return false;
+	};
+
+	struct FSpot
+	{
+		FVector At;
+		float Yaw;
+	};
+	TArray<FSpot> OnFloor, AtWall, InWall, OnTable, OnConsole, OnLongTable;
+
+	// пол: тело длиной около 1,7 м — свободны середина и две точки вдоль него
+	for (float X = -HalfX + 120.f; X <= HalfX - 120.f; X += 60.f)
+	{
+		for (float Y = -HalfY + 120.f; Y <= HalfY - 120.f; Y += 60.f)
+		{
+			const FVector At = Origin + FVector(X, Y, 0.f);
+			const float Yaw = 360.f * Unit(Hash32({ Seed, 10U, static_cast<uint32>(X + 1000.f), static_cast<uint32>(Y + 1000.f) }));
+			const FVector Along = FRotator(0.f, Yaw, 0.f).Vector();
+			if (!NearKeep(At, 110.f) && Free(At, 45.f) && Free(At + Along * 60.f, 38.f) && Free(At - Along * 60.f, 38.f)
+				&& Free(At + FRotator(0.f, Yaw + 90.f, 0.f).Vector() * 60.f, 38.f) && Free(At - FRotator(0.f, Yaw + 90.f, 0.f).Vector() * 60.f, 38.f))
+			{
+				OnFloor.Add({ At, Yaw });
+			}
+		}
+	}
+
+	TArray<FString> Names;
+	TMap<FString, TArray<UStaticMeshComponent*>> Groups;
+	CollectElements(Names, Groups);
+	for (const FString& G : Names)
+	{
+		const TArray<UStaticMeshComponent*>& Parts = Groups[G];
+		const UStaticMeshComponent* Base = nullptr;
+		bool bNiche = false;
+		for (const UStaticMeshComponent* P : Parts)
+		{
+			const FString N = P->GetName();
+			Base = N == G ? P : Base;
+			bNiche |= N.Contains(TEXT("FirstAid")) || N.Contains(TEXT("Extinguisher")) || N.Contains(TEXT("Emergency"));
+		}
+		if (!Base)
+		{
+			continue;
+		}
+		const FBox Box = Base->Bounds.GetBox();
+		if (G.StartsWith(TEXT("Lining_")))
+		{
+			if (Box.Min.Z - Origin.Z > 50.f || bNiche)
+			{
+				continue;   // перемычки над проёмами и аварийные ниши — без тел
+			}
+			// колонка стоит серединой спины в точке привязки, +Y меша смотрит в комнату; лицо колонки — на Lining дальше
+			const FVector Face = Base->GetRightVector();
+			const FVector At = FVector(Base->GetComponentLocation().X, Base->GetComponentLocation().Y, Origin.Z) + Face * Lining;
+			const float Yaw = Face.Rotation().Yaw - 90.f;   // у меша тела стена в −Y, тело в +Y
+			if (NearKeep(At + Face * 50.f, 90.f))
+			{
+				continue;
+			}
+			if (Free(At + Face * 50.f, 36.f))
+			{
+				InWall.Add({ At, Yaw });
+				if (Free(At + Face * 105.f, 40.f))
+				{
+					AtWall.Add({ At, Yaw });   // сидящему у стены нужно место для ног
+				}
+			}
+			continue;
+		}
+		// мебель: коробка без поворота с ровным верхом на высоте от 0,5 до 1,05 м (койка, столешница, пульт),
+		// на ней нет мест предметов и записок и ничего не стоит. Позы сделаны под стол 0,78 м и пульт 1,0 м:
+		// на поверхности другой высоты тело ставится со сдвигом по высоте (лежащему вдоль края это не вредит)
+		const float Turn = FMath::Abs(FMath::Fmod(Base->GetComponentRotation().Yaw, 90.f));
+		const float Top = Box.Max.Z - Origin.Z;
+		const bool bDebug = FParse::Param(FCommandLine::Get(), TEXT("RunCorpseDebug"));
+		if (bDebug)
+		{
+			UE_LOG(LogTemp, Display, TEXT("Run: corpse furniture %s top %.0f size %.0f x %.0f turn %.0f"), *G, Top, Box.GetSize().X, Box.GetSize().Y, Turn);
+		}
+		if (Top < 52.f || Top > 106.f || (Turn > 1.f && Turn < 89.f))
+		{
+			continue;
+		}
+		// занята ли поверхность: на ней сейчас лежит вещь или записка (возможные, но пустые места не мешают)
+		bool bUsed = false;
+		for (const FVector& K : Occupied)
+		{
+			bUsed |= K.X > Box.Min.X - 12.f && K.X < Box.Max.X + 12.f && K.Y > Box.Min.Y - 12.f && K.Y < Box.Max.Y + 12.f;
+		}
+		if (bUsed)
+		{
+			if (bDebug)
+			{
+				UE_LOG(LogTemp, Display, TEXT("Run:   %s rejected: an item or a note lies on it"), *G);
+			}
+			continue;
+		}
+		const FVector C = Box.GetCenter(), E = Box.GetExtent();
+		for (int32 Side = 0; Side < 4; ++Side)
+		{
+			// сторона, с которой к мебели можно подойти: перед её краем свободно
+			const FVector Normal = Side == 0 ? FVector(1, 0, 0) : Side == 1 ? FVector(-1, 0, 0) : Side == 2 ? FVector(0, 1, 0) : FVector(0, -1, 0);
+			const float Depth = 2.f * (Side < 2 ? E.X : E.Y), Length = 2.f * (Side < 2 ? E.Y : E.X);
+			const FVector Edge = FVector(C.X, C.Y, Origin.Z) + Normal * (Depth * 0.5f);
+			bool bNearThing = false;
+			for (int32 D = 0; D < 4; ++D)
+			{
+				bNearThing |= FVector::Dist2D(Origin + Dir(D) * InnerFace(D), Edge + Normal * 55.f) < 190.f;   // проход к двери свободен
+			}
+			if (!Free(Edge + Normal * 55.f, 38.f) || bNearThing)
+			{
+				if (bDebug)
+				{
+					UE_LOG(LogTemp, Display, TEXT("Run:   %s side %d rejected: front blocked=%d near a door=%d"), *G, Side,
+						Free(Edge + Normal * 55.f, 38.f) ? 0 : 1, bNearThing ? 1 : 0);
+				}
+				continue;
+			}
+			// над поверхностью чисто: в передних двух третях ничего выше 12 см не стоит (подушка — можно, монитор — нет)
+			const FVector Along = FVector(-Normal.Y, Normal.X, 0.f);
+			const FVector Mid = Edge - Normal * (Depth * 0.35f) + FVector(0.f, 0.f, Top + 28.f);
+			const FVector Half = (Normal * (Depth * 0.35f)).GetAbs() + (Along * FMath::Max(10.f, Length * 0.5f - 10.f)).GetAbs() + FVector(0.f, 0.f, 16.f);
+			const FBox Above(Mid - Half, Mid + Half);
+			bool bClear = true;
+			for (const TPair<FString, TArray<UStaticMeshComponent*>>& Other : Groups)
+			{
+				for (const UStaticMeshComponent* M : Other.Value)
+				{
+					bClear &= M == Base || !M->Bounds.GetBox().Intersect(Above);
+				}
+			}
+			if (bDebug)
+			{
+				UE_LOG(LogTemp, Display, TEXT("Run:   %s side %d depth %.0f length %.0f clear above=%d"), *G, Side, Depth, Length, bClear ? 1 : 0);
+			}
+			if (!bClear)
+			{
+				continue;
+			}
+			const float Yaw = Normal.Rotation().Yaw - 90.f;   // у меша мебель в −Y, край поверхности — y = 0
+			if (Top > 72.f && Top < 84.f && Depth >= 75.f && Length >= 70.f)
+			{
+				OnTable.Add({ Edge, Yaw });        // поперёк стола, ноги свисают до пола: только на высоте стола
+			}
+			if (Top < 88.f && Length >= 180.f && Depth >= 45.f)
+			{
+				OnLongTable.Add({ Edge + FVector(0.f, 0.f, Top - 78.f), Yaw });    // вдоль края: койка, стол
+			}
+			if (Top >= 88.f && Length >= 150.f && Depth >= 45.f)
+			{
+				OnConsole.Add({ Edge + FVector(0.f, 0.f, Top - 100.f), Yaw });      // вдоль края: столешница, пульт
+			}
+		}
+	}
+
+	// по телу: вид опоры по жребию, место — из свободных для этого вида; тела не ближе двух метров друг к другу
+	struct FKind
+	{
+		TArray<FSpot>* Spots;
+		const TCHAR* Poses[4];
+		int32 Num;
+		uint32 Weight;
+	};
+	FKind Kinds[] = {
+		{ &OnFloor, { TEXT("Floor1"), TEXT("Floor2"), TEXT("Floor3"), TEXT("Curl1") }, 4, 30U },
+		{ &OnFloor, { TEXT("Curl2"), TEXT("Curl3"), TEXT("Floor1"), TEXT("Floor3") }, 4, 10U },
+		{ &AtWall, { TEXT("Wall1"), TEXT("Wall2"), TEXT("Wall3"), TEXT("Wall1") }, 3, 28U },
+		{ &InWall, { TEXT("Embed1"), TEXT("Embed2"), TEXT("Embed3"), TEXT("Embed1") }, 3, 18U },
+		{ &OnTable, { TEXT("Table1"), TEXT("Table1"), TEXT("Table1"), TEXT("Table1") }, 1, 14U },
+		{ &OnLongTable, { TEXT("Table2"), TEXT("Table2"), TEXT("Table2"), TEXT("Table2") }, 1, 10U },
+		{ &OnConsole, { TEXT("Console1"), TEXT("Console1"), TEXT("Console1"), TEXT("Console1") }, 1, 14U },
+	};
+	TArray<FVector> Placed;
+	FString What;
+	for (int32 I = 0; I < Count; ++I)
+	{
+		uint32 Total = 0;
+		for (const FKind& K : Kinds)
+		{
+			Total += K.Spots->Num() > 0 ? K.Weight : 0U;
+		}
+		if (Total == 0)
+		{
+			break;
+		}
+		uint32 Roll = Hash32({ Seed, 20U, static_cast<uint32>(I) }) % Total;
+		const FKind* Pick = nullptr;
+		for (const FKind& K : Kinds)
+		{
+			const uint32 W = K.Spots->Num() > 0 ? K.Weight : 0U;
+			if (!Pick && Roll < W)
+			{
+				Pick = &K;
+			}
+			Roll -= FMath::Min(Roll, W);
+		}
+		// отладка: -RunCorpsePose=Wall1 ставит только эту позу (проверка опоры и поворота)
+		FString ForcePose;
+		if (FParse::Value(FCommandLine::Get(), TEXT("RunCorpsePose="), ForcePose))
+		{
+			Pick = nullptr;
+			for (const FKind& K : Kinds)
+			{
+				for (int32 N = 0; N < K.Num && !Pick; ++N)
+				{
+					Pick = ForcePose == K.Poses[N] && K.Spots->Num() > 0 ? &K : nullptr;
+				}
+			}
+		}
+		if (!Pick)
+		{
+			continue;
+		}
+		// место: первое подходящее, начиная со случайного
+		const int32 Start = static_cast<int32>(Hash32({ Seed, 21U, static_cast<uint32>(I) }) % static_cast<uint32>(Pick->Spots->Num()));
+		const FSpot* Spot = nullptr;
+		for (int32 K = 0; K < Pick->Spots->Num() && !Spot; ++K)
+		{
+			const FSpot& Try = (*Pick->Spots)[(Start + K) % Pick->Spots->Num()];
+			if (!Placed.ContainsByPredicate([&Try](const FVector& P) { return FVector::Dist2D(P, Try.At) < 200.f; }))
+			{
+				Spot = &Try;
+			}
+		}
+		if (!Spot)
+		{
+			continue;
+		}
+		const FString Pose = ForcePose.IsEmpty() ? FString(Pick->Poses[Hash32({ Seed, 22U, static_cast<uint32>(I) }) % static_cast<uint32>(Pick->Num)]) : ForcePose;
+		Out.Add({ Pose, Spot->At - Origin, Spot->Yaw });
+		Placed.Add(Spot->At);
+		What += FString::Printf(TEXT(" %s(%.0f,%.0f)"), *Pose, Spot->At.X - Origin.X, Spot->At.Y - Origin.Y);
+	}
+	SpawnCorpses(Out);
+	UE_LOG(LogTemp, Display, TEXT("Run: corpses %d of %d:%s | spots floor %d wall %d embed %d table %d long %d console %d"), Placed.Num(), Count, *What,
+		OnFloor.Num(), AtWall.Num(), InWall.Num(), OnTable.Num(), OnLongTable.Num(), OnConsole.Num());
+	return Placed.Num();
 }

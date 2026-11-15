@@ -33,6 +33,14 @@ namespace RunRoomGeo
 	MEGAJAM_API const TCHAR* DoorName(int32 Door);
 }
 
+/** Тело на уровне: поза (имя меша SM_DeadMan_<Поза>) и место относительно комнаты. */
+struct FRunCorpsePlace
+{
+	FString Pose;
+	FVector Local = FVector::ZeroVector;
+	float Yaw = 0.f;
+};
+
 UCLASS()
 class MEGAJAM_API ARunRoom : public AActor
 {
@@ -105,6 +113,16 @@ public:
 	FIntVector ApplyEmergency();
 	bool IsEmergency() const { return bEmergency; }
 
+	/** Мертвецы (запрос автора 15.11): позы /Game/Characters/DeadMan/SM_DeadMan_<Поза> (SourceArt/characters/dead-man).
+	 *  По зерну и набору: на свободном полу (Floor, Curl), у колонок стен (Wall — сидит у стены, Embed — торчит из
+	 *  неё, «телепортировало в стену»), на койках, столешницах и пультах, где сейчас ничего не лежит (Table, Console).
+	 *  Двери и места на полу у меток остаются свободными. Occupied — где лежат вещи и записки комнаты.
+	 *  Count < 0 — число тел решает зерно (от нуля до трёх). Коллизии у тел нет.
+	 *  Out — что и куда поставлено: ведущий забега хранит это за комнатой набора и при возвращении ставит тела
+	 *  на те же места (SpawnCorpses), даже если вещи с тех пор забрали. Возвращает, сколько тел поставлено. */
+	int32 ApplyCorpses(uint32 Seed, int32 Count, const TArray<FVector>& Occupied, TArray<FRunCorpsePlace>& Out);
+	void SpawnCorpses(const TArray<FRunCorpsePlace>& Places);
+
 private:
 	bool bEmergency = false;
 	struct FPulse
@@ -121,6 +139,7 @@ private:
 
 	FVector LeafClosed[4];
 	float LeafOpen[4] = { 0.f, 0.f, 0.f, 0.f };
+	bool bLeafWanted[4] = { false, false, false, false };   // куда едет створка: по смене — звук
 	bool bArrival[4] = { false, false, false, false };
 	float ForcedOpenLeft[4] = { 0.f, 0.f, 0.f, 0.f };
 

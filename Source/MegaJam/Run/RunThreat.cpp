@@ -13,6 +13,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Materials/MaterialInterface.h"
+#include "RunAudio.h"
 #include "RunDirector.h"
 #include "RunGen.h"
 #include "RunItem.h"
@@ -102,13 +103,14 @@ void ARunThreat::Setup(int32 InKind, ARunDirector* InDirector, ARunRoom* InRoom,
 	SetActorLocation(Origin);
 	switch (Kind)
 	{
-	case ThreatBlackHole: SetupBlackHole(); break;
-	case ThreatSmoke: SetupSmoke(); break;
-	case ThreatSlowTime: SetupSlowTime(); break;
-	case Decompression: SetupVacuum(); break;
+	case ThreatBlackHole: SetupBlackHole(); RunAudio::Loop(this, TEXT("BlackHoleDrone"), 0.6f, 1.5f); break;
+	case ThreatSmoke: SetupSmoke(); RunAudio::Loop(this, TEXT("SmokeRoom"), 0.6f, 1.5f); break;
+	case ThreatSlowTime: SetupSlowTime(); RunAudio::Loop(this, TEXT("SlowTime"), 0.6f, 1.5f); break;
+	case Decompression: SetupVacuum(); RunAudio::Loop(this, TEXT("VacuumRoom"), 0.7f, 2.f); RunAudio::Play(this, TEXT("Decompression"), 0.9f); break;
 	case ThreatFungus:
 	{
 		const FIntVector F = InRoom->ApplyFungus(Seed);
+		RunAudio::Loop(this, TEXT("FungusRoom"), 0.6f, 1.5f);
 		UE_LOG(LogTemp, Display, TEXT("Run: fungus: overgrown %d, mushrooms %d, decals %d"), F.X, F.Y, F.Z);
 		break;
 	}
@@ -270,6 +272,7 @@ void ARunThreat::TickBlackHole(float Dt, APawn* Pawn)
 	if (D < KillRadius && Director.IsValid() && Director->GetPhase() == ERunPhase::Playing)
 	{
 		SwallowT = 0.f;
+		RunAudio::Play(this, TEXT("BlackHoleSwallow"));
 		MeshRelative = Mesh->GetRelativeTransform();
 		SwallowFeet = Mesh->GetComponentLocation();
 		Ch->GetCharacterMovement()->DisableMovement();
@@ -349,6 +352,7 @@ void ARunThreat::TickSmoke(float Dt, const FVector& P)
 	{
 		Exposure = 0.f;
 		Hurt(TEXT("The smoke burns your throat."), P, SmokeDamage, false);
+		RunAudio::Play(this, TEXT("Cough"));
 	}
 }
 
@@ -416,6 +420,7 @@ void ARunThreat::TickFungus(float Dt, const FVector& P)
 		{
 			Ticker = 0.f;
 			Hurt(TEXT("The spores scratch at your lungs."), P, SporeDamage, false);
+			RunAudio::Play(this, TEXT("Cough"));
 		}
 	}
 }
@@ -469,6 +474,7 @@ void ARunThreat::TickVacuum(float Dt, const FVector& P)
 		{
 			Ticker = 0.f;
 			Hurt(TEXT("There is no air. Your lungs burn."), P, VacuumDamage, false);
+			RunAudio::Play(this, TEXT("Gasp"));
 		}
 	}
 }

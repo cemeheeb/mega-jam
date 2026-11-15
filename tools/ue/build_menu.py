@@ -4,6 +4,7 @@
     python3 tools/ue/build_menu.py --shader   # только обновить код шейдера в M_BlackHole (tools/ue/shaders/BlackHole.hlsl)
     python3 tools/ue/build_menu.py --mesh     # корабль после новой выгрузки: удалить SM_MenuShip и импортировать заново
     python3 tools/ue/build_menu.py --textures # текстуры корабля после новой выгрузки: заменить T_MenuShip_*
+    python3 tools/ue/build_menu.py --lens     # только материал линзы M_MenuLens (хроматическая аберрация вокруг курсора)
 
 Файлы корабля готовит tools/blender/export_menu_ship.py (SourceArt/ui/menu-ship). Ассеты — в /Game/Game/Menu,
 уровень — /Game/Game/Maps/Lvl_Menu (папка /Game/Game упаковывается целиком). Поведение — в C++ (Source/MegaJam/Menu).
@@ -31,6 +32,7 @@ SRC = os.path.join(PROJECT, "SourceArt", "ui", "menu-ship")
 SHADER = os.path.join(PROJECT, "tools", "ue", "shaders", "BlackHole.hlsl")
 FOLDER = "/Game/Game/Menu"
 MATERIAL = f"{FOLDER}/M_BlackHole"
+LENS = f"{FOLDER}/M_MenuLens"
 LEVEL = "/Game/Game/Maps/Lvl_Menu"
 SHIP_GLOW = 6.0       # сила свечения огней корабля (карта Emissive)
 TEMPLATE_ACTORS = ("Floor", "DirectionalLight", "Light Source", "SkyAtmosphere", "SkyLight", "ExponentialHeightFog",
@@ -195,6 +197,75 @@ def build_material():
     call(AS, "save_assets", {"asset_paths": [MATERIAL]})
 
 
+LENS_CODE = """
+// UV — точка экрана, Lens.xy — середина линзы (доли экрана), Lens.z — сила, Lens.w — ширина экрана в его высотах.
+// Сдвиг растёт от нуля под линзой и упирается в предел Lens.z * Radius высот экрана: дальний текст остаётся читаемым.
+float2 d = UV - Lens.xy;
+float len = length(d * float2(Lens.w, 1.0)) / max(Radius, 0.01);
+return d * (Lens.z / sqrt(1.0 + len * len));
+"""
+
+
+def build_lens():
+    """Линза меню (просьба автора 15.11): хроматическая аберрация, которая идёт за мышью. Постобработка после
+    тонального отображения: красный канал кадра берётся ближе к середине линзы, синий — дальше, зелёный на месте.
+    Сдвиг считает узел Custom (LENS_CODE); та же формула — AMenuDirector::LensShift для слоя меню (AMenuHUD).
+    Параметры Lens и Radius каждый кадр ставит AMenuDirector. Граф строится один раз, потом меняется только код."""
+    call(AS, "create_folder", {"path": FOLDER})
+    if exists(LENS):
+        node = custom_node(ref(LENS))
+        assert node, "в M_MenuLens нет узла Custom"
+        set_props(node, {"Code": LENS_CODE})
+        call(MT, "recompile", {"material_or_function": ref(LENS)})
+        call(AS, "save_assets", {"asset_paths": [LENS]})
+        print("  M_MenuLens: обновлён код узла Custom")
+        return
+    m = call(MT, "create_material", {"folder_path": FOLDER, "asset_name": "M_MenuLens"})
+    uv = add(m, "ScreenPosition", -1300, 0)
+    lens = add(m, "VectorParameter", -1300, 250, ParameterName="Lens", DefaultValue={"R": 0.5, "G": 0.5, "B": 0.0035, "A": 1.78})
+    lens4 = add(m, "AppendVector", -1050, 250)
+    link(lens, "RGB", lens4, "A")
+    link(lens, "A", lens4, "B")
+    radius = add(m, "ScalarParameter", -1300, 500, ParameterName="Radius", DefaultValue=0.7)
+    node = add(m, "Custom", -800, 150, Code=LENS_CODE, OutputType="CMOT_Float2", Description="LensShift")
+    for k, name in enumerate(["UV", "Lens", "Radius"]):
+        cur = json.loads(call(OB, "get_properties", {"instance": node, "properties": ["Inputs"]}))["Inputs"]
+        if k < len(cur):
+            cur[k]["inputName"] = name
+        else:
+            cur.append({**cur[0], "inputName": name})
+        set_props(node, {"Inputs": cur})
+    link(uv, "ViewportUV", node, "UV")
+    link(lens4, "", node, "Lens")
+    link(radius, "", node, "Radius")
+    uv_r = add(m, "Subtract", -450, -200)
+    link(uv, "ViewportUV", uv_r, "A")
+    link(node, "", uv_r, "B")
+    uv_b = add(m, "Add", -450, 400)
+    link(uv, "ViewportUV", uv_b, "A")
+    link(node, "", uv_b, "B")
+    parts = []
+    for k, (coords, mask) in enumerate(((uv_r, "R"), (None, "G"), (uv_b, "B"))):
+        tex = add(m, "SceneTexture", -200, -200 + k * 300, SceneTextureId="PPI_PostProcessInput0", bFiltered=True)
+        if coords:
+            link(coords, "", tex, call(MT, "get_expression_input_names", {"expression": tex})[0])
+        one = add(m, "ComponentMask", 100, -200 + k * 300, R=mask == "R", G=mask == "G", B=mask == "B", A=False)
+        link(tex, "Color", one, "")
+        parts.append(one)
+    rg = add(m, "AppendVector", 350, -50)
+    link(parts[0], "", rg, "A")
+    link(parts[1], "", rg, "B")
+    rgb = add(m, "AppendVector", 550, 50)
+    link(rg, "", rgb, "A")
+    link(parts[2], "", rgb, "B")
+    call(MT, "connect_to_output", {"expression": rgb, "output_name": "", "material_property": "MP_EmissiveColor"})
+    set_props(m, {"MaterialDomain": "MD_PostProcess", "BlendableLocation": "BL_SceneColorAfterTonemapping"})
+    print("  входы Custom:", call(MT, "get_expression_input_names", {"expression": node}))
+    call(MT, "recompile", {"material_or_function": m})
+    call(AS, "save_assets", {"asset_paths": [LENS]})
+    print("  собран", LENS)
+
+
 def labels():
     out = []
     for a in call(SC, "find_actors", {"name": "", "tag": "", "collision_channels": []}) or []:
@@ -234,9 +305,13 @@ def main():
     if "--textures" in sys.argv:
         replace_textures()
         return
+    if "--lens" in sys.argv:
+        build_lens()
+        return
     if not exists(f"{FOLDER}/SM_MenuShip") or "--mesh" in sys.argv:
         import_ship("--mesh" in sys.argv)
     build_material()
+    build_lens()
     build_level()
     if start_level and start_level != LEVEL:
         call(SC, "load_level", {"level_path": start_level})

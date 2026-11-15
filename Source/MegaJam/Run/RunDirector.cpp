@@ -1,5 +1,7 @@
 #include "RunDirector.h"
 
+#include "Animation/AnimInstance.h"
+#include "Animation/AnimMontage.h"
 #include "Animation/AnimSequenceBase.h"
 #include "Animation/AnimSingleNodeInstance.h"
 #include "Camera/CameraActor.h"
@@ -25,6 +27,8 @@
 #include "Misc/CommandLine.h"
 #include "Misc/Parse.h"
 #include "Misc/Paths.h"
+#include "Components/AudioComponent.h"
+#include "RunAudio.h"
 #include "RunEnemy.h"
 #include "RunHUD.h"
 #include "RunItem.h"
@@ -216,6 +220,7 @@ void ARunDirector::SetupPlayer()
 		// присед для дыма (решение автора 15.11): капсула 2 × 48 см, голова ниже слоя дыма (RunThreatTune::SmokeBottom)
 		Hero->GetCharacterMovement()->GetNavAgentPropertiesRef().bCanCrouch = true;
 		Hero->GetCharacterMovement()->SetCrouchedHalfHeight(48.f);
+		Hero->JumpMaxCount = 0;   // Space — рывок-уклонение (OnDodge), прыжка нет
 	}
 
 	// камера за правым плечом и ближе: в тесной комнате персонаж не должен закрывать пол-экрана
@@ -240,6 +245,27 @@ void ARunDirector::SetupPlayer()
 		HandMesh->SetReceivesDecals(false);
 		HandMesh->SetVisibility(false);
 		HandMesh->RegisterComponent();
+		// ключ в кулаке на время замаха (сокет HandGrip_R манекена). Меш ключа стоит рукоятью вверх, начало — у губок:
+		// кулак держит рукоять в 37 см от губок. Поворот и сдвиг подобраны по кадрам; -RunGrip=Pitch,Yaw,Roll,Z — проба
+		GripMesh = NewObject<UStaticMeshComponent>(this, TEXT("GripMesh"));
+		GripMesh->SetupAttachment(Hero->GetMesh(), TEXT("HandGrip_R"));
+		GripMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		GripMesh->SetReceivesDecals(false);
+		GripMesh->SetVisibility(false);
+		GripMesh->RegisterComponent();
+		{
+			FRotator GripRot(0.f, 0.f, 0.f);
+			float GripZ = -37.f;
+			FString Grip;
+			TArray<FString> V;
+			if (FParse::Value(FCommandLine::Get(), TEXT("RunGrip="), Grip) && Grip.ParseIntoArray(V, TEXT(",")) == 4)
+			{
+				GripRot = FRotator(FCString::Atof(*V[0]), FCString::Atof(*V[1]), FCString::Atof(*V[2]));
+				GripZ = FCString::Atof(*V[3]);
+			}
+			GripMesh->SetRelativeRotation(GripRot);
+			GripMesh->SetRelativeLocation(GripRot.RotateVector(FVector(0.f, 0.f, GripZ)));
+		}
 		// фонарик (вещь из каталога): в руке светит туда, куда смотрит камера (решение автора 15.11)
 		Flashlight = NewObject<USpotLightComponent>(this, TEXT("Flashlight"));
 		Flashlight->SetupAttachment(HandPivot);
@@ -302,6 +328,9 @@ void ARunDirector::SetupPlayer()
 		InputComponent->BindKey(EKeys::Down, IE_Pressed, this, &ARunDirector::OnBookmarkNext);
 		InputComponent->BindKey(EKeys::Tab, IE_Pressed, this, &ARunDirector::OnToggleJournal);
 		InputComponent->BindKey(EKeys::C, IE_Pressed, this, &ARunDirector::OnCrouchKey);
+		// рывок-уклонение; прыжок шаблона на Space выключен (SetupPlayer): в отсеках он не нужен
+		InputComponent->BindKey(EKeys::SpaceBar, IE_Pressed, this, &ARunDirector::OnDodge);
+		InputComponent->BindKey(EKeys::LeftAlt, IE_Pressed, this, &ARunDirector::OnDodge);
 		InputComponent->BindKey(EKeys::T, IE_Pressed, this, &ARunDirector::TakeOffSuit);
 		// не F1–F12: в редакторе это клавиши режимов вида (F1 — каркас, F2 — без света, F3 — со светом)
 		InputComponent->BindKey(EKeys::H, IE_Pressed, this, &ARunDirector::OnToggleDebug);
@@ -334,6 +363,31 @@ void ARunDirector::SpawnRoom(int32 RoomId, const FVector& Location, int32 Arriva
 	{
 		const FIntVector Burn = RoomActor->ApplyBurn(Hash32({ Seed, 301U, static_cast<uint32>(Key) }));
 		UE_LOG(LogRun, Display, TEXT("Run: burned room=%d key=%d: burnt %d, sooted %d, decals %d"), RoomId, Key, Burn.X, Burn.Y, Burn.Z);
+	}
+	// мертвецы: в стартовой рубке (она же финальная) их нет; -RunCorpses=N — столько в каждой комнате, для проверки
+	if (Rooms.Num() == 0 || Key != Rooms[0].Key || FParse::Param(FCommandLine::Get(), TEXT("RunCorpsesStart")))
+	{
+		FRunKeyState& Bodies = KeyState(Key);
+		if (Bodies.bCorpsesPlaced)
+		{
+			RoomActor->SpawnCorpses(Bodies.Corpses);
+		}
+		else
+		{
+			// первый вход: тела ложатся туда, где сейчас ничего не лежит, и это место за ними остаётся
+			Bodies.bCorpsesPlaced = true;
+			int32 Force = -1;
+			FParse::Value(FCommandLine::Get(), TEXT("RunCorpses="), Force);
+			TArray<FVector> Occupied;
+			for (const ARunItem* Thing : ItemActors)
+			{
+				if (Thing)
+				{
+					Occupied.Add(Thing->GetActorLocation());
+				}
+			}
+			RoomActor->ApplyCorpses(Hash32({ Seed, 320U, static_cast<uint32>(Key) }), Force, Occupied, Bodies.Corpses);
+		}
 	}
 	if (IsEmergency(Key))
 	{
@@ -762,20 +816,77 @@ void ARunDirector::OnAttack()
 {
 	const float Now = GetWorld()->GetTimeSeconds();
 	const APawn* Pawn = UGameplayStatics::GetPlayerPawn(this, 0);
-	if (Phase != ERunPhase::Playing || !Pawn || Now < NextAttackAt)
+	if (Phase != ERunPhase::Playing || !Pawn)
 	{
 		return;
 	}
 	if (!HasWeapon())
 	{
-		if (EnemyActors.Num() > 0)
+		if (EnemyActors.Num() > 0 && Now >= NextAttackAt)
 		{
+			NextAttackAt = Now + 1.f;
+			RunAudio::Play(this, TEXT("UiDeny"));
 			Say(TEXT("You have nothing to fight with."), 2.f);
 		}
 		return;
 	}
-	NextAttackAt = Now + AttackCooldown;
+	if (Now < AttackBusyUntil)
+	{
+		bAttackQueued = Now > AttackBusyUntil - 0.35f;   // нажатие под конец замаха — следующий удар серии
+		return;
+	}
+	StartSwing();
+}
+
+// Замах: анимация удара манекена (три разных по кругу — серия), ключ в руке, на время замаха герой почти стоит.
+void ARunDirector::StartSwing()
+{
+	const float Now = GetWorld()->GetTimeSeconds();
+	ACharacter* Ch = Cast<ACharacter>(UGameplayStatics::GetPlayerPawn(this, 0));
+	if (!Ch)
+	{
+		return;
+	}
+	if (Now > ComboResetAt)
+	{
+		ComboStep = 0;
+	}
+	bCrouchToggle = false;   // бьют стоя
+	const int32 Slot = Pocket.IndexOfByKey(Weapon);
+	if (Slot != INDEX_NONE && HeldSlot != Slot)
+	{
+		HeldSlot = Slot;      // ключ в руке
+		SetInspecting(false);
+	}
+	const FString Path = FString::Printf(TEXT("/Game/Characters/Mannequins/Anims/Unarmed/Attack/MM_Attack_0%d.MM_Attack_0%d"), ComboStep % 3 + 1, ComboStep % 3 + 1);
+	UAnimSequenceBase* Clip = LoadObject<UAnimSequenceBase>(nullptr, *Path, nullptr, LOAD_NoWarn | LOAD_Quiet);
+	constexpr float Rate = 1.25f;
+	const float Len = Clip ? Clip->GetPlayLength() / Rate : 0.5f;
+	if (UAnimInstance* Anim = Clip && Ch->GetMesh() ? Ch->GetMesh()->GetAnimInstance() : nullptr)
+	{
+		Anim->PlaySlotAnimationAsDynamicMontage(Clip, TEXT("DefaultSlot"), 0.08f, 0.2f, Rate);
+	}
+	AttackHitTime = Now + Len * 0.38f;
+	AttackBusyUntil = Now + Len * 0.72f;
+	ComboResetAt = AttackBusyUntil + 0.7f;
+	NextAttackAt = AttackBusyUntil;
+	++ComboStep;
+	bAttackQueued = false;
+	RunAudio::Play(this, TEXT("WrenchSwing"), 0.8f, FMath::FRandRange(0.92f, 1.08f));
+}
+
+// Момент удара: кто в этот миг перед героем и в пределах досягаемости — получает.
+void ARunDirector::ResolveSwing()
+{
+	const float Now = GetWorld()->GetTimeSeconds();
+	const APawn* Pawn = UGameplayStatics::GetPlayerPawn(this, 0);
+	if (Phase != ERunPhase::Playing || !Pawn)
+	{
+		return;
+	}
 	SwingAt = Now;
+	int32 Hits = 0;
+	bool bFlesh = false, bMetal = false;   // во что попали: в живое (человек, крыса) или в металл робота
 	const FVector P = Pawn->GetActorLocation();
 	const FVector Facing = Pawn->GetActorForwardVector().GetSafeNormal2D();
 	const FVector Looking = FRotator(0.f, Pawn->GetControlRotation().Yaw, 0.f).Vector();
@@ -802,6 +913,8 @@ void ARunDirector::OnAttack()
 			continue;   // между игроком и противником стена или закрытая створка
 		}
 		--E->Health;
+		++Hits;
+		(E->Kind == ThreatRobot ? bMetal : bFlesh) = true;
 		UE_LOG(LogRun, Display, TEXT("Run: attack hit id=%d kind=%s health=%d"), E->Id, ARunEnemy::DisplayName(E->Kind), E->Health);
 		if (E->Health <= 0)
 		{
@@ -810,7 +923,8 @@ void ARunDirector::OnAttack()
 			const int32 Id = E->Id;
 			Enemies.RemoveAll([Id](const FRunEnemyState& S) { return S.Id == Id; });
 			EnemyActors.Remove(Actor);
-			Actor->Destroy();
+			TestKillAt = Actor->GetFloorPos();
+			Actor->Die();   // анимация смерти; тело остаётся лежать и исчезает само
 		}
 		else
 		{
@@ -818,6 +932,76 @@ void ARunDirector::OnAttack()
 			Actor->Knock(P, AttackStun);
 		}
 	}
+	// У удара три звука (автор, 15.11): по живому, по металлу робота и по предмету обстановки (прежний WrenchHit).
+	if (bFlesh)
+	{
+		RunAudio::Play(this, TEXT("WrenchHitFlesh"));
+	}
+	if (bMetal)
+	{
+		RunAudio::Play(this, TEXT("WrenchHitMetal"));
+	}
+	if (Hits == 0)
+	{
+		// мимо противников: ключ мог попасть в стену, створку или мебель перед героем (на высоте пояса)
+		FCollisionQueryParams World(FName(TEXT("RunAttackWorld")), false, Pawn);
+		for (ARunEnemy* Actor : EnemyActors)
+		{
+			World.AddIgnoredActor(Actor);
+		}
+		FHitResult Hit;
+		const FVector From = P - FVector(0.f, 0.f, 10.f);
+		if (GetWorld()->SweepSingleByChannel(Hit, From, From + Facing * AttackWorldReach, FQuat::Identity, ECC_WorldStatic,
+			FCollisionShape::MakeSphere(14.f), World))
+		{
+			RunAudio::Play(this, TEXT("WrenchHit"));
+			UE_LOG(LogRun, Display, TEXT("Run: attack hit object %s part %s at %.0f cm"), *GetNameSafe(Hit.GetActor()),
+				*GetNameSafe(Hit.GetComponent()), Hit.Distance);
+		}
+	}
+	else
+	{
+		UE_LOG(LogRun, Display, TEXT("Run: attack sound flesh=%d metal=%d"), bFlesh ? 1 : 0, bMetal ? 1 : 0);
+	}
+}
+
+bool ARunDirector::TestStepWasDodge()
+{
+	// шаг 123 самопроверки только ждёт; рывок делается здесь, перед самым кадром, чтобы снять его середину
+	if (bSelfTest && TestStep > 0 && GetWorld()->GetTimeSeconds() >= DodgeReadyAt && FParse::Param(FCommandLine::Get(), TEXT("RunShots")) && ComboStep > 0 && DodgeUntil < 0.f)
+	{
+		OnDodge();
+	}
+	return GetWorld()->GetTimeSeconds() < DodgeUntil;
+}
+
+// Рывок-уклонение: короткий бросок туда, куда идёт герой (стоя на месте — назад), удары в это время не проходят.
+void ARunDirector::OnDodge()
+{
+	const float Now = GetWorld()->GetTimeSeconds();
+	ACharacter* Ch = Cast<ACharacter>(UGameplayStatics::GetPlayerPawn(this, 0));
+	if (Phase != ERunPhase::Playing || !Ch || Now < DodgeReadyAt || !Ch->GetCharacterMovement()->IsMovingOnGround())
+	{
+		return;
+	}
+	FVector Want = Ch->GetLastMovementInputVector();
+	Want.Z = 0.f;
+	DodgeDir = Want.IsNearlyZero(0.05f) ? -Ch->GetActorForwardVector().GetSafeNormal2D() : Want.GetSafeNormal2D();
+	DodgeUntil = Now + DodgeSeconds;
+	DodgeSafeUntil = Now + DodgeSafeSeconds;
+	DodgeReadyAt = Now + DodgeCooldown;
+	AttackHitTime = -1.f;        // рывок срывает свой же замах
+	bAttackQueued = false;
+	AttackBusyUntil = Now;
+	if (UAnimSequenceBase* Clip = LoadObject<UAnimSequenceBase>(nullptr, TEXT("/Game/Characters/Mannequins/Anims/Unarmed/Jump/MM_Dash.MM_Dash"), nullptr, LOAD_NoWarn | LOAD_Quiet))
+	{
+		if (UAnimInstance* Anim = Ch->GetMesh() ? Ch->GetMesh()->GetAnimInstance() : nullptr)
+		{
+			Anim->PlaySlotAnimationAsDynamicMontage(Clip, TEXT("DefaultSlot"), 0.06f, 0.15f, FMath::Max(1.f, Clip->GetPlayLength() / (DodgeSeconds + 0.12f)));
+		}
+	}
+	RunAudio::Play(this, TEXT("Dodge"), 0.7f);
+	UE_LOG(LogRun, Display, TEXT("Run: dodge"));
 }
 
 float ARunDirector::GetHurtFlash() const
@@ -849,6 +1033,10 @@ void ARunDirector::HurtPlayer(const FString& Text, const FVector& From, float Da
 	Health -= Took;
 	DamageTaken += Took;
 	UE_LOG(LogRun, Display, TEXT("Run: hurt damage=%.0f health=%.0f (%s)"), Damage, Health, *Text);
+	if (bKnockback)
+	{
+		RunAudio::Play(this, TEXT("Hurt"));   // у дыма, спор и вакуума свои звуки (ARunThreat)
+	}
 	ACharacter* Ch = bKnockback ? Cast<ACharacter>(UGameplayStatics::GetPlayerPawn(this, 0)) : nullptr;
 	if (Ch)
 	{
@@ -869,6 +1057,21 @@ void ARunDirector::HurtPlayer(const FString& Text, const FVector& From, float Da
 		RunEndAt = Now;
 		DeathCause = Text;
 		SetInspecting(false);
+		if (ACharacter* Fallen = bNoDeathAnim ? nullptr : Cast<ACharacter>(UGameplayStatics::GetPlayerPawn(this, 0)))
+		{
+			// герой падает: вперёд, если ударили в спину, иначе навзничь; последний кадр остаётся
+			const bool bFromBehind = FVector::DotProduct((From - Fallen->GetActorLocation()).GetSafeNormal2D(), Fallen->GetActorForwardVector()) < -0.2f;
+			if (UAnimSequenceBase* Clip = LoadObject<UAnimSequenceBase>(nullptr, bFromBehind
+				? TEXT("/Game/Characters/Mannequins/Anims/Death/MM_Death_Back_01.MM_Death_Back_01")
+				: TEXT("/Game/Characters/Mannequins/Anims/Death/MM_Death_Front_01.MM_Death_Front_01"), nullptr, LOAD_NoWarn | LOAD_Quiet))
+			{
+				Fallen->GetMesh()->SetAnimationMode(EAnimationMode::AnimationSingleNode);
+				Fallen->GetMesh()->PlayAnimation(Clip, false);
+			}
+			Fallen->GetCharacterMovement()->DisableMovement();
+		}
+		RunAudio::Play(this, TEXT("Death"));
+		RunAudio::Play(this, TEXT("DeathSting"), 0.8f);
 		Say(Text + TEXT(" Everything goes dark. YOU DIED."), 5.f);
 	}
 	else
@@ -899,13 +1102,24 @@ void ARunDirector::PutOnSuit()
 		Helmet->SetCollisionProfileName(TEXT("NoCollision"));
 		Helmet->SetCastShadow(false);
 		Helmet->RegisterComponent();
-		Helmet->SetStaticMesh(LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Sphere.Sphere")));
-		UMaterialInterface* Glass = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/FX/Anomalies/MI_TimeBubble.MI_TimeBubble"),
-			nullptr, LOAD_NoWarn | LOAD_Quiet);
-		Helmet->SetMaterial(0, Glass ? Glass : LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/Game/Materials/MI_Gray_Glow.MI_Gray_Glow")));
-		Helmet->SetWorldScale3D(FVector(0.36f));
+		// модель шлема (автор, Tripo, 15.11): 37 см, привязка — середина; нет её — прозрачный шар
+		if (UStaticMesh* Model = LoadObject<UStaticMesh>(nullptr, TEXT("/Game/Environment/Common/SpaceSuitHelmet/SM_SpaceSuitHelmet.SM_SpaceSuitHelmet"),
+			nullptr, LOAD_NoWarn | LOAD_Quiet))
+		{
+			Helmet->SetStaticMesh(Model);
+			Helmet->SetCastShadow(true);
+		}
+		else
+		{
+			Helmet->SetStaticMesh(LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Sphere.Sphere")));
+			UMaterialInterface* Glass = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/FX/Anomalies/MI_TimeBubble.MI_TimeBubble"),
+				nullptr, LOAD_NoWarn | LOAD_Quiet);
+			Helmet->SetMaterial(0, Glass ? Glass : LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/Game/Materials/MI_Gray_Glow.MI_Gray_Glow")));
+			Helmet->SetWorldScale3D(FVector(0.36f));
+		}
 	}
 	Helmet->SetVisibility(true);
+	RunAudio::Play(this, TEXT("SuitOn"));
 	Say(TEXT("You pull on the space suit. The helmet seals with a hiss."), 5.f);
 	UE_LOG(LogRun, Display, TEXT("Run: suit on"));
 	if (!bTipSuit)
@@ -923,6 +1137,7 @@ void ARunDirector::TakeOffSuit()
 	}
 	if (IsInVacuum())
 	{
+		RunAudio::Play(this, TEXT("UiDeny"));
 		Say(TEXT("Not here. There is no air to breathe."), 3.f);
 		return;
 	}
@@ -945,6 +1160,7 @@ void ARunDirector::TakeOffSuit()
 	P.LocalPos = FVector(Feet.X, Feet.Y, RoomActor->GetActorLocation().Z + 11.f) - RoomActor->GetActorLocation();
 	CurrentKeyState().Items.Add(P);
 	SpawnItemActor(Suit, -1, RoomActor->GetActorLocation() + P.LocalPos, P.Uid);
+	RunAudio::Play(this, TEXT("SuitOff"));
 	Say(TEXT("You step out of the space suit and leave it standing."), 3.f);
 	UE_LOG(LogRun, Display, TEXT("Run: suit off"));
 }
@@ -952,7 +1168,9 @@ void ARunDirector::TakeOffSuit()
 void ARunDirector::KillPlayer(const FString& Text, const FVector& From)
 {
 	InvulnerableUntil = 0.f;
+	bNoDeathAnim = true;
 	HurtPlayer(Text, From, Health + 1.f, false);
+	bNoDeathAnim = false;
 }
 
 bool ARunDirector::IsPlayerCrouched() const
@@ -963,12 +1181,16 @@ bool ARunDirector::IsPlayerCrouched() const
 
 // Присед (решение автора 15.11, для дыма). Капсулу и камеру опускает движение персонажа движка. Анимации приседа
 // (IdlePath и WalkPath ниже) взяты из плагина движка MoverExamples и перенесены на скелет проекта
-// (tools/ue/import_crouch.py); герой играет их вместо блюпринта анимации шаблона. Если ассетов нет — просто
-// сжимается по высоте, чтобы было видно, что голова ниже дыма.
+// (tools/ue/import_crouch.py). Позы у них разные: на месте глубокий присед (таз на 42 см), в шаге полуприсед (75 см).
+// Поэтому они играют монтажом в слоте DefaultSlot блюпринта анимации шаблона (ABP_Unarmed), а не заменяют его:
+// у монтажа есть время смешивания, и вход в присед, выход из него и смена «на месте ↔ шаг» идут плавным переходом,
+// а не скачком. Если ассетов нет — герой просто сжимается по высоте, чтобы было видно, что голова ниже дыма.
 void ARunDirector::UpdateCrouch(ACharacter* Ch, const APlayerController* PC)
 {
 	static const TCHAR* const IdlePath = TEXT("/Game/Characters/Mannequins/Anims/Crouch/MM_Crouch_Idle.MM_Crouch_Idle");
 	static const TCHAR* const WalkPath = TEXT("/Game/Characters/Mannequins/Anims/Crouch/MM_Crouch_Walk.MM_Crouch_Walk");
+	static const FName CrouchSlot(TEXT("DefaultSlot"));
+	constexpr float CrouchBlend = 0.3f;   // с, переход между позами
 	const bool bWant = Phase == ERunPhase::Playing
 		&& (bCrouchToggle || PC->IsInputKeyDown(EKeys::LeftControl) || PC->IsInputKeyDown(EKeys::RightControl));
 	if (bWant && !Ch->bIsCrouched)
@@ -980,6 +1202,7 @@ void ARunDirector::UpdateCrouch(ACharacter* Ch, const APlayerController* PC)
 		Ch->UnCrouch();   // под низким потолком не встанет: движение само проверит
 	}
 	USkeletalMeshComponent* Mesh = Ch->GetMesh();
+	UAnimInstance* Anim = Mesh->GetAnimInstance();
 	UAnimSequenceBase* Idle = LoadObject<UAnimSequenceBase>(nullptr, IdlePath, nullptr, LOAD_NoWarn | LOAD_Quiet);
 	UAnimSequenceBase* Walk = LoadObject<UAnimSequenceBase>(nullptr, WalkPath, nullptr, LOAD_NoWarn | LOAD_Quiet);
 	if (Ch->bIsCrouched != bCrouchPose)
@@ -988,7 +1211,7 @@ void ARunDirector::UpdateCrouch(ACharacter* Ch, const APlayerController* PC)
 		if (bCrouchPose)
 		{
 			MeshScaleStanding = Mesh->GetRelativeScale3D();
-			if (!Idle)
+			if (!Idle || !Anim)
 			{
 				Mesh->SetRelativeScale3D(FVector(MeshScaleStanding.X, MeshScaleStanding.Y, MeshScaleStanding.Z * 0.62f));
 			}
@@ -996,26 +1219,32 @@ void ARunDirector::UpdateCrouch(ACharacter* Ch, const APlayerController* PC)
 		else
 		{
 			Mesh->SetRelativeScale3D(MeshScaleStanding);
-			if (Mesh->GetAnimationMode() == EAnimationMode::AnimationSingleNode)
+			if (Anim && CrouchMontage.IsValid())
 			{
-				Mesh->SetAnimationMode(EAnimationMode::AnimationBlueprint);
+				Anim->Montage_Stop(CrouchBlend, CrouchMontage.Get());   // плавно обратно в походку шаблона
 			}
+			CrouchMontage.Reset();
+			CrouchClip.Reset();
 		}
 	}
-	if (bCrouchPose && Idle)
+	if (bCrouchPose && Idle && Anim)
 	{
 		const float Speed = Ch->GetVelocity().Size2D();
-		UAnimSequenceBase* Want = Speed > 20.f && Walk ? Walk : Idle;
-		if (Mesh->GetAnimationMode() != EAnimationMode::AnimationSingleNode || Mesh->GetSingleNodeInstance() == nullptr
-			|| Mesh->GetSingleNodeInstance()->GetAnimationAsset() != Want)
+		// порог с запасом в обе стороны, чтобы на грани скорости клипы не перещёлкивались туда-сюда
+		const bool bWalking = Walk && (CrouchClip.Get() == Walk ? Speed > 10.f : Speed > 30.f);
+		UAnimSequenceBase* Want = bWalking ? Walk : Idle;
+		if (CrouchClip.Get() != Want || !CrouchMontage.IsValid() || !Anim->Montage_IsPlaying(CrouchMontage.Get()))
 		{
-			Mesh->PlayAnimation(Want, true);
+			// новый монтаж в том же слоте сам уводит прежний за CrouchBlend — получается перекрёстный переход;
+			// повторов с запасом, чтобы клип не кончался
+			CrouchMontage = Anim->PlaySlotAnimationAsDynamicMontage(Want, CrouchSlot, CrouchBlend, CrouchBlend, 1.f, 100000);
+			CrouchClip = Want;
 		}
-		if (Want == Walk)
+		if (Want == Walk && CrouchMontage.IsValid())
 		{
 			// в MM_Crouch_Walk корень проходит 540 см за цикл 1,8 с — родная скорость 300 см/с; вприсядку герой идёт
 			// 150, значит темп 0,5, иначе ноги скользят
-			Mesh->SetPlayRate(FMath::Clamp(Speed / 300.f, 0.25f, 1.6f));
+			Anim->Montage_SetPlayRate(CrouchMontage.Get(), FMath::Clamp(Speed / 300.f, 0.25f, 1.6f));
 		}
 	}
 }
@@ -1100,6 +1329,7 @@ void ARunDirector::BeginTransition(ARunRoom* Room, int32 Door)
 	PendingDoor = Door;
 	Room->bSealed = true;
 	SwapAt = GetWorld()->GetTimeSeconds() + TransitionSeconds;
+	RunAudio::Play(this, TEXT("AirlockScan"));
 }
 
 void ARunDirector::CancelTransition()
@@ -1125,6 +1355,7 @@ void ARunDirector::DoSwap()
 		CancelTransition();
 		RoomActor->SetArrivalDoor(Door);   // створка открыта; новый переход — когда игрок выйдет из тамбура и вернётся
 		RoomActor->SetDoorSign(Door, TEXT("HULL BREACH"));
+		RunAudio::Play(this, TEXT("AirlockRefused"));
 		Say(TEXT("The airlock reads your pocket and stays shut: HULL BREACH beyond. SUIT REQUIRED."), 6.f);
 		UE_LOG(LogRun, Display, TEXT("Run: airlock refused key=%d: hull breach, no suit"), Peek);
 		return;
@@ -1147,6 +1378,7 @@ void ARunDirector::DoSwap()
 	Old->Destroy();
 	bBusy = false;
 	PendingDoor = -1;
+	RunAudio::Play(this, TEXT("AirlockShift"));
 	EnterRoom(To);
 }
 
@@ -1179,6 +1411,7 @@ void ARunDirector::EnterRoom(int32 RoomId)
 		if (!bEngineFixed)
 		{
 			bEngineFixed = true;
+			RunAudio::Play(this, TEXT("EnginesOnline"));
 			WriteProgress(TEXT("The engines are running again. One thing left: get back to the bridge."));
 			Say(TEXT("The warp engines hum back to life. Now get back to the bridge."), 8.f);
 		}
@@ -1193,6 +1426,7 @@ void ARunDirector::EnterRoom(int32 RoomId)
 		SetInspecting(false);
 		UE_LOG(LogRun, Display, TEXT("Run: WON doors=%d notes=%d damage=%.0f health=%.0f medkits=%d seconds=%.0f"), GetDoorsOpened(), NotesRead,
 			DamageTaken, Health, MedkitsUsed, GetRunSeconds());
+		RunAudio::Play(this, TEXT("Win"), 0.8f);
 		Say(TEXT("You are on the bridge. The ship tears itself free. YOU ESCAPED."), 8.f);
 		return;
 	}
@@ -1215,7 +1449,12 @@ void ARunDirector::EnterRoom(int32 RoomId)
 		}
 		Say(bHuman ? TEXT("Someone is in the room. It has your face. It will not stop following you.")
 			: bRobot ? TEXT("A maintenance robot turns towards you. It will not leave this room.")
-			: TEXT("Rats. They are fast, but they will not open a door."), 6.f);
+			: TEXT("Rats. Huge ones. They leap - do not stand still."), 6.f);
+		if (!bTipDodge)
+		{
+			bTipDodge = true;
+			ShowTip(TEXT("[Space] dodge - it strikes where you stood"), 7.f);
+		}
 		if (!bTipHit && HasWeapon())
 		{
 			bTipHit = true;
@@ -1308,6 +1547,7 @@ void ARunDirector::StepBookmark(int32 Step)
 	}
 	Bookmark = Bookmark < 0 ? (Step > 0 ? 0 : Bookmarks.Num() - 1) : FMath::Clamp(Bookmark + Step, 0, Bookmarks.Num() - 1);
 	bBookmarkJump = true;
+	RunAudio::Play(this, TEXT("PageTurn"));
 }
 
 void ARunDirector::OnInteract()
@@ -1329,6 +1569,7 @@ void ARunDirector::OnInteract()
 		++NotesRead;
 		AddToJournal(Text);   // записки складываются в блокнот (5.6)
 		AddBookmark(Text);    // и закладкой в нём, без слота (решение автора 15.11)
+		RunAudio::Play(this, TEXT("NotePaper"));
 		Say(Text, 9.f);
 	}
 	else if (A->ItemId == Suit)
@@ -1346,6 +1587,7 @@ void ARunDirector::OnInteract()
 	{
 		if (Pocket.Num() >= PocketSlots)
 		{
+			RunAudio::Play(this, TEXT("UiDeny"));
 			Say(TEXT("Pocket is full."), 2.f);
 			return;
 		}
@@ -1361,6 +1603,7 @@ void ARunDirector::OnInteract()
 			State.Items.RemoveAt(Index);
 		}
 		Pocket.Add(Item);
+		RunAudio::Play(this, TEXT("ItemPickup"));
 		if (GetHeldSlot() < 0)
 		{
 			HeldSlot = Pocket.Num() - 1;   // руки были пусты — взятое сразу в руке
@@ -1419,6 +1662,7 @@ void ARunDirector::DropSlot(int32 Slot)
 	P.bHasPos = true;
 	P.LocalPos = Loc - RoomActor->GetActorLocation();
 	SpawnItemActor(Item, -1, Loc, P.Uid);
+	RunAudio::Play(this, TEXT("ItemDrop"));
 }
 
 void ARunDirector::RemoveFromPocket(int32 Slot)
@@ -1539,6 +1783,7 @@ void ARunDirector::UseMedkit(int32 Slot)
 	Health = FMath::Min(MaxHealth, Health + MedkitHeal);
 	HealAt = GetWorld()->GetTimeSeconds();
 	++MedkitsUsed;
+	RunAudio::Play(this, TEXT("MedkitUse"));
 	RemoveFromPocket(Slot);
 	UE_LOG(LogRun, Display, TEXT("Run: medkit used health=%.0f -> %.0f"), Before, Health);
 	Say(TEXT("You patch yourself up. It helps."), 3.f);
@@ -1598,6 +1843,7 @@ void ARunDirector::TurnPage(int32 Step)
 	if (IsReading())
 	{
 		JournalPage = FMath::Max(0, JournalPage + Step);
+		RunAudio::Play(this, TEXT("PageTurn"));
 	}
 }
 
@@ -1622,6 +1868,10 @@ void ARunDirector::SetMenuOpen(bool bOpen)
 		{
 			bJournalUnread = false;
 		}
+	}
+	if (bOpen != bMenuOpen)
+	{
+		RunAudio::Play(this, TEXT("NotebookOpen"));
 	}
 	bMenuOpen = bOpen;
 }
@@ -1685,7 +1935,17 @@ void ARunDirector::TickHeldItem(float DeltaSeconds)
 			ShowItemMesh(HandMesh, Held, 10.f, true);
 			ShownHandItem = Held;
 		}
-		HandMesh->SetVisibility(bShow);
+		// на замахе ключ не висит под кистью, а зажат в кулаке
+		const bool bGrip = bShow && GripMesh && Held == Weapon && GetWorld()->GetTimeSeconds() < AttackBusyUntil + 0.2f;
+		if (GripMesh)
+		{
+			if (bGrip && !GripMesh->GetStaticMesh())
+			{
+				GripMesh->SetStaticMesh(ARunItem::FindModel(ItemName(Weapon)));
+			}
+			GripMesh->SetVisibility(bGrip);
+		}
+		HandMesh->SetVisibility(bShow && !bGrip);
 		if (Ch)
 		{
 			HandPivot->SetWorldRotation(FRotator(0.f, Ch->GetActorRotation().Yaw, 0.f));
@@ -1693,6 +1953,11 @@ void ARunDirector::TickHeldItem(float DeltaSeconds)
 		if (Flashlight)
 		{
 			const bool bLit = bShow && IsFlashlight(Held);
+			if (bLit != bFlashlightLit)
+			{
+				bFlashlightLit = bLit;
+				RunAudio::Play(this, TEXT("FlashlightClick"));
+			}
 			Flashlight->SetVisibility(bLit);
 			if (const APlayerController* PC = bLit ? UGameplayStatics::GetPlayerController(this, 0) : nullptr)
 			{
@@ -1767,8 +2032,102 @@ void ARunDirector::LogRoom(const TCHAR* Why) const
 		K.Content.Notes.Num(), *Items, *PocketNames, Health, S.Doors[0], S.Doors[1], S.Doors[2], S.Doors[3]);
 }
 
+// Музыка, фон комнаты, шаги, сердце. Вызывается каждый кадр, пока у игрока есть персонаж.
+void ARunDirector::UpdateAudio(float DeltaSeconds, ACharacter* Ch)
+{
+	// музыка: спокойный трек идёт весь забег; боевой входит плавно, когда на игрока вышел противник
+	// (в комнате живой враг или кто-то идёт следом), и уходит через несколько секунд после боя
+	if (!MusicCalm)
+	{
+		MusicCalm = RunAudio::Loop(this, TEXT("RunBed"), MusicVolume, 4.f);
+	}
+	bool bHostile = GetFollowers() > 0;
+	for (const ARunEnemy* E : EnemyActors)
+	{
+		bHostile |= E && E->IsHostile();
+	}
+	CombatHold = Phase == ERunPhase::Playing && bHostile ? 5.f : CombatHold - DeltaSeconds;
+	const bool bWant = CombatHold > 0.f && Phase == ERunPhase::Playing;
+	if (bWant != bCombatMusic)
+	{
+		bCombatMusic = bWant;
+		if (bWant)
+		{
+			if (MusicCombat)
+			{
+				MusicCombat->FadeIn(1.2f, CombatMusicVolume, 0.f);
+			}
+			else
+			{
+				MusicCombat = RunAudio::Loop(this, TEXT("Danger"), CombatMusicVolume, 1.2f);
+			}
+		}
+		else if (MusicCombat)
+		{
+			MusicCombat->FadeOut(4.f, 0.f);
+		}
+		if (MusicCalm)
+		{
+			// спокойный трек под боем не выключается, а уходит под него: возврат без шва
+			MusicCalm->AdjustVolume(bWant ? 1.5f : 4.f, bWant ? MusicVolume * 0.12f : MusicVolume);
+		}
+		UE_LOG(LogRun, Display, TEXT("Run: music %s"), bWant ? TEXT("combat") : TEXT("calm"));
+	}
+	if (Phase != ERunPhase::Playing && !bEndMusic)
+	{
+		bEndMusic = true;   // смерть или победа: музыка уходит вниз, слышны звук события и тишина
+		if (MusicCalm)
+		{
+			MusicCalm->AdjustVolume(3.f, MusicVolume * 0.35f);
+		}
+	}
+
+	// фон комнаты: гул корабля или гул на аварийном питании — по свету комнаты
+	const FName Tone = RoomActor && RoomActor->IsEmergency() ? FName(TEXT("EmergencyHum")) : FName(TEXT("ShipHum"));
+	if (Tone != RoomToneName && RunAudio::Find(Tone))
+	{
+		RoomToneName = Tone;
+		if (RoomTone)
+		{
+			RoomTone->FadeOut(1.5f, 0.f);
+		}
+		RoomTone = RunAudio::Loop(this, Tone, 0.5f, 1.5f);
+	}
+
+	// сердце: здоровья на одно-два попадания
+	const bool bLow = Phase == ERunPhase::Playing && Health > 0.f && Health <= 25.f;
+	if (bLow && !Heartbeat)
+	{
+		Heartbeat = RunAudio::Loop(this, TEXT("Heartbeat"), 0.8f, 1.f);
+	}
+	else if (!bLow && Heartbeat)
+	{
+		Heartbeat->FadeOut(1.5f, 0.f);
+		Heartbeat = nullptr;
+	}
+
+	// шаги: по пройденному пути. Бегом шаг длиннее и громче, вприсядку — тише
+	if (Ch && Ch->GetCharacterMovement() && Ch->GetCharacterMovement()->IsMovingOnGround() && Phase == ERunPhase::Playing)
+	{
+		const float Speed = Ch->GetVelocity().Size2D();
+		StepLeft -= Speed * DeltaSeconds;
+		if (Speed > 30.f && StepLeft <= 0.f)
+		{
+			const bool bRun = Speed > WalkSpeed + 40.f;
+			StepLeft = bRun ? 105.f : IsPlayerCrouched() ? 60.f : 72.f;
+			RunAudio::Play(this, TEXT("Footstep"), IsPlayerCrouched() ? 0.25f : bRun ? 0.7f : 0.45f, FMath::FRandRange(0.9f, 1.1f));
+		}
+	}
+}
+
 void ARunDirector::Tick(float DeltaSeconds)
 {
+	if (TestDeathShotAt > 0.f && GetWorld()->GetTimeSeconds() >= TestDeathShotAt)
+	{
+		TestDeathShotAt = -1.f;
+		FScreenshotRequest::RequestScreenshot(FPaths::ProjectSavedDir() / TEXT("Screenshots/Burned/player_dead.png"), true, false);
+		UE_LOG(LogRun, Display, TEXT("Run: test shot of the dead player, phase=%d"), static_cast<int32>(Phase));
+	}
 	Super::Tick(DeltaSeconds);
 	const float Now = GetWorld()->GetTimeSeconds();
 	if (!bPlayerReady)
@@ -1786,17 +2145,42 @@ void ARunDirector::Tick(float DeltaSeconds)
 		// Клавиша опрашивается каждый кадр, а не ловится нажатием: отпущенная на паузе не залипнет.
 		const APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
 		const bool bRun = PC && (PC->IsInputKeyDown(EKeys::LeftShift) || PC->IsInputKeyDown(EKeys::RightShift));
+		{
+			const float NowT = GetWorld()->GetTimeSeconds();
+			if (AttackHitTime >= 0.f && NowT >= AttackHitTime)
+			{
+				AttackHitTime = -1.f;
+				ResolveSwing();
+			}
+			if (bAttackQueued && NowT >= AttackBusyUntil && Phase == ERunPhase::Playing)
+			{
+				StartSwing();
+			}
+			if (NowT < AttackBusyUntil)
+			{
+				RequestSpeedFactor(0.35f);   // на замахе герой почти стоит
+			}
+			if (NowT < DodgeUntil && Phase == ERunPhase::Playing)
+			{
+				// рывок: скорость задаётся напрямую и гаснет к концу
+				const float A = (DodgeUntil - NowT) / FMath::Max(DodgeSeconds, 0.05f);
+				const FVector V = DodgeDir * (320.f + 620.f * A);
+				Ch->GetCharacterMovement()->Velocity = FVector(V.X, V.Y, Ch->GetCharacterMovement()->Velocity.Z);
+			}
+		}
 		const float Gait = bRun ? BaseWalkSpeed : FMath::Min(WalkSpeed, BaseWalkSpeed);
 		Ch->GetCharacterMovement()->MaxWalkSpeed = Gait * SpeedRequest;
 		// вприсядку — медленнее шага, Shift не помогает
 		Ch->GetCharacterMovement()->MaxWalkSpeedCrouched = FMath::Min(WalkSpeed, BaseWalkSpeed) * 0.6f * SpeedRequest;
-		if (PC)
+		if (PC && Phase == ERunPhase::Playing)
 		{
-			UpdateCrouch(Ch, PC);
+			UpdateCrouch(Ch, PC);   // после смерти героя анимацией правит падение (HurtPlayer)
 		}
 		if (Helmet && bSuitOn)
 		{
-			Helmet->SetWorldLocation(Ch->GetMesh()->GetSocketLocation(TEXT("head")) + FVector(0.f, 0.f, 9.f));
+			// забрало (+Y модели) смотрит туда же, куда герой; середина шлема — чуть выше и впереди основания черепа
+			Helmet->SetWorldLocationAndRotation(Ch->GetMesh()->GetSocketLocation(TEXT("head")) + FVector(0.f, 0.f, 9.f) + Ch->GetActorForwardVector() * 2.f,
+				FRotator(0.f, Ch->GetActorRotation().Yaw - 90.f, 0.f));
 			Helmet->SetHiddenInGame(Ch->IsHidden() || !Ch->GetMesh()->IsVisible());
 		}
 		SpeedRequest = 1.f;   // угроза просит замедление каждый кадр заново
@@ -1818,6 +2202,7 @@ void ARunDirector::Tick(float DeltaSeconds)
 			Boom->SocketOffset.Z = FMath::FInterpTo(Boom->SocketOffset.Z, Rise, DeltaSeconds, 6.f);
 		}
 		CameraCeiling = TNumericLimits<float>::Max();   // и потолок камеры — тоже каждый кадр
+		UpdateAudio(DeltaSeconds, Ch);
 		// у стены камера упирается и въезжает в персонажа: на это время он скрыт, иначе его спина закрывает весь экран
 		if (const APlayerCameraManager* Cam = UGameplayStatics::GetPlayerCameraManager(this, 0))
 		{
@@ -1923,9 +2308,10 @@ void ARunDirector::TickSelfTest()
 	// видно ли под слоем), 118 — фонарик в руку (только при -RunEmergency=1)
 	static const int32 BurnedSteps[] = { 100, 101, 110, 101, -1, 0, -1, 111, 113, 114, 113, 114, 113, 114, 113, 114, 115,
 		116, 117, 116, 117, 118, 116, 1, -1, 104 };
-	static const int32 EnemySteps[] = { 100, 101, 105, 101, 110, 101, -1, 0, -1, 111, 112, 112, 1, -1, 111,
+	// 122 — замах ключом и кадр в его середине, 123 — рывок и кадр в нём (только с -RunShots)
+	static const int32 EnemySteps[] = { 100, 101, 105, 101, 110, 101, -1, 0, -1, 111, 116, 122, 116, 123, 116, 124, 112, 112, 1, -1, 111,
 		112, 112, 112, 112, 112, 112, 112, 112, 112, 112, 111, 120, 120, 120, 120, 120, 111,
-		-1, 0, -1, 111, 120, 120, 120, 120, 120, 120, 120, 120, 111, 104 };
+		-1, 0, -1, 111, 120, 120, 120, 120, 120, 120, 120, 120, 111, 199, 199, 125, 116, 104 };   // 125, 116 — кадр убитого после боя
 	// полный забег по шпаргалке (-RunWin): 200+R — подойти к предмету роли R, 210 — выбросить проводника,
 	// 220 — выбросить всё, кроме блокнота, 106 — отчёт о состоянии
 	// 230 — надеть скафандр, если он в комнате (уровни 1 и 2: разгерметизация на 2 или 3)
@@ -1935,7 +2321,7 @@ void ARunDirector::TickSelfTest()
 	// аптечка в руке после ушиба, осмотр, меню на Tab (144 — снимок в Saved/Screenshots/Menu, 145 — закладка выше).
 	// 199 — пауза, каждое состояние держится несколько секунд
 	static const int32 ShowSteps[] = { 100, 101, 140, -1, 141, 199, 199, 199, 199, 199, 199, 199, 142, 199, 199, 199, 144, 199, 199, 199,
-		143, 199, 199, 144, 199, 145, 199, 199, 144, 199, 199, 199, 199 };
+		143, 199, 199, 144, 199, 145, 199, 199, 144, 199, 143, 146, 199, 199, 144, 199, 199, 199 };
 	const int32* Steps = PathSteps;
 	int32 NumSteps = UE_ARRAY_COUNT(PathSteps);
 	if (bShowTest)
@@ -2035,11 +2421,52 @@ void ARunDirector::TickSelfTest()
 		UE_LOG(LogRun, Display, TEXT("Run: show notes read, journal=%d"), Journal.Num());
 		break;
 	}
+	case 146:
+	{
+		// витрина моделей: все вещи каталога, ключ и записка сеткой на полу перед героем, скафандр сбоку, шлем надет;
+		// камера сверху, чтобы мелкие вещи было видно
+		FVector Floor = Pawn->GetActorLocation() - FVector(0.f, 0.f, 90.f);
+		FHitResult Hit;
+		FCollisionQueryParams Params(FName(TEXT("RunShow")), false, Pawn);
+		if (GetWorld()->LineTraceSingleByChannel(Hit, Pawn->GetActorLocation(), Pawn->GetActorLocation() - FVector(0.f, 0.f, 300.f), ECC_Visibility, Params))
+		{
+			Floor = Hit.ImpactPoint;
+		}
+		const FVector Fwd = Pawn->GetActorForwardVector(), Side = Pawn->GetActorRightVector();
+		const FVector Mid = Floor + Fwd * 95.f;
+		TArray<int32> List;
+		for (int32 I = 0; I < 16; ++I)
+		{
+			List.Add(I);
+		}
+		List.Add(Weapon);
+		for (int32 I = 0; I < List.Num(); ++I)
+		{
+			SpawnItemActor(List[I], -1, Mid + Fwd * (45.f - 30.f * (I / 5)) + Side * (-60.f + 30.f * (I % 5)) + FVector(0.f, 0.f, 11.f));
+		}
+		SpawnItemActor(0, 0, Mid - Fwd * 75.f + Side * 30.f + FVector(0.f, 0.f, 1.f));    // записка
+		SpawnItemActor(Suit, -1, Mid + Side * 130.f + FVector(0.f, 0.f, 11.f));
+		PutOnSuit();
+		const FVector From = Mid - Fwd * 70.f + FVector(0.f, 0.f, 150.f);
+		ACameraActor* Cam = GetWorld()->SpawnActor<ACameraActor>(From, (Mid - From).Rotation());
+		Cam->GetCameraComponent()->bConstrainAspectRatio = false;
+		Cam->GetCameraComponent()->SetFieldOfView(70.f);
+		if (APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
+		{
+			PC->SetViewTargetWithBlend(Cam, 0.f);
+		}
+		UE_LOG(LogRun, Display, TEXT("Run: show models %d, suit on=%d"), List.Num(), bSuitOn ? 1 : 0);
+		break;
+	}
 	case 141:
-		Pocket.Add(Medkit);
+	{
+		int32 ShowItem = Medkit;
+		FParse::Value(FCommandLine::Get(), TEXT("RunShowItem="), ShowItem);   // какую вещь показать на осмотре
+		Pocket.Add(ShowItem);
 		HeldSlot = Pocket.Num() - 1;
 		HurtPlayer(TEXT("Show bruise."), Pawn->GetActorLocation() + FVector(-100.f, 0.f, 0.f), 45.f);
 		break;
+	}
 	case 142: OnInspect(); UE_LOG(LogRun, Display, TEXT("Run: show inspecting=%d"), IsInspecting() ? 1 : 0); break;
 	case 143: OnToggleJournal(); UE_LOG(LogRun, Display, TEXT("Run: show reading=%d"), IsReading() ? 1 : 0); break;
 	case 144:
@@ -2128,6 +2555,47 @@ void ARunDirector::TickSelfTest()
 			}
 		}
 		break;
+	case 125:
+		// камера на место, где упал последний убитый противник (только с -RunShots)
+		if (FParse::Param(FCommandLine::Get(), TEXT("RunShots")) && !TestKillAt.IsZero())
+		{
+			const FVector From = TestKillAt + (Pawn->GetActorLocation() - TestKillAt).GetSafeNormal2D() * 230.f + FVector(0.f, 0.f, 150.f);
+			ACameraActor* Cam = GetWorld()->SpawnActor<ACameraActor>(From, (TestKillAt + FVector(0.f, 0.f, 25.f) - From).Rotation());
+			Cam->GetCameraComponent()->bConstrainAspectRatio = false;
+			Cam->GetCameraComponent()->SetFieldOfView(75.f);
+			if (APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
+			{
+				PC->SetViewTargetWithBlend(Cam, 0.f);
+			}
+			TestNextAt = Now + 0.6f;
+		}
+		break;
+	case 124:
+		// проверка смерти героя (-RunDie -RunShots): удар насмерть спереди, кадр через полторы секунды
+		if (FParse::Param(FCommandLine::Get(), TEXT("RunDie")) && FParse::Param(FCommandLine::Get(), TEXT("RunShots")) && Phase == ERunPhase::Playing)
+		{
+			InvulnerableUntil = 0.f;
+			TestDeathShotAt = Now + 1.6f;
+			HurtPlayer(TEXT("Test death."), Pawn->GetActorLocation() + Pawn->GetActorForwardVector() * 100.f, 1000.f);
+		}
+		break;
+	case 122:
+		if (FParse::Param(FCommandLine::Get(), TEXT("RunShots")))
+		{
+			// в середину комнаты: в тесном тамбуре камера въезжает в героя и прячет его
+			const FVector Mid = RoomActor->GetActorLocation();
+			Pawn->SetActorLocation(FVector(Mid.X, Mid.Y, Pawn->GetActorLocation().Z), false, nullptr, ETeleportType::TeleportPhysics);
+			OnAttack();
+			TestNextAt = Now + 0.22f;
+		}
+		break;
+	case 123:
+		if (FParse::Param(FCommandLine::Get(), TEXT("RunShots")))
+		{
+			TestNextAt = Now + 1.2f;   // дождаться конца замаха, потом рывок — следующим шагом через 0,15 с
+			DodgeReadyAt = 0.f;
+		}
+		break;
 	case 118:
 		if (ForceEmergency > 0 && Pocket.Num() < PocketSlots)
 		{
@@ -2138,11 +2606,12 @@ void ARunDirector::TickSelfTest()
 		}
 		break;
 	case 116:
-		if (ForceThreatKind == ThreatSmoke || ForceEmergency > 0)
+		if (ForceThreatKind == ThreatSmoke || ForceEmergency > 0 || (ForceThreatKind > NumThreats - 3 && FParse::Param(FCommandLine::Get(), TEXT("RunShots"))))
 		{
 			const bool bFlash = GetHeldSlot() >= 0 && IsFlashlight(Pocket[HeldSlot]);
 			const FString Path = FPaths::ProjectSavedDir() / FString::Printf(TEXT("Screenshots/Burned/seed%u_t%d_key%d_player_%s.png"),
-				static_cast<uint32>(Seed), ForceThreatKind, Rooms[CurrentRoom].Key, bFlash ? TEXT("flashlight") : IsPlayerCrouched() ? TEXT("crouch") : TEXT("stand"));
+				static_cast<uint32>(Seed), ForceThreatKind, Rooms[CurrentRoom].Key, bFlash ? TEXT("flashlight") : IsPlayerCrouched() ? TEXT("crouch")
+				: Now < AttackBusyUntil ? TEXT("swing") : TestStepWasDodge() ? TEXT("dodge") : TestStandShots++ == 0 ? TEXT("stand") : TEXT("later"));
 			FScreenshotRequest::RequestScreenshot(Path, true, false);
 			UE_LOG(LogRun, Display, TEXT("Run: test shot %s"), *Path);
 			TestNextAt = Now + 0.5f;

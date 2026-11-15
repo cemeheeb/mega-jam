@@ -1,4 +1,5 @@
 #include "MenuDirector.h"
+#include "../Run/RunAudio.h"
 
 #include "MenuHUD.h"
 #include "Camera/CameraComponent.h"
@@ -24,6 +25,7 @@ namespace MenuAssets
 	const TCHAR* SkySphere = TEXT("/Engine/BasicShapes/Sphere.Sphere");
 	const TCHAR* SkyMaterial = TEXT("/Game/Game/Menu/M_BlackHole.M_BlackHole");
 	const TCHAR* Ship = TEXT("/Game/Game/Menu/SM_MenuShip.SM_MenuShip");
+	const TCHAR* Lens = TEXT("/Game/Game/Menu/M_MenuLens.M_MenuLens");
 	constexpr float SkyScale = 20000.f;
 	constexpr float FadeIn = 2.5f;      // с
 	constexpr float FadeOut = 0.9f;     // с
@@ -151,8 +153,9 @@ void AMenuDirector::ApplyLook()
 	S.BloomThreshold = 1.0f;
 	S.bOverride_VignetteIntensity = true;
 	S.VignetteIntensity = 0.55f;
+	// аберрация движка расходится от середины экрана; когда работает линза за мышью, она не нужна
 	S.bOverride_SceneFringeIntensity = true;
-	S.SceneFringeIntensity = 0.35f;
+	S.SceneFringeIntensity = LensMaterial ? 0.f : 0.35f;
 	S.bOverride_FilmGrainIntensity = true;
 	S.FilmGrainIntensity = 0.12f;
 	S.bOverride_LensFlareIntensity = true;
@@ -171,6 +174,23 @@ void AMenuDirector::PlaceShip()
 void AMenuDirector::BeginPlay()
 {
 	Super::BeginPlay();
+	RunAudio::Loop(this, TEXT("MenuTheme"), 0.6f, 3.f);   // музыка меню (карточка audio/music/menu-theme)
+	// линза: материал постобработки поверх готового кадра (только в игре: в сохранённый уровень не попадает)
+	if (UMaterialInterface* Base = LoadObject<UMaterialInterface>(nullptr, MenuAssets::Lens))
+	{
+		LensMaterial = UMaterialInstanceDynamic::Create(Base, this);
+		Post->AddOrUpdateBlendable(LensMaterial, 1.f);
+	}
+	FString Fixed;
+	if (FParse::Value(FCommandLine::Get(), TEXT("MenuMouse="), Fixed, false))
+	{
+		FString X, Y;
+		if (Fixed.Split(TEXT(","), &X, &Y))
+		{
+			bLensFixed = true;
+			Lens = LensTarget = FVector2D(FCString::Atof(*X), FCString::Atof(*Y));
+		}
+	}
 	ApplyLook();
 	PlaceShip();
 	Ambient->RecaptureSky();
@@ -225,7 +245,21 @@ void AMenuDirector::Tick(float DeltaSeconds)
 		{
 			PC->SetViewTarget(this);   // если режим игры всё же дал игроку пешку, вид остаётся за меню
 		}
+		// линза идёт за мышью с запаздыванием; мышь ушла из окна — линза остаётся, где была
+		int32 VX = 0, VY = 0;
+		float MX = 0.f, MY = 0.f;
+		PC->GetViewportSize(VX, VY);
+		if (!bLensFixed && VX > 0 && VY > 0 && PC->GetMousePosition(MX, MY))
+		{
+			LensTarget = FVector2D(FMath::Clamp(MX / VX, 0.f, 1.f), FMath::Clamp(MY / VY, 0.f, 1.f));
+		}
+		if (LensMaterial && VX > 0 && VY > 0)
+		{
+			LensMaterial->SetVectorParameterValue(TEXT("Lens"), FLinearColor(Lens.X, Lens.Y, LensStrength, float(VX) / VY));
+			LensMaterial->SetScalarParameterValue(TEXT("Radius"), LensRadius);
+		}
 	}
+	Lens = FMath::Vector2DInterpTo(Lens, LensTarget, DeltaSeconds, LensFollow);
 	if (bSelfTest && Chosen < 0 && Clock > 3.f)
 	{
 		UE_LOG(LogMenu, Log, TEXT("Menu: self test chooses %s"), *ItemName(ItemNewGame));
@@ -262,6 +296,7 @@ void AMenuDirector::OnUp()
 	if (Chosen < 0)
 	{
 		Selected = (Selected + ItemCount - 1) % ItemCount;
+		RunAudio::Play(this, TEXT("UiClick"));
 	}
 }
 
@@ -270,6 +305,7 @@ void AMenuDirector::OnDown()
 	if (Chosen < 0)
 	{
 		Selected = (Selected + 1) % ItemCount;
+		RunAudio::Play(this, TEXT("UiClick"));
 	}
 }
 
@@ -306,6 +342,7 @@ void AMenuDirector::Activate(int32 Item)
 	Chosen = Item;
 	Selected = Item;
 	LeaveAt = Clock + MenuAssets::FadeOut;
+	RunAudio::Play(this, TEXT("UiConfirm"));
 	UE_LOG(LogMenu, Log, TEXT("Menu: %s"), *ItemName(Item));
 }
 

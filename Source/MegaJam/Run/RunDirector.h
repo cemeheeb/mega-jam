@@ -6,6 +6,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "RunGen.h"
+#include "RunRoom.h"
 #include "RunDirector.generated.h"
 
 class ARunEnemy;
@@ -36,6 +37,8 @@ struct FRunKeyState
 	TArray<FRunPlacedItem> Items;
 	TArray<bool> NoteRead;
 	bool bEnemiesSpawned = false;   // противники этой комнаты уже появлялись: убитые не возвращаются
+	bool bCorpsesPlaced = false;    // тела этой комнаты уже расставлены: при возвращении — на те же места
+	TArray<FRunCorpsePlace> Corpses;
 };
 
 /** Комната за конкретной дверью. Свои у неё только двери. */
@@ -92,6 +95,8 @@ public:
 	void TakeOffSuit();
 	/** Комната, где игрок, — разгерметизация. */
 	bool IsInVacuum() const;
+	/** Игрок в рывке-уклонении: удары противников по нему не проходят. */
+	bool IsDodging() const { return GetWorld() && GetWorld()->GetTimeSeconds() < DodgeSafeUntil; }
 	/** Подпись и шкала угрозы на экране (счётчик радиации, направление гравитации). */
 	void SetThreatHint(const FString& Text, float Meter);
 	/** Замедлить игрока на этот кадр. */
@@ -244,6 +249,20 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Run")
 	float ExposureBias = 1.8f;
 
+	/** Громкость музыки: спокойный трек и боевой. Во время боя спокойный приглушается, но не выключается. */
+	/** Рывок-уклонение (Space или левый Alt): столько секунд длится и столько из них удары по игроку не проходят. */
+	UPROPERTY(EditAnywhere, Category = "Run")
+	float DodgeSeconds = 0.38f;
+	UPROPERTY(EditAnywhere, Category = "Run")
+	float DodgeSafeSeconds = 0.34f;
+	UPROPERTY(EditAnywhere, Category = "Run")
+	float DodgeCooldown = 0.95f;
+
+	UPROPERTY(EditAnywhere, Category = "Run")
+	float MusicVolume = 0.5f;
+	UPROPERTY(EditAnywhere, Category = "Run")
+	float CombatMusicVolume = 0.65f;
+
 	bool IsEmergency(int32 Key) const;
 	/** Фонарик из каталога вещей: в руке он светит туда, куда смотрит камера. */
 	static bool IsFlashlight(int32 Item);
@@ -271,11 +290,26 @@ private:
 	void OnBookmarkNext() { StepBookmark(1); }
 	UPROPERTY() TObjectPtr<UStaticMeshComponent> Helmet;
 	UPROPERTY() TObjectPtr<class UPostProcessComponent> Post;
+	// --- звук (RunAudio): музыка спокойная и боевая, фон комнаты, сердце при малом здоровье, шаги ---
+	UPROPERTY() TObjectPtr<class UAudioComponent> MusicCalm;
+	UPROPERTY() TObjectPtr<class UAudioComponent> MusicCombat;
+	UPROPERTY() TObjectPtr<class UAudioComponent> RoomTone;
+	UPROPERTY() TObjectPtr<class UAudioComponent> Heartbeat;
+	FName RoomToneName;
+	bool bCombatMusic = false;
+	float CombatHold = 0.f;        // боевой трек держится ещё столько секунд после того, как врагов не стало
+	float StepLeft = 0.f;          // сантиметров до следующего звука шага
+	float DodgeSafeUntil = -100.f;
+	bool bFlashlightLit = false;
+	bool bEndMusic = false;
+	void UpdateAudio(float DeltaSeconds, class ACharacter* Ch);
 	UPROPERTY() TObjectPtr<class USpotLightComponent> Flashlight;
 	// присед: C переключает, Ctrl держит; без анимаций приседа герой сжимается по высоте (UpdateCrouch)
 	bool bCrouchToggle = false;
 	bool bCrouchPose = false;
 	FVector MeshScaleStanding = FVector::OneVector;
+	TWeakObjectPtr<class UAnimMontage> CrouchMontage;      // клип приседа, играет в слоте DefaultSlot ABP_Unarmed
+	TWeakObjectPtr<class UAnimSequenceBase> CrouchClip;    // какой из двух клипов сейчас в этом монтаже
 	void OnCrouchKey() { bCrouchToggle = !bCrouchToggle; }
 	void UpdateCrouch(class ACharacter* Ch, const class APlayerController* PC);
 	float DamageTaken = 0.f;
@@ -307,6 +341,9 @@ private:
 	TObjectPtr<USceneComponent> HandPivot;
 	UPROPERTY()
 	TObjectPtr<UStaticMeshComponent> HandMesh;
+	/** Ключ в кулаке на время замаха: сидит в сокете HandGrip_R скелета и поворачивается вместе с кистью. */
+	UPROPERTY()
+	TObjectPtr<UStaticMeshComponent> GripMesh;
 	/** Вещь на осмотре: перед камерой, крутится вокруг своей середины. */
 	UPROPERTY()
 	TObjectPtr<USceneComponent> InspectPivot;
@@ -343,6 +380,25 @@ private:
 
 	float NextAttackAt = 0.f;
 	float SwingAt = -100.f;
+	// --- бой (запрос автора 15.11): удар ключом с анимацией, серия из трёх ударов, рывок-уклонение ---
+	int32 ComboStep = 0;             // какой удар серии следующий (анимации MM_Attack_01–03 манекена шаблона)
+	float AttackHitTime = -1.f;      // когда удар этого замаха достанет противника; < 0 — замаха нет
+	float AttackBusyUntil = -100.f;  // до этого момента идёт замах: новый удар встаёт в очередь
+	float ComboResetAt = 0.f;
+	bool bAttackQueued = false;
+	FVector DodgeDir = FVector::ZeroVector;
+	float DodgeUntil = -100.f;
+	float DodgeReadyAt = 0.f;
+	bool bTipDodge = false;
+	bool bNoDeathAnim = false;       // чёрная дыра: героя уносит сама аномалия, падать не нужно
+	void StartSwing();
+	void ResolveSwing();
+	void OnDodge();
+	/** Для самопроверки: кадр снимается сразу после шага 123 — в этот момент делается рывок. */
+	bool TestStepWasDodge();
+	FVector TestKillAt = FVector::ZeroVector;   // самопроверка: где упал последний убитый противник
+	int32 TestStandShots = 0;       // самопроверка: первый кадр стоящего героя — stand, следующие — later
+	float TestDeathShotAt = -1.f;   // самопроверка с -RunDie: когда снять кадр упавшего героя
 
 	float InvulnerableUntil = 0.f;
 	float HurtAt = -100.f;
