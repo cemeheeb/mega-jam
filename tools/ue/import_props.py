@@ -8,7 +8,8 @@
 Файлы готовит tools/blender/props/tripo_props.py: в папке карточки SourceArt/<карточка> лежат SM_*.fbx
 (сантиметры), T_<Материал>_BaseColor.png и T_<Материал>_ORM.png. Папка в игре — как показывает Студия:
 /Game/<путь карточки в ПаскальКейс> (items/coolant-valve -> /Game/Items/CoolantValve). Материал — MI_<Материал>
-из M_Kit; все меши карточки получают его в свой слот. Коллизия — только коробки UCX из файла (у створки шлюза).
+из M_Kit; все меши карточки получают его в свой слот. Коллизия — только выпуклые UCX из файла (створка шлюза,
+мебель второй партии).
 Нужен открытый редактор с проектом MegaJam, не в Play.
 """
 
@@ -36,7 +37,13 @@ PROPS = [
     "items/sealant-can", "items/voice-recorder", "items/rubber-duck", "items/ration-tin", "items/pressure-gauge",
     "items/power-cell", "items/pipe-wrench", "items/duct-tape", "items/paper-note", "items/gyroscope", "items/fuse",
     "items/family-photo", "items/dog-tag", "items/data-cartridge",
+    # вторая партия (15.11): мебель комнат вместо серых коробок build_rooms.py
+    "environment/engine/warp-core", "environment/living/space-toilet", "environment/common/dining-set",
+    "environment/cargo/cargo-crates", "environment/medbay/medbay-kit",
 ]
+
+# сила свечения (EmissiveStrength) у карточек с картой T_*_Emissive.png: колонна ядра светит, индикатор унитаза тлеет
+GLOW = {"environment/engine/warp-core": 4.0, "environment/living/space-toilet": 2.0}
 
 
 def pascal(name):
@@ -50,7 +57,7 @@ def import_card(card, saved):
     bases = sorted(glob.glob(os.path.join(src, "T_*_BaseColor.png")))
     assert len(bases) == 1, f"{card}: ожидалась одна текстура T_*_BaseColor.png, найдено {len(bases)}"
     mat = os.path.basename(bases[0])[2:-len("_BaseColor.png")]
-    mi = material(src, folder, mat, None, saved)
+    mi = material(src, folder, mat, GLOW.get(card), saved)
     for fbx in sorted(glob.glob(os.path.join(src, "SM_*.fbx"))):
         name = os.path.splitext(os.path.basename(fbx))[0]
         mesh_path = f"{folder}/{name}"

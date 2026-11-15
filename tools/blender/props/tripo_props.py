@@ -14,6 +14,10 @@
   preview.png                 миниатюра для Студии
 Грибы (fungus-clusters) — один меш из пяти кучек: режется на SM_Fungus1–5 по островам сетки, каждая кучка
 упрощается до 2 тыс. треугольников (в комнате их десятки) и встаёт центром дна в ноль.
+Наборы мебели (dining-set, cargo-crates, medbay-kit; 15.11, вторая партия) — несколько предметов в ряд одной
+моделью: таблица parts режет их по островам, у каждого предмета свой размер, поворот, привязка и коллизия UCX;
+drop убирает лишние острова (Tripo поставил у стола две фигурки людей). Ядро двигателя получает патрубки
+в четыре стороны (Tripo сделал в две) и карту свечения по бирюзовым пикселям цвета.
 Импорт в Unreal — tools/ue/import_props.py.
 """
 import os
@@ -23,6 +27,7 @@ import bmesh
 import bpy
 import numpy as np
 from mathutils import Matrix, Vector
+from mathutils.bvhtree import BVHTree
 
 ROOT = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))), "SourceArt")
 
@@ -33,6 +38,10 @@ ROOT = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirn
 # на пол его кладёт поза из таблицы моделей в RunItem.cpp)
 def item(name, size, rough, metal, **more):
     return dict(name=name, size=size, pivot="bottom", rough=rough, metal=metal, **more)
+
+
+def part(name, seed, size, **more):
+    return dict(name=name, seed=seed, size=size, **more)
 
 
 ASSETS = {
@@ -61,6 +70,35 @@ ASSETS = {
     "environment/common/fungus-clusters": dict(name="Fungus", material="FungusClusters", size=1.0, pivot="bottom", rough=0.75, metal=0.0,
                                                split=[(0.30, -0.30), (0.0, 0.30), (0.33, 0.30), (-0.35, 0.30), (-0.20, -0.27)],
                                                max_tris=2000),
+    # ---- вторая партия (15.11): мебель комнат вместо серых коробок build_rooms.py ----
+    # ядро: от пола до потолка 3,0 м, пропорции Tripo (основание 2,27 м); коллизия — призма по основанию
+    "environment/engine/warp-core": dict(name="WarpCore", size=("z", 3.0), pivot="bottom", rough=0.45, metal=0.2,
+                                         fix="stubs4", ucx=("prism", 12), emissive="teal"),
+    # унитаз: глубина 73 см, как у заглушки с бачком (55 + 18); высота и ширина — по пропорциям Tripo
+    "environment/living/space-toilet": dict(name="SpaceToilet", size=("y", 0.73), pivot="bottom", rough=0.4, metal=0.1,
+                                            ucx=True, emissive="teal"),
+    # parts: имя меша, точка предмета в сырых осях Tripo (к ней относятся острова сетки), размер в игре.
+    # turn — поворот вокруг Z после выравнивания (длинная сторона стола у Tripo вдоль Y, в комнате — вдоль X);
+    # ucx: True — коробка по габариту, "tall" — коробка на каждую высокую створку; straight=False — не выравнивать
+    "environment/common/dining-set": dict(
+        material="DiningSet", rough=0.55, metal=0.1, drop=[((-0.47, -0.35), (0.235, 0.345))],      # две фигурки людей
+        parts=[part("MessTable", (-0.40, -0.03), (2.0, 0.8, 0.78), turn=90, ucx=True),
+               part("MessBench", (-0.045, -0.04), (2.0, 0.30, 0.45), turn=90, ucx=True),
+               part("CrewTable", (0.245, -0.01), (1.2, 0.8, 0.78), turn=90, ucx=True),
+               part("Stool", (0.445, -0.01), (0.36, 0.36, 0.45), ucx=True)]),
+    "environment/cargo/cargo-crates": dict(
+        material="CargoCrates", rough=0.5, metal=0.4,
+        parts=[part("CrateLarge", (-0.37, 0.0), (1.2, 1.2, 1.2), ucx=True),
+               part("CrateMedium", (-0.025, 0.0), (1.0, 1.0, 1.0), ucx=True),
+               part("CrateSmall", (0.23, 0.0), (0.8, 0.8, 0.8), ucx=True),
+               part("Barrel", (0.425, 0.0), (0.64, 0.64, 0.90), ucx=True)]),
+    # лампа висит на потолке: привязка — верх её крепления; ширма стоит зигзагом, как у Tripo
+    "environment/medbay/medbay-kit": dict(
+        material="MedbayKit", rough=0.5, metal=0.2,
+        parts=[part("SurgicalLamp", (-0.25, -0.30), ("z", 1.0), pivot="top", straight=False),
+               part("PrivacyScreen", (-0.24, 0.22), ("z", 1.70), ucx="tall", straight=False),
+               part("InstrumentTrolley", (0.17, 0.28), ("z", 0.85), ucx=True),
+               part("BiohazardBin", (0.43, 0.30), ("z", 0.65), ucx=True)]),
 }
 
 
@@ -90,6 +128,19 @@ def write_textures(card, mat):
     orm.filepath_raw = os.path.join(out, f"T_{mat}_ORM.png")
     orm.file_format = "PNG"
     orm.save()
+    if a.get("emissive") == "teal":
+        # светится бирюзовое: стекло колонны ядра, индикаторы. Остальное — чёрное; сила — EmissiveStrength в Unreal
+        rgb = px.reshape(-1, 4)
+        teal = (rgb[:, 1] - rgb[:, 0] > 0.10) & (rgb[:, 2] - rgb[:, 0] > 0.08) & (np.maximum(rgb[:, 1], rgb[:, 2]) > 0.30)
+        glow = np.zeros_like(rgb)
+        glow[:, 3] = 1.0
+        glow[teal, :3] = rgb[teal, :3]
+        em = bpy.data.images.new("emissive", w, h, alpha=False, is_data=True)
+        em.pixels.foreach_set(glow.ravel())
+        em.filepath_raw = os.path.join(out, f"T_{mat}_Emissive.png")
+        em.file_format = "PNG"
+        em.save()
+        print(f"   свечение: {teal.mean() * 100:.1f}% пикселей")
     return w
 
 
@@ -105,8 +156,9 @@ def material(card, mat):
     return m
 
 
-def split_by_seeds(ob, seeds):
-    """Острова сетки — к ближайшей из точек seeds (x, y); на каждую точку свой объект."""
+def split_by_seeds(ob, seeds, drop=()):
+    """Острова сетки — к ближайшей из точек seeds (x, y); на каждую точку свой объект. Острова, чья середина
+    попала в прямоугольник из drop ((x0, x1), (y0, y1)), выбрасываются."""
     bm = bmesh.new()
     bm.from_mesh(ob.data)
     bm.verts.ensure_lookup_table()
@@ -131,6 +183,10 @@ def split_by_seeds(ob, seeds):
     for verts in islands:
         cx = sum(v.co.x for v in verts) / len(verts)
         cy = sum(v.co.y for v in verts) / len(verts)
+        if any(x0 <= cx <= x1 and y0 <= cy <= y1 for (x0, x1), (y0, y1) in drop):
+            print(f"   выброшен остров: {len(verts)} вершин у ({cx:.2f}, {cy:.2f})")
+            group.append(-1)
+            continue
         group.append(min(range(len(seeds)), key=lambda k: (cx - seeds[k][0]) ** 2 + (cy - seeds[k][1]) ** 2))
     parts = []
     for k in range(len(seeds)):
@@ -165,6 +221,136 @@ def tris_of(ob):
     return sum(len(p.vertices) - 2 for p in ob.data.polygons)
 
 
+def coords(me):
+    pts = np.empty(len(me.vertices) * 3, np.float32)
+    me.vertices.foreach_get("co", pts)
+    return pts.reshape(-1, 3).astype(np.float64)
+
+
+def straighten(me):
+    """Tripo ставит предметы чуть наискосок: повернуть вокруг Z так, чтобы габарит в плане стал наименьшим."""
+    pts = coords(me)[:, :2]
+    pts = pts - (pts.min(axis=0) + pts.max(axis=0)) / 2
+
+    def area(deg):
+        c, s = np.cos(np.radians(deg)), np.sin(np.radians(deg))
+        x, y = pts[:, 0] * c - pts[:, 1] * s, pts[:, 0] * s + pts[:, 1] * c
+        return (x.max() - x.min()) * (y.max() - y.min())
+
+    best = min(np.arange(-45.0, 45.01, 0.25), key=area)
+    if area(best) > area(0.0) * 0.99:
+        return 0.0                       # круглое или уже ровное
+    lo, hi = bounds(me)
+    c = (lo + hi) / 2
+    me.transform(Matrix.Translation((c.x, c.y, 0)) @ Matrix.Rotation(np.radians(best), 4, "Z") @ Matrix.Translation((-c.x, -c.y, 0)))
+    return float(best)
+
+
+def scale_to(me, size):
+    """size: число — по наибольшей стороне; ("z" | "y", длина) — по одной оси, пропорции прежние; (x, y, z) — по осям."""
+    lo, hi = bounds(me)
+    d = hi - lo
+    if isinstance(size, tuple) and size[0] in ("y", "z"):
+        s = Vector((size[1] / (d.z if size[0] == "z" else d.y),) * 3)
+    elif isinstance(size, tuple):
+        s = Vector((size[0] / d.x, size[1] / d.y, size[2] / d.z))
+    else:
+        s = Vector((size / max(d),) * 3)
+    me.transform(Matrix.Diagonal((s.x, s.y, s.z, 1.0)))
+    return s
+
+
+def islands_of(me):
+    """Острова сетки: списки номеров вершин."""
+    bm = bmesh.new()
+    bm.from_mesh(me)
+    bm.verts.ensure_lookup_table()
+    seen, out = set(), []
+    for v in bm.verts:
+        if v.index in seen:
+            continue
+        stack, verts = [v], []
+        seen.add(v.index)
+        while stack:
+            u = stack.pop()
+            verts.append(u.index)
+            for e in u.link_edges:
+                w = e.other_vert(u)
+                if w.index not in seen:
+                    seen.add(w.index)
+                    stack.append(w)
+        out.append(verts)
+    bm.free()
+    return out
+
+
+def stubs_four_ways(me):
+    """Ядро: Tripo поставил патрубки на хомутах в две стороны, по карточке их четыре. Острова-патрубки
+    (небольшие, далеко от оси) копируются с поворотом на 90° вокруг оси колонны."""
+    pts = coords(me)
+    stubs = [vs for vs in islands_of(me) if 40 <= len(vs) <= 200 and np.hypot(*pts[vs, :2].mean(axis=0)) > 0.25]
+    bm = bmesh.new()
+    bm.from_mesh(me)
+    bm.verts.ensure_lookup_table()
+    for vs in stubs:
+        chosen = set(vs)
+        geom = [bm.verts[i] for i in vs] + [f for f in bm.faces if all(v.index in chosen for v in f.verts)]
+        new = bmesh.ops.duplicate(bm, geom=geom)["geom"]
+        bmesh.ops.rotate(bm, verts=[g for g in new if isinstance(g, bmesh.types.BMVert)], cent=(0, 0, 0),
+                         matrix=Matrix.Rotation(np.pi / 2, 3, "Z"))
+        bm.verts.ensure_lookup_table()
+    bm.to_mesh(me)
+    bm.free()
+    print(f"   патрубки: было {len(stubs)}, стало {len(stubs) * 2}")
+
+
+def prism(name, radius, z0, z1, sides):
+    """Выпуклая призма вокруг оси Z — коллизия круглого предмета."""
+    ring = [(radius * np.cos(2 * np.pi * k / sides), radius * np.sin(2 * np.pi * k / sides)) for k in range(sides)]
+    verts = [(x, y, z0) for x, y in ring] + [(x, y, z1) for x, y in ring]
+    faces = [(k, (k + 1) % sides, sides + (k + 1) % sides, sides + k) for k in range(sides)]
+    faces += [tuple(range(sides - 1, -1, -1)), tuple(range(sides, 2 * sides))]
+    me = bpy.data.meshes.new(name)
+    me.from_pydata(verts, [], faces)
+    me.update()
+    ob = bpy.data.objects.new(name, me)
+    bpy.context.scene.collection.objects.link(ob)
+    return ob
+
+
+def collision(o, kind):
+    """Объекты коллизии UCX для меша o (в метрах, как сам меш)."""
+    if not kind:
+        return []
+    lo, hi = bounds(o.data)
+    if kind is True:
+        return [box(f"UCX_{o.name}_00", lo, hi)]
+    if kind == "tall":
+        # ширма: коробка на каждую створку — остров высотой больше половины предмета; не тоньше 4 см
+        pts = coords(o.data)
+        out = []
+        for vs in islands_of(o.data):
+            a, b = pts[vs].min(axis=0), pts[vs].max(axis=0)
+            if b[2] - a[2] < 0.5 * (hi.z - lo.z):
+                continue
+            for i in (0, 1):
+                if b[i] - a[i] < 0.04:
+                    m = (a[i] + b[i]) / 2
+                    a[i], b[i] = m - 0.02, m + 0.02
+            out.append(box(f"UCX_{o.name}_{len(out):02d}", Vector(a), Vector(b)))
+        return out
+    if kind[0] == "prism":
+        return [prism(f"UCX_{o.name}_00", min(hi.x - lo.x, hi.y - lo.y) / 2, lo.z, hi.z, kind[1])]
+    raise ValueError(kind)
+
+
+def top_at_centre(me):
+    """Высота верхней поверхности над точкой привязки (столешница, полка): луч сверху вниз по оси Z."""
+    tree = BVHTree.FromPolygons([tuple(v.co) for v in me.vertices], [tuple(p.vertices) for p in me.polygons])
+    hit = tree.ray_cast(Vector((0, 0, 100)), Vector((0, 0, -1)))
+    return hit[0].z if hit[0] is not None else float("nan")
+
+
 def preview(card, objs):
     scene = bpy.context.scene
     lo = Vector([min(bounds(o.data)[0][i] + o.location[i] for o in objs) for i in range(3)])
@@ -193,7 +379,7 @@ def process(card):
     a = ASSETS[card]
     out = os.path.join(ROOT, card)
     stem = card.split("/")[-1]
-    mat_name = a.get("material", a["name"])
+    mat_name = a.get("material") or a["name"]
     for o in list(bpy.data.objects):
         bpy.data.objects.remove(o, do_unlink=True)
     bpy.context.scene.unit_settings.scale_length = 1.0
@@ -217,9 +403,7 @@ def process(card):
     elif a.get("pose") == "upright":
         # главные оси облака вершин: самая длинная встаёт вертикально, самая тонкая — вдоль Y (ключ лежал
         # наискосок и был чуть повёрнут вокруг себя); тяжёлый конец, где вершин больше, — вниз
-        pts = np.empty(len(ob.data.vertices) * 3, np.float32)
-        ob.data.vertices.foreach_get("co", pts)
-        pts = pts.reshape(-1, 3).astype(np.float64)
+        pts = coords(ob.data)
         c = pts.mean(axis=0)
         w, v = np.linalg.eigh(np.cov((pts - c).T))            # по возрастанию: тонкая, средняя, длинная
         thin, long_ = v[:, 0], v[:, 2]
@@ -231,29 +415,40 @@ def process(card):
         ob.data.transform(Matrix.Translation(Vector(-c)))
         ob.data.transform(rot)
         print(f"   поза upright: длинная ось была {tuple(round(float(x), 2) for x in long_)}")
+    if a.get("fix") == "stubs4":
+        stubs_four_ways(ob.data)
 
-    # размер
-    lo, hi = bounds(ob.data)
-    d = hi - lo
-    size = a["size"]
-    if isinstance(size, tuple) and size[0] == "z":
-        s = Vector((size[1] / d.z,) * 3)
-    elif isinstance(size, tuple):
-        s = Vector((size[0] / d.x, size[1] / d.y, size[2] / d.z))
+    if "parts" in a:
+        # набор: у каждого предмета своё выравнивание, поворот и размер
+        specs = a["parts"]
+        objs = split_by_seeds(ob, [sp["seed"] for sp in specs], a.get("drop", ()))
+        for o, sp in zip(objs, specs):
+            o.name = o.data.name = "SM_" + sp["name"]
+            angle = straighten(o.data) if sp.get("straight", True) else 0.0
+            if sp.get("turn"):
+                lo, hi = bounds(o.data)
+                c = (lo + hi) / 2
+                o.data.transform(Matrix.Translation((c.x, c.y, 0)) @ Matrix.Rotation(np.radians(sp["turn"]), 4, "Z")
+                                 @ Matrix.Translation((-c.x, -c.y, 0)))
+            lo, hi = bounds(o.data)
+            d = hi - lo
+            k = scale_to(o.data, sp["size"])
+            print(f"   {o.name}: выровнен на {angle:+.2f}°, у Tripo {d.x:.3f} x {d.y:.3f} x {d.z:.3f}, "
+                  f"растяжение {k.x / k.z:.2f} x {k.y / k.z:.2f} x 1")
     else:
-        s = Vector((size / max(d),) * 3)
-    ob.data.transform(Matrix.Diagonal((s.x, s.y, s.z, 1.0)))
+        # размер
+        s = scale_to(ob.data, a["size"])
+        if "split" in a:
+            seeds = [(x * s.x, y * s.y) for x, y in a["split"]]
+            objs = split_by_seeds(ob, seeds)
+            for k, o in enumerate(objs):
+                o.name = o.data.name = f"SM_{a['name']}{k + 1}"
+        else:
+            ob.name = ob.data.name = "SM_" + a["name"]
+            objs = [ob]
+        specs = [a] * len(objs)
 
-    if "split" in a:
-        seeds = [(x * s.x, y * s.y) for x, y in a["split"]]
-        objs = split_by_seeds(ob, seeds)
-        for k, o in enumerate(objs):
-            o.name = o.data.name = f"SM_{a['name']}{k + 1}"
-    else:
-        ob.name = ob.data.name = "SM_" + a["name"]
-        objs = [ob]
-
-    for o in objs:
+    for o, sp in zip(objs, specs):
         before = tris_of(o)
         if a.get("max_tris") and before > a["max_tris"]:
             mod = o.modifiers.new("Decimate", "DECIMATE")
@@ -262,12 +457,26 @@ def process(card):
             bpy.ops.object.modifier_apply(modifier=mod.name)
         lo, hi = bounds(o.data)
         c = (lo + hi) / 2
-        o.data.transform(Matrix.Translation((-c.x, -c.y, -lo.z if a["pivot"] == "bottom" else -c.z)))
+        pivot = sp.get("pivot") or a.get("pivot", "bottom")
+        if pivot == "top":
+            # висит на потолке: привязка — середина верхней площадки крепления
+            pts = coords(o.data)
+            top = pts[pts[:, 2] > hi.z - 0.03 * (hi.z - lo.z)]
+            m = (top.min(axis=0) + top.max(axis=0)) / 2
+            o.data.transform(Matrix.Translation((-m[0], -m[1], -hi.z)))
+            pts = coords(o.data)
+            low = pts[pts[:, 2] < pts[:, 2].min() + 0.35 * (hi.z - lo.z)]
+            lc = (low.min(axis=0) + low.max(axis=0)) / 2
+            print(f"   {o.name}: нижняя треть (плафон) — середина ({lc[0] * 100:.1f}, {lc[1] * 100:.1f}) см от привязки, "
+                  f"поперечник {(low.max(axis=0) - low.min(axis=0))[:2].max() * 100:.1f} см")
+        else:
+            o.data.transform(Matrix.Translation((-c.x, -c.y, -lo.z if pivot == "bottom" else -c.z)))
         lo, hi = bounds(o.data)
         d = hi - lo
-        print(f"   {o.name}: {d.x * 100:.1f} x {d.y * 100:.1f} x {d.z * 100:.1f} см, низ {lo.z * 100:.1f}, треугольников {before} -> {tris_of(o)}")
+        print(f"   {o.name}: {d.x * 100:.1f} x {d.y * 100:.1f} x {d.z * 100:.1f} см, низ {lo.z * 100:.1f}, "
+              f"верх над привязкой {top_at_centre(o.data) * 100:.1f}, треугольников {before} -> {tris_of(o)}")
 
-    # миниатюра: кучки грибов разложены в ряд, только на время кадра
+    # миниатюра: предметы набора разложены в ряд, только на время кадра
     if len(objs) > 1:
         x = 0.0
         for o in objs:
@@ -281,11 +490,8 @@ def process(card):
 
     # выгрузка: сантиметры, как у остальных наборов (pipeline/unreal.md)
     bpy.context.scene.unit_settings.scale_length = 0.01
-    for o in objs:
-        ucx = []
-        if a.get("ucx"):
-            lo, hi = bounds(o.data)
-            ucx = [box(f"UCX_{o.name}_00", lo, hi)]
+    for o, sp in zip(objs, specs):
+        ucx = collision(o, sp.get("ucx"))
         for e in [o] + ucx:
             e.data.transform(Matrix.Scale(100.0, 4))
         tri = o.modifiers.new("ExportTriangulate", "TRIANGULATE")
@@ -303,6 +509,8 @@ def process(card):
             use_custom_props=False, add_leaf_bones=False, bake_anim=False,
             path_mode="STRIP", embed_textures=False, colors_type="NONE",
         )
+        if ucx:
+            print(f"   {o.name}: коллизия — {len(ucx)} шт.")
     print(f"## {card}: {len(objs)} FBX, текстура {width} px, слот MI_{mat_name}")
 
 

@@ -4,6 +4,7 @@ priority: 2
 idea: Low round raised floor module under the captain's acceleration couch in the middle of the bridge.
 prompt: "A standalone round raised floor module for the command post of a spaceship bridge, like a wide flat disc about two and a half metres across and only a hand's height tall: a top of off-white painted metal floor plates divided into radial segments with fine seams and small recessed screw heads, a graphite anti-slip ring around a central round brushed aluminium mounting plate with four bolts where a chair is fixed, a short vertical rim of light-grey aluminium with a thin muted teal light strip, and an international orange safety stripe along the top edge of the rim."
 avoid: chair, seat, steps, railing, objects on top, thick cylinder, stage
+image: bridge-dais-1.webp
 notes: |
   Пометка автора на снимке рубки 14.11: «Делаем этот выступ в tripo» — помост под креслом на посту рубки.
   Размер серого цилиндра, по которому его заменит модель: диаметр 2,4 м, высота 12 см
@@ -11,3 +12,32 @@ notes: |
   Точка привязки — центр дна; поворот любой, но радиальные швы лучше совместить с шагом консолей кольца (45°).
   В шаблоне стиля interior в Avoid есть «a base or plinth» и «visible floor». Если картинка из-за них выходит без помоста,
   эти слова можно вычеркнуть из промта перед копированием в Nano Banana.
+  15.11: собран из примитивов по картинке автора (images/bridge-dais-1.webp, меша Tripo нет) скриптом
+  tools/blender/kit/dais_build.py, blend — source/bridge-dais.blend, объект BridgeDais, материал BridgeDais.
+  Размер 2400 × 120 мм, как у серого цилиндра: на картинке при этой ширине около 300 мм, автор оставил 120,
+  поэтому бок — бок картинки, сжатый по высоте в 2,5 раза. Верх: восемь белых плит (швы через 45° в карте высот),
+  по два винта у внешних углов, алюминиевый кант 12 мм, оранжевая полоса на скруглённой кромке (R 18 мм);
+  в середине стальное кольцо, восемь графитовых антискользящих плит на 2 мм ниже со стальными планками,
+  внутреннее кольцо и шлифованная плита крепления кресла (ø 654 мм) с четырьмя болтами. Бок: светлый алюминий
+  на утопленном графитовом цоколе, четыре длинные утопленные панели (0, 90, 180, 270°, по 66°) с бирюзовой
+  светящейся полосой в щели и четыре узкие ниши на 45°; шов плит идёт через кромку вниз по боку.
+  Ориентация больше не любая: износ — только на проходе с юга (зона автора 15.11): кромка и плиты по пути к креслу,
+  низ южного бока, резиновое кольцо вокруг кресла. Юг — −X в Blender и −X в Unreal, ставить с yaw 0.
+  Развёртка: 42 острова, 873 px/м на 2048 (тексель 1,15 мм); незатёртые шесть секторов верха и три четверти бока
+  лежат на одном мастере, южные — свои; резиновые плиты все свои; винты, болты и планки — по острову на вид.
+  Растяжение — только на поясах скругления (до 1,5 %), на узких кольцах рамок (до 3,6 %), на скруглённых концах
+  стенок щели и на скрытой нижней ступени (плотность × 0,25).
+  Текстуры: маски dais_bake1/2.py, потёртости dais_scuffs.py (fine-scratches и weathering), ArmorPaint
+  dais_gen_build.py + dais_ap_run.sh (7 слоёв), доводка dais_post.py: свечение полосы пишется в _emission
+  (цвет 0,42/0,93/0,96, в Blender сила 2,5). Узор резины — пупырчатые ячейки 6 мм в карте высот (rubber-floor
+  Студии рифлёный, а на картинке пупырки). Алюминий бока матовый, металличность 0,3: так он светло-серый, как на
+  картинке, при любом окружении; до голого металла стирается только на рёбрах и в царапинах.
+  15.11 выгружен в игру (по просьбе автора): source/export_bridge_dais.py пишет SM_BridgeDais.fbx (27 198
+  треугольников, в сантиметрах, начало — центр дна, слот MI_BridgeDais, коллизия — одна 32-гранная призма UCX
+  240 × 12 см, болты плиты крепления на 0,6 см выше неё) и T_BridgeDais_*.png в 2048 (не 1024: на помосте 2,4 м
+  иначе тексель 2,3 мм и швы плит с пупырками резины размываются); у Normal перевёрнут зелёный канал (DirectX).
+  Импорт: python3 tools/ue/import_kit.py bridge/bridge-dais -> /Game/Environment/Bridge/BridgeDais, M_Kit,
+  EmissiveStrength 4. В рубке (build_rooms.py bridge) Post_Dais теперь этот меш вместо серого цилиндра,
+  в (0, 0, 0) с yaw 0; кресло стоит на нём, как раньше, на высоте 12 см.
+  После правки blend: снова export_bridge_dais.py и import_kit.py --mesh --tex bridge/bridge-dais, затем
+  build_rooms.py Bridge.

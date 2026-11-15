@@ -33,6 +33,7 @@ SRC = os.path.join(PROJECT, "SourceArt", "environment")
 # экраны консоли — как огоньки наборов Singula. Сгоревшая консоль (SM_NavigatorConsole_Burned) — свой материал.
 SETS = {
     "bridge/navigator-console": {"NavigatorConsole": 3.0},
+    "bridge/bridge-dais": {"BridgeDais": 4.0},     # бирюзовые полосы света по боку помоста
 }
 TEXTURE = {   # суффикс -> (параметр M_Kit, свойства текстуры)
     "BaseColor": ("BaseColor", {"SRGB": True, "CompressionSettings": "TC_Default"}),

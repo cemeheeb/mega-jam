@@ -5,8 +5,9 @@ style: interior-kit
 idea: "Surgical lamp, privacy screen, instrument trolley and biohazard bin."
 prompt: "Four separate pieces of sickbay equipment in a row: a round surgical lamp head seventy-five centimetres across, a flat off-white disc with a ring of small frosted lenses, on a short jointed light-grey aluminium ceiling arm; a folding privacy screen of three off-white fabric panels in aluminium frames, one metre seventy tall; a narrow instrument trolley eighty centimetres tall with two graphite shelves on an aluminium frame; and a round-cornered biohazard waste bin sixty centimetres tall painted international orange with a graphite flap lid."
 avoid: instruments, blood, patient, wheels detached
-later: true
 notes: |
   Приоритет 3. Медотсек: лампа Lamp_Head r38 на штанге Lamp_Arm длиной 60 см от потолка, ширма Screen 170 × 170 см,
   столик Tray 40 × 30 × 80 см, бак Biohazard_Bin 36 × 36 × 60 см.
   Сборка: SM_SurgicalLamp (привязка — верх штанги), SM_PrivacyScreen, SM_InstrumentTrolley, SM_BiohazardBin.
+  15.11: меш Tripo автора (source/tripo) разрезан на SM_SurgicalLamp (висит: привязка — верх крепления, спускается на 100 см, плафон 61 см отведён на 18 см), SM_PrivacyScreen 106 × 101 × 170 см (три створки зигзагом, коллизия по створкам; заглушка была плоской 6 × 170), SM_InstrumentTrolley 53 × 51 × 85 см (стоял под углом 9° — выровнен; верхняя полка на 68 см, место предмета перенесено на неё), SM_BiohazardBin 29 × 29 × 65 см. В игре /Game/Environment/Medbay/MedbayKit, в build_rooms.py medbay. Сборка — tools/blender/props/tripo_props.py, импорт — tools/ue/import_props.py. В комнате появится после пересборки (build_rooms.py).
+generated: true

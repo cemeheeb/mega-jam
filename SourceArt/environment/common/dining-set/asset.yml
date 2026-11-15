@@ -10,3 +10,5 @@ notes: |
   Жилая комната: Table 120 × 80 × 78 см, Stool1 и 2 36 × 36 × 45 см.
   Верх столов ровный и пустой, на высоте 78 см: на нём лежат вещи и записки.
   Сборка: разрезать на SM_MessTable, SM_MessBench, SM_CrewTable, SM_Stool; привязка — центр дна.
+  15.11: меш Tripo автора (source/tripo) разрезан на SM_MessTable 200 × 80 × 78, SM_MessBench 200 × 30 × 45, SM_CrewTable 120 × 80 × 78, SM_Stool 36 × 36 × 45 см — размеры заглушек, растяжение до 26%. Правки: выброшены две фигурки людей, которые Tripo поставил у большого стола; большой стол стоял под углом 2,25° — выровнен; длинная сторона столов и лавки — вдоль X. Коллизия — коробки. В игре /Game/Environment/Common/DiningSet, в build_rooms.py — столовая и жилая. Сборка — tools/blender/props/tripo_props.py, импорт — tools/ue/import_props.py. В комнате появится после пересборки (build_rooms.py).
+generated: true

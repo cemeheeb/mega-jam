@@ -90,7 +90,9 @@ class Room:
 
     def mesh(self, name, asset, center, yaw=0.0, rot=None, foot=None):
         """asset — путь от /Game/Environment, например Common/Lamps/SM_CagedCeilingLamp. foot — (размер, центр)
-        по осям комнаты: габарит меша-мебели, который стоит у стены (коробки и цилиндры дают габарит сами)."""
+        по осям комнаты: габарит меша-мебели, который стоит у стены (коробки и цилиндры дают габарит сами).
+        Третьим в foot можно дать False: предмет не коробка со столешницей (бочка, унитаз) — колонку за ним
+        он закрывает, а не служит ей рабочей поверхностью."""
         self.meshes.append((name, f"{ENV}/{asset}", center, rot or (0, yaw, 0)))
         if foot:
             self.feet.append((name, *foot))
@@ -215,18 +217,14 @@ def shell(room):
 def living():
     r = Room("Living")
     shell(r)
-    # спальная капсула в юго-западном углу, у южной стены; голова к западной стене
+    # спальная капсула в юго-западном углу, спиной к южной стене — модель environment/living/sleep-capsule
+    # (15.11, пока с однотонными зонами, import_sleep_capsule.py; до неё — девять серых коробок). Корпус 236 × 100 ×
+    # 180 см, привязка — середина корпуса на полу, ступень выступает вперёд ещё на 20 см. Открытая сторона меша +Y
+    # смотрит в комнату на север (yaw −90); изголовье при этом на востоке — подушка слева, как на картинке автора
+    # (у коробок голова была к западной стене). Свет — под крышей капсулы (её низ на 169 см)
     px, py = -LX / 2 + 50, -225
-    r.box("Sleep_Base", (100, 220, 45), (px, py, 22.5), "Furniture")
-    r.box("Sleep_Mattress", (90, 200, 12), (px, py, 51), "Bed")
-    r.box("Sleep_Pillow", (60, 40, 10), (px, py - 78, 62), "Linen")
-    r.box("Sleep_Blanket", (86, 110, 6), (px, py + 40, 60), "Linen")
-    r.box("Sleep_HeadWall", (100, 8, 170), (px, py - 114, 130), "Furniture")
-    r.box("Sleep_FootWall", (100, 8, 170), (px, py + 114, 130), "Furniture")
-    r.box("Sleep_Canopy", (100, 236, 8), (px, py, 219), "Furniture")
-    r.box("Sleep_Visor", (8, 220, 40), (px + 46, py, 195), "Dark")
-    r.box("Sleep_Step", (30, 120, 20), (px + 65, py, 10), "Furniture")
-    r.light("Sleep_Light", (px, py, 190), 250, 350, (0.45, 0.90, 0.95))
+    r.mesh("Sleep", "Living/SleepCapsule/SM_SleepCapsule", (px, py, 0), yaw=-90, foot=((100, 236.5, 180), (px, py, 90)))
+    r.light("Sleep_Light", (px, py, 150), 250, 350, (0.45, 0.90, 0.95))
     # три шкафчика в юго-восточном углу, вдоль южной стены
     for i in range(3):
         y = 150 + i * 80
@@ -237,10 +235,11 @@ def living():
     r.box("Galley_Top", (62, 222, 4), (LX / 2 - 30, -230, 92), "Dark")
     r.box("Galley_Cabinet", (35, 220, 60), (LX / 2 - 17.5, -230, 190), "Furniture")
     # стол и два табурета перед кухонным уголком
-    r.box("Table_Top", (120, 80, 6), (250, -230, 75), "Furniture")
-    r.box("Table_Leg", (20, 20, 72), (250, -230, 36), "Dark")
-    r.box("Stool1", (36, 36, 45), (250, -300, 22.5), "Furniture")
-    r.box("Stool2", (36, 36, 45), (250, -160, 22.5), "Furniture")
+    # модели набора environment/common/dining-set (Tripo автора, 15.11; до них — серые коробки тех же размеров):
+    # столешница на 78 см, привязка — центр дна; foot — прежний габарит коробки для раскладки колонок и потолка
+    r.mesh("Table", "Common/DiningSet/SM_CrewTable", (250, -230, 0), foot=((120, 80, 78), (250, -230, 39)))
+    r.mesh("Stool1", "Common/DiningSet/SM_Stool", (250, -300, 0), foot=((36, 36, 45), (250, -300, 22.5)))
+    r.mesh("Stool2", "Common/DiningSet/SM_Stool", (250, -160, 0), yaw=90, foot=((36, 36, 45), (250, -160, 22.5)))
     r.mesh("Table_DrinkPouch", "Bridge/CrewItems/SM_DrinkPouch", (292, -212, 78), yaw=20)   # в стороне от мест предметов
     # уборная: кабинка 1,6 × 1,6 м в северо-восточном углу, дверь смотрит на юг
     x0, y0, w = 285, 210, 8                     # южная и западная грани кабинки, толщина перегородки
@@ -255,15 +254,16 @@ def living():
     leaf = g1 - g0 - 2
     r.box("Lavatory_Door", (4, leaf, gh - 2),
           (x0 + 2 - math.sin(ang) * leaf / 2, g1 - math.cos(ang) * leaf / 2, (gh - 2) / 2), "Furniture", yaw=-75)
-    r.box("Lavatory_Toilet", (55, 38, 40), (x1 - 30, 300, 20), "Linen")
-    r.box("Lavatory_ToiletLid", (50, 36, 4), (x1 - 31, 300, 42), "Dark")
-    r.box("Lavatory_Tank", (18, 40, 42), (x1 - 9, 300, 61), "Linen")
+    # унитаз с бачком и поручнями — модель environment/living/space-toilet (71 × 73 × 75 см): бачком к северной
+    # стене, лицом на юг, к двери кабинки (лицо меша +Y -> −X)
+    r.mesh("Lavatory_Toilet", "Living/SpaceToilet/SM_SpaceToilet", (x1 - 36.5, 300, 0), yaw=90,
+           foot=((73, 68, 75), (x1 - 36.5, 300, 37.5), False))
     r.box("Lavatory_SinkStand", (16, 16, 80), (330, y1 - 12, 40), "Furniture")
     r.box("Lavatory_Sink", (42, 32, 12), (330, y1 - 18, 86), "Linen")
     r.box("Lavatory_Mirror", (34, 3, 45), (330, y1 - 1.5, 145), "Dark")
     r.light("Lavatory_Light", ((x0 + x1) / 2, (y0 + y1) / 2, 255), 300, 320, (1.0, 0.96, 0.90))
     r.spots_for("ItemSpot", [(250, -205, 78), (250, -255, 78), (LX / 2 - 30, -170, 94), (LX / 2 - 30, -290, 94),
-                             (px, py + 60, 63), (-250, 150, 0), (150, 150, 0), (-100, -250, 0)])
+                             (px + 10, py, 61), (-250, 150, 0), (150, 150, 0), (-100, -250, 0)])
     r.spots_for("NoteSpot", [(215, -230, 78), (-330, 120, 0), (330, 150, 0)])
     return r
 
@@ -271,52 +271,35 @@ def living():
 # ---------- рубка: только центральный пост — кресло на помосте и консоли навигаторов по кругу ----------
 #
 # Пометки автора на снимке 14.11: панель пилота перед креслом убрана; консоли кольца — консоли навигаторов
-# с мониторами; помост автор делает в Tripo (карточки environment/bridge/navigator-console и bridge-dais).
-# До моделей — серые коробки тех же размеров.
+# с мониторами (карточки environment/bridge/navigator-console и bridge-dais). Помост собран в Blender по картинке
+# автора (15.11), до моделей стояли серые коробки и цилиндр тех же размеров.
 
 def bridge():
     r = Room("Bridge")
     shell(r)
-    r.cylinder("Post_Dais", 120, 12, (0, 0, 6), "Furniture")
+    # помост (environment/bridge/bridge-dais, import_kit.py): 240 × 12 см, начало — центр дна; затёртый проход
+    # к креслу смотрит в −X, то есть на юг, поэтому без поворота
+    r.mesh("Post_Dais", "Bridge/BridgeDais/SM_BridgeDais", (0, 0, 0))
     # противоперегрузочное кресло (Singula acceleration-couch) в центре, лицом на север: лицо меша +Y -> +X
     r.mesh("Chair_Couch", "Bridge/AccelerationCouch/SM_AccelerationCouch", (0, 0, 12), yaw=-90)
-    # кольцо консолей вокруг поста; на юге проход к креслу
-    radius, depth, width = 215, 60, 150
-    # каждая консоль — свой пост: две пары органов по краям, середина свободна под предмет или записку;
-    # у дальнего края — два монитора лицом к посту
-    stations = {0: ("CommandConsoleParts/SM_TrackballPanel", "ControlConsoleParts/SM_Keypad"),      # навигация
-                45: ("ControlConsoleParts/SM_RotaryKnob", "ControlConsoleParts/SM_SwitchBlock"),    # связь
-                90: ("CommandConsoleParts/SM_BreakerPanel", "CommandConsoleParts/SM_KeySwitch"),    # питание
-                135: ("ControlConsoleParts/SM_SwitchBlock", "ControlConsoleParts/SM_RotaryKnob"),   # двигатель
-                225: ("CommandConsoleParts/SM_BreakerPanel", "ControlConsoleParts/SM_Keypad"),      # жизнеобеспечение
-                270: ("CommandConsoleParts/SM_TrackballPanel", "ControlConsoleParts/SM_RotaryKnob"),  # датчики
-                315: ("CommandConsoleParts/SM_KeySwitch", "CommandConsoleParts/SM_EmergencyButton")}  # шлюзы
+    # кольцо консолей вокруг поста; на юге проход к креслу. Консоль — модель навигаторской (карточка
+    # environment/bridge/navigator-console: 150 × 92 см, начало — середина дна, сторона оператора +Y, мониторы у
+    # дальнего края слиты с ней). Оператор стоит внутри кольца, лицом наружу: +Y -> к центру, yaw = deg + 90.
+    # Радиус: ближние к посту углы соседних консолей сходятся на 227 см (шаг 45°), на 232 между ними щель 4 см.
+    # До 15.11 здесь стояли серые коробки с мониторами-коробками и парами органов Singula: у модели свои клавиши.
+    # В выгоревшей рубке ARunRoom::ApplyBurn меняет консоль на SM_NavigatorConsole_Burned сам, по имени меша.
+    radius, depth = 232, 92
     for i, deg in enumerate((0, 45, 90, 135, 225, 270, 315)):
         a = math.radians(deg)
-        x, y = radius * math.cos(a), radius * math.sin(a)
-        r.box(f"Ring_Console{i + 1}", (depth, width, 95), (x, y, 47.5), "Furniture", yaw=deg)
-        r.box(f"Ring_Desk{i + 1}", (depth - 14, width - 16, 6), (x, y, 98), "Dark", yaw=deg)
-
-        def at(rad, lat, z):
-            """Точка консоли: rad — от центра поста, lat — вдоль консоли (по часовой стрелке, если смотреть сверху)."""
-            return (rad * math.cos(a) - lat * math.sin(a), rad * math.sin(a) + lat * math.cos(a), z)
-
-        # органы — у ближнего к посту края, лицом к центру (лицо +Y -> −радиус: yaw = deg + 90)
-        for j, (sgn, asset) in enumerate(zip((-1, 1), stations[deg])):
-            r.mesh(f"Ring_Console{i + 1}_Part{j + 1}", f"Bridge/{asset}", at(radius - 12, sgn * 55, 101), yaw=deg + 90)
-        # мониторы: корпус 64 × 40 см на низкой ножке у дальнего края стола, экран — бирюзовый, лицом к посту;
-        # нижний край на 1,05 м — предмет в середине стола (до 25 см от ближнего края) их не задевает
-        back = radius + depth / 2 - 8
-        for j, sgn in enumerate((-1, 1)):
-            lat = sgn * 33
-            r.box(f"Ring_Console{i + 1}_MonitorStand{j + 1}", (10, 12, 4), at(back, lat, 103), "Dark", yaw=deg)
-            r.box(f"Ring_Console{i + 1}_Monitor{j + 1}", (4, 64, 40), at(back, lat, 125), "Dark", yaw=deg)
-            r.box(f"Ring_Console{i + 1}_Screen{j + 1}", (1, 58, 34), at(back - 2.5, lat, 125), "Glow", yaw=deg)
+        r.mesh(f"Ring_Console{i + 1}", "Bridge/NavigatorConsole/SM_NavigatorConsole",
+               (radius * math.cos(a), radius * math.sin(a), 0), yaw=deg + 90)
     r.light("Post_Light", (0, 0, 200), 500, 500, (0.45, 0.90, 0.95))
-    d = radius * math.sqrt(0.5)
-    r.spots_for("ItemSpot", [(d, d, 101), (-d, d, 101), (d, -d, 101), (-d, -d, 101), (0, radius, 101),
-                             (0, -radius, 101), (350, 300, 0), (-350, -300, 0)])
-    r.spots_for("NoteSpot", [(radius, 0, 101), (-350, 300, 0), (350, -300, 0)])
+    # предметы и записка — на коврике консоли, в 22 см от ближнего к посту края (как в вычислительном центре), стол 1,003 м
+    spot = radius - depth / 2 + 22
+    d = spot * math.sqrt(0.5)
+    r.spots_for("ItemSpot", [(d, d, 100), (-d, d, 100), (d, -d, 100), (-d, -d, 100), (0, spot, 100),
+                             (0, -spot, 100), (350, 300, 0), (-350, -300, 0)])
+    r.spots_for("NoteSpot", [(spot, 0, 100), (-350, 300, 0), (350, -300, 0)])
     return r
 
 
@@ -412,11 +395,10 @@ def engine():
     r = Room("Engine")
     shell(r)
     # ядро в центре, от пола до потолка
-    r.cylinder("Core_Base", 150, 20, (0, 0, 10), "Furniture")
-    r.cylinder("Core_Column", 85, 260, (0, 0, 150), "Glow")
-    r.cylinder("Core_RingLow", 115, 16, (0, 0, 80), "Dark")
-    r.cylinder("Core_RingHigh", 115, 16, (0, 0, 220), "Dark")
-    r.cylinder("Core_Top", 150, 20, (0, 0, 290), "Furniture")
+    # модель environment/engine/warp-core (Tripo автора, 15.11): 3,0 м, основание 2,27 м (у серых цилиндров было 3,0),
+    # колонна светится своей картой. Патрубки хомутов смотрят на пилоны: у меша они по осям, отсюда поворот на 45°.
+    # foot — габарит прежнего основания: под ним потолок без светильников, как раньше
+    r.mesh("Core", "Engine/WarpCore/SM_WarpCore", (0, 0, 0), yaw=45, foot=((300, 300, H), (0, 0, H / 2)))
     r.light("Core_Light", (140, 0, 150), 2500, 900, (0.35, 0.85, 1.0))
     r.light("Core_Light2", (-140, 0, 150), 2500, 900, (0.35, 0.85, 1.0))
     # четыре пилона по диагоналям и силовые шины от них к ядру
@@ -486,13 +468,22 @@ def medbay():
     r.box("Chair_Seat", (70, 60, 50), (cx, cy, 25), "Furniture")
     r.box("Chair_Back", (16, 60, 80), (cx - 40, cy, 80), "Furniture", yaw=0)
     r.box("Chair_Leg", (70, 56, 12), (cx + 65, cy, 44), "Furniture")
-    r.cylinder("Lamp_Arm", 5, 60, (cx, cy, 265), "Dark")
-    r.cylinder("Lamp_Head", 38, 10, (cx, cy, 232), "Linen")
-    r.light("Lamp_Light", (cx, cy, 215), 900, 300, (1.0, 0.98, 0.95))
-    r.box("Screen", (6, 170, 170), (cx + 130, cy - 40, 85), "Linen")
-    r.box("Tray", (40, 30, 80), (cx - 20, cy - 90, 40), "Furniture")
-    r.box("Biohazard_Bin", (36, 36, 60), (-LX / 2 + 20, -100, 30), "Door")
-    r.spots_for("ItemSpot", [(150, -LY / 2 + 130, 65), (310, -LY / 2 + 130, 65), (180, 330, 104), (cx - 20, cy - 90, 80),
+    # модели набора environment/medbay/medbay-kit (Tripo автора, 15.11; до них — серые коробки и цилиндры).
+    # Лампа висит на потолке: привязка — верх крепления, оно над серединой кресла, где была штанга заглушки
+    # (foot — её габарит: потолок над лампой собирается как раньше). Плафон на коленчатой штанге отведён от крепления
+    # на 18 см к востоку и спускается до 2,0 м; свет — под ним. Коллизии у лампы нет.
+    r.mesh("Lamp", "Medbay/MedbayKit/SM_SurgicalLamp", (cx, cy, H), foot=((10, 10, 60), (cx, cy, 265)))
+    r.light("Lamp_Light", (cx, cy + 18, 185), 900, 300, (1.0, 0.98, 0.95))
+    # ширма стоит зигзагом из трёх створок, в плане 106 × 101 см (плоская коробка была 6 × 170): отодвинута
+    # от подножки кресла; коллизия — по створкам
+    r.mesh("Screen", "Medbay/MedbayKit/SM_PrivacyScreen", (cx + 160, cy - 40, 0), foot=((106, 101, 170), (cx + 160, cy - 40, 85)))
+    # столик на колёсах 53 × 51 × 85 см, верхняя полка на 68 см — на ней место предмета; он шире коробки-заглушки,
+    # поэтому на 6 см дальше от западной стены: дверцы колонок за ним остаются доступны
+    r.mesh("Tray", "Medbay/MedbayKit/SM_InstrumentTrolley", (cx - 20, cy - 84, 0), foot=((53, 51, 85), (cx - 20, cy - 84, 42.5)))
+    # бак у южной стены, педалью в комнату (лицо меша +Y -> +X)
+    r.mesh("Biohazard_Bin", "Medbay/MedbayKit/SM_BiohazardBin", (-LX / 2 + 18, -100, 0), yaw=-90,
+           foot=((29, 29, 65), (-LX / 2 + 18, -100, 32.5)))
+    r.spots_for("ItemSpot", [(150, -LY / 2 + 130, 65), (310, -LY / 2 + 130, 65), (180, 330, 104), (cx - 20, cy - 84, 68),
                              (cx + 4, cy, 50), (150, 120, 0), (-150, 150, 0), (-330, -100, 0)])
     r.spots_for("NoteSpot", [(310, -LY / 2 + 70, 65), (180, 315, 104), (-200, 250, 0)])
     return r
@@ -504,19 +495,22 @@ def cargo():
     r = Room("Cargo")
     shell(r)
     # штабель ящиков в северо-западной четверти
-    r.box("CrateA", (120, 120, 120), (340, -280, 60), "Furniture")
-    r.box("CrateB", (120, 120, 120), (200, -300, 60), "Furniture")
-    r.box("CrateC", (100, 100, 100), (330, -285, 170), "Tank")
-    r.box("CrateD", (80, 80, 80), (190, -160, 40), "Tank")
-    for tag, c in (("A", (340, -280)), ("B", (200, -300))):
-        r.box(f"Crate{tag}_Band", (124, 124, 12), (c[0], c[1], 96), "Door")
+    # модели набора environment/cargo/cargo-crates (Tripo автора, 15.11; до них — серые коробки тех же размеров):
+    # кубы 120, 100 и 80 см, привязка — центр дна; оранжевый пояс большого ящика — на самой модели.
+    # Лицо с ручками и замками (+Y меша) смотрит на восток или, при yaw 90, на юг — к середине комнаты
+    crates = "Cargo/CargoCrates/SM_"
+    r.mesh("CrateA", crates + "CrateLarge", (340, -280, 0), foot=((120, 120, 120), (340, -280, 60)))
+    r.mesh("CrateB", crates + "CrateLarge", (200, -300, 0), yaw=90, foot=((120, 120, 120), (200, -300, 60)))
+    r.mesh("CrateC", crates + "CrateMedium", (330, -285, 120), foot=((100, 100, 100), (330, -285, 170)))
+    r.mesh("CrateD", crates + "CrateSmall", (190, -160, 0), yaw=90, foot=((80, 80, 80), (190, -160, 40)))
     # бочки в северо-восточной четверти
     k = 0
     for bx in (300, 372):
         for by in (200, 272, 344):
             k += 1
-            r.cylinder(f"Barrel{k}", 32, 90, (bx, by, 45), "Tank" if k % 2 else "Door")
-    r.cylinder("Barrel_Top", 32, 90, (336, 236, 135), "Tank")
+            # бочка набора — оранжевая (серых через одну, как у цилиндров-заглушек, пока нет); повёрнуты вразнобой
+            r.mesh(f"Barrel{k}", crates + "Barrel", (bx, by, 0), yaw=k * 47, foot=((64, 64, 90), (bx, by, 45), False))
+    r.mesh("Barrel_Top", crates + "Barrel", (336, 236, 90), yaw=20, foot=((64, 64, 90), (336, 236, 135), False))
     # стеллаж с коробками вдоль южной стены, юго-восточная четверть
     r.box("Shelf_Frame", (60, 260, 8), (-LX / 2 + 30, 240, 4), "Dark")
     for lvl in range(3):
@@ -556,11 +550,12 @@ def mess():
     # два стола с лавками в северных четвертях
     for sgn, tag in ((-1, "W"), (1, "E")):
         y = sgn * 230
-        r.box(f"Table{tag}_Top", (200, 80, 6), (250, y, 75), "Furniture")
-        for j, x in enumerate((170, 330)):
-            r.box(f"Table{tag}_Leg{j + 1}", (12, 70, 72), (x, y, 36), "Dark")
+        # модели набора environment/common/dining-set (Tripo автора, 15.11; до них — серые коробки тех же размеров):
+        # стол 200 × 80 см со столешницей на 78 см и лавки 200 × 30 × 45 см, привязка — центр дна
+        r.mesh(f"Table{tag}", "Common/DiningSet/SM_MessTable", (250, y, 0), foot=((200, 80, 78), (250, y, 39)))
         for j, dy in enumerate((-62, 62)):
-            r.box(f"Bench{tag}{j + 1}", (200, 30, 45), (250, y + dy, 22.5), "Furniture")
+            r.mesh(f"Bench{tag}{j + 1}", "Common/DiningSet/SM_MessBench", (250, y + dy, 0),
+                   foot=((200, 30, 45), (250, y + dy, 22.5)))
         r.box(f"Tray{tag}1", (40, 30, 3), (200, y, 79.5), "Linen")
         r.box(f"Tray{tag}2", (40, 30, 3), (300, y + 8, 79.5), "Linen")
         r.cylinder(f"Cup{tag}", 5, 10, (220, y + 22, 83), "Door")
@@ -743,9 +738,9 @@ def footprints(room):
         else:
             ex, ey, ez = r, r, h / 2
         out.append((name, c[0] - ex, c[0] + ex, c[1] - ey, c[1] + ey, c[2] - ez, c[2] + ez, False))
-    for name, size, c in room.feet:
+    for name, size, c, *flat in room.feet:
         out.append((name, c[0] - size[0] / 2, c[0] + size[0] / 2, c[1] - size[1] / 2, c[1] + size[1] / 2,
-                    c[2] - size[2] / 2, c[2] + size[2] / 2, True))
+                    c[2] - size[2] / 2, c[2] + size[2] / 2, not flat or flat[0]))
     return out
 
 

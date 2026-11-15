@@ -4,7 +4,8 @@ import bpy, bmesh
 from mathutils import Vector, Matrix
 from math import sin, cos, pi, asin, radians, hypot
 
-ZONES = ['white', 'aluminium', 'graphite', 'orange', 'teal', 'frosted', 'glass', 'satin', 'plastic', 'grille']
+# fabric and linen were appended for the sleep capsule (15.11, mattress and bedding); the order stays fixed
+ZONES = ['white', 'aluminium', 'graphite', 'orange', 'teal', 'frosted', 'glass', 'satin', 'plastic', 'grille', 'fabric', 'linen']
 I4 = Matrix.Identity(4)
 
 
