@@ -1,0 +1,10 @@
+title: Dodge
+kind: sound
+priority: 2
+idea: "The hero dashes aside to avoid a hit (Space or Left Alt)."
+prompt: "person in a heavy work suit lunging sideways, one quick fabric rustle with a boot scuff on a metal floor, thick canvas clothing, rubber sole, close-up, dry, no reverb."
+seconds: 0.6
+notes: |
+  Приоритет 2.
+  15.11: звук сгенерирован локально Stable Audio 3 (tools/audio/generate_sfx.py), дублей 4, выбран dodge-3.wav по измерениям — на слух ассистент не проверял. Другой дубль: кнопка «В игру» у него, потом tools/ue/import_audio.py.
+take: dodge-3.wav

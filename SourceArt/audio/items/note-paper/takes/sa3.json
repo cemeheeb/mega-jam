@@ -1,0 +1,46 @@
+[
+ {
+  "file": "note-paper-1.wav",
+  "chosen": false,
+  "seed": 135933404,
+  "score": -0.5,
+  "measured": "начало 0.03 с, звучит 1.04 с",
+  "seconds": 1.07,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, sheet of paper picked up and unfolded, one crisp short rustle, dry thin paper, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "note-paper-2.wav",
+  "chosen": true,
+  "seed": 135933405,
+  "score": -0.27,
+  "measured": "начало 0.03 с, звучит 0.99 с",
+  "seconds": 1.02,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, sheet of paper picked up and unfolded, one crisp short rustle, dry thin paper, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "note-paper-3.wav",
+  "chosen": false,
+  "seed": 135933406,
+  "score": -0.67,
+  "measured": "начало 0.10 с, звучит 1.26 с",
+  "seconds": 1.1,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, sheet of paper picked up and unfolded, one crisp short rustle, dry thin paper, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "note-paper-4.wav",
+  "chosen": false,
+  "seed": 135933407,
+  "score": -0.54,
+  "measured": "начало 0.08 с, звучит 1.19 с",
+  "seconds": 1.1,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, sheet of paper picked up and unfolded, one crisp short rustle, dry thin paper, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ }
+]

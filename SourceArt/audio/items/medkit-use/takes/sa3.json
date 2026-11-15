@@ -1,0 +1,46 @@
+[
+ {
+  "file": "medkit-use-1.wav",
+  "chosen": false,
+  "seed": 2051549982,
+  "score": -0.38,
+  "measured": "начало 0.01 с, звучит 2.05 с",
+  "seconds": 2.08,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, first aid kit used in a hurry, a plastic case latch pops open, a quick spray hiss, a bandage wrapped and torn off, plastic case, aerosol spray, gauze, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "medkit-use-2.wav",
+  "chosen": true,
+  "seed": 2051549983,
+  "score": -0.15,
+  "measured": "начало 0.01 с, звучит 1.79 с",
+  "seconds": 1.82,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, first aid kit used in a hurry, a plastic case latch pops open, a quick spray hiss, a bandage wrapped and torn off, plastic case, aerosol spray, gauze, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "medkit-use-3.wav",
+  "chosen": false,
+  "seed": 2051549984,
+  "score": -0.43,
+  "measured": "начало 0.01 с, звучит 2.02 с",
+  "seconds": 2.05,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, first aid kit used in a hurry, a plastic case latch pops open, a quick spray hiss, a bandage wrapped and torn off, plastic case, aerosol spray, gauze, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "medkit-use-4.wav",
+  "chosen": false,
+  "seed": 2051549985,
+  "score": -0.65,
+  "measured": "начало 0.07 с, звучит 2.45 с",
+  "seconds": 2.2,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, first aid kit used in a hurry, a plastic case latch pops open, a quick spray hiss, a bandage wrapped and torn off, plastic case, aerosol spray, gauze, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ }
+]

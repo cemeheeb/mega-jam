@@ -1,0 +1,11 @@
+title: Door Pounding
+kind: sound
+priority: 3
+idea: "Something follows the player and is at the door."
+prompt: "Something heavy pounding on a thick metal door from the other side: three slow, dull, booming hits with a slight rattle of the frame. Muffled, threatening, one shot."
+seconds: 3
+later: true
+notes: |
+  Приоритет 3. Преследователь идёт следом и скоро войдёт (на экране «IT IS COMING AFTER YOU», метка двери).
+  ElevenLabs Sound Effects: длительность 3 с, Prompt influence повыше — чтобы звук был ровно таким, как описан.
+  Скачанный файл перетащить в карточку и нажать «В игру»: Студия сделает WAV 48 кГц 16 бит для Unreal.

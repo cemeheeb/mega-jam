@@ -1,0 +1,11 @@
+[
+ {
+  "file": "ui-deny-1.wav",
+  "chosen": true,
+  "seed": null,
+  "score": 0.0,
+  "measured": "два низких глухих гудка 196 Гц",
+  "seconds": 0.25,
+  "kind": "synth"
+ }
+]

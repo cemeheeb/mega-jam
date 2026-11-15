@@ -1,0 +1,46 @@
+[
+ {
+  "file": "robot-hit-1.wav",
+  "chosen": false,
+  "seed": 1033631603,
+  "score": -1.4,
+  "measured": "начало 0.00 с, звучит 1.44 с",
+  "seconds": 0.8,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, maintenance robot jolted by a blow, a short stuttering electrical glitch with a servo twitch and a few sparks, buzzing electronics, small servo motor, no impact, no clang, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "robot-hit-2.wav",
+  "chosen": false,
+  "seed": 1033631604,
+  "score": -1.23,
+  "measured": "начало 0.01 с, звучит 1.33 с",
+  "seconds": 0.8,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, maintenance robot jolted by a blow, a short stuttering electrical glitch with a servo twitch and a few sparks, buzzing electronics, small servo motor, no impact, no clang, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "robot-hit-3.wav",
+  "chosen": true,
+  "seed": 1033631605,
+  "score": -1.08,
+  "measured": "начало 0.01 с, звучит 1.17 с",
+  "seconds": 0.8,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, maintenance robot jolted by a blow, a short stuttering electrical glitch with a servo twitch and a few sparks, buzzing electronics, small servo motor, no impact, no clang, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "robot-hit-4.wav",
+  "chosen": false,
+  "seed": 1033631606,
+  "score": -1.59,
+  "measured": "начало 0.00 с, звучит 1.48 с",
+  "seconds": 0.8,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, maintenance robot jolted by a blow, a short stuttering electrical glitch with a servo twitch and a few sparks, buzzing electronics, small servo motor, no impact, no clang, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ }
+]

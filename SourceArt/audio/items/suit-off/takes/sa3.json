@@ -1,0 +1,46 @@
+[
+ {
+  "file": "suit-off-1.wav",
+  "chosen": false,
+  "seed": 1224522316,
+  "score": -0.96,
+  "measured": "начало 0.75 с, звучит 1.52 с",
+  "seconds": 1.55,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, taking off a spacesuit, a helmet unlocking with a hiss of released air, latches opening, heavy fabric dropped onto the floor, thick suit fabric, metal latches, air valve, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "suit-off-2.wav",
+  "chosen": false,
+  "seed": 1224522317,
+  "score": -2.14,
+  "measured": "начало 0.93 с, звучит 0.94 с",
+  "seconds": 0.98,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, taking off a spacesuit, a helmet unlocking with a hiss of released air, latches opening, heavy fabric dropped onto the floor, thick suit fabric, metal latches, air valve, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "suit-off-3.wav",
+  "chosen": true,
+  "seed": 1224522318,
+  "score": -0.45,
+  "measured": "начало 0.66 с, звучит 2.05 с",
+  "seconds": 2.08,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, taking off a spacesuit, a helmet unlocking with a hiss of released air, latches opening, heavy fabric dropped onto the floor, thick suit fabric, metal latches, air valve, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "suit-off-4.wav",
+  "chosen": false,
+  "seed": 1224522319,
+  "score": -1.52,
+  "measured": "начало 0.73 с, звучит 1.08 с",
+  "seconds": 1.12,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, taking off a spacesuit, a helmet unlocking with a hiss of released air, latches opening, heavy fabric dropped onto the floor, thick suit fabric, metal latches, air valve, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ }
+]

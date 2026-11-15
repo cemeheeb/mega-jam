@@ -1,0 +1,46 @@
+[
+ {
+  "file": "page-turn-1.wav",
+  "chosen": false,
+  "seed": 1099862200,
+  "score": -1.47,
+  "measured": "начало 0.04 с, звучит 0.75 с, событий 4",
+  "seconds": 0.6,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, page of a small notebook, a single page turned, thin paper, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "page-turn-2.wav",
+  "chosen": true,
+  "seed": 1099862201,
+  "score": -1.05,
+  "measured": "начало 0.06 с, звучит 0.31 с, событий 2",
+  "seconds": 0.35,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, page of a small notebook, a single page turned, thin paper, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "page-turn-3.wav",
+  "chosen": false,
+  "seed": 1099862202,
+  "score": -1.49,
+  "measured": "начало 0.07 с, звучит 1.05 с, событий 2",
+  "seconds": 0.6,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, page of a small notebook, a single page turned, thin paper, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "page-turn-4.wav",
+  "chosen": false,
+  "seed": 1099862203,
+  "score": -1.41,
+  "measured": "начало 0.10 с, звучит 1.11 с, событий 1",
+  "seconds": 0.6,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, page of a small notebook, a single page turned, thin paper, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ }
+]

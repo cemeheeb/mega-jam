@@ -1,0 +1,11 @@
+[
+ {
+  "file": "ui-click-1.wav",
+  "chosen": true,
+  "seed": null,
+  "score": 0.0,
+  "measured": "короткий тик: щелчок шума 4 мс и тон 1,9 кГц",
+  "seconds": 0.07,
+  "kind": "synth"
+ }
+]

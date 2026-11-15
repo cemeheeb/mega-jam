@@ -1,0 +1,46 @@
+[
+ {
+  "file": "wrench-swing-1.wav",
+  "chosen": false,
+  "seed": 2084851196,
+  "score": -0.76,
+  "measured": "начало 0.05 с, звучит 0.62 с, событий 1",
+  "seconds": 0.5,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, heavy metal tool swung fast through the air, one short low whoosh, air swish, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "wrench-swing-2.wav",
+  "chosen": false,
+  "seed": 2084851197,
+  "score": -1.24,
+  "measured": "начало 0.09 с, звучит 0.74 с, событий 2",
+  "seconds": 0.5,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, heavy metal tool swung fast through the air, one short low whoosh, air swish, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "wrench-swing-3.wav",
+  "chosen": false,
+  "seed": 2084851198,
+  "score": -0.46,
+  "measured": "начало 0.07 с, звучит 0.52 с, событий 1",
+  "seconds": 0.5,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, heavy metal tool swung fast through the air, one short low whoosh, air swish, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "wrench-swing-4.wav",
+  "chosen": true,
+  "seed": 2084851199,
+  "score": -0.22,
+  "measured": "начало 0.03 с, звучит 0.45 с, событий 1",
+  "seconds": 0.48,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, heavy metal tool swung fast through the air, one short low whoosh, air swish, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ }
+]

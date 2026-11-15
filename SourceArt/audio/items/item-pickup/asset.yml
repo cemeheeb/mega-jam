@@ -1,0 +1,12 @@
+title: Item Pickup
+kind: sound
+priority: 1
+idea: "An item goes into the pocket."
+prompt: "A small object grabbed by a hand and slipped into a fabric pocket: a quick soft grab and a short cloth rustle. Close, dry, one shot."
+seconds: 0.6
+notes: |
+  Приоритет 1. Вещь взята в карман (E).
+  ElevenLabs Sound Effects: длительность 0.6 с, Prompt influence повыше — чтобы звук был ровно таким, как описан.
+  Скачанный файл перетащить в карточку и нажать «В игру»: Студия сделает WAV 48 кГц 16 бит для Unreal.
+  15.11: звук сгенерирован локально Stable Audio 3 (tools/audio/generate_sfx.py), дублей 4, выбран item-pickup-2.wav по измерениям — на слух ассистент не проверял. Другой дубль: кнопка «В игру» у него, потом tools/ue/import_audio.py.
+take: item-pickup-2.wav

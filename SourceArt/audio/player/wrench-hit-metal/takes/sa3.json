@@ -1,0 +1,46 @@
+[
+ {
+  "file": "wrench-hit-metal-1.wav",
+  "chosen": true,
+  "seed": 745486547,
+  "score": -0.19,
+  "measured": "начало 0.00 с, звучит 0.62 с, событий 1",
+  "seconds": 0.66,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, heavy steel wrench striking a hollow metal machine casing, one loud bright clang that rings briefly, steel on a thin steel shell, resonant metal, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "wrench-hit-metal-2.wav",
+  "chosen": false,
+  "seed": 745486548,
+  "score": -0.22,
+  "measured": "начало 0.00 с, звучит 0.71 с, событий 1",
+  "seconds": 0.74,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, heavy steel wrench striking a hollow metal machine casing, one loud bright clang that rings briefly, steel on a thin steel shell, resonant metal, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "wrench-hit-metal-3.wav",
+  "chosen": false,
+  "seed": 745486549,
+  "score": -0.27,
+  "measured": "начало 0.00 с, звучит 0.70 с, событий 1",
+  "seconds": 0.73,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, heavy steel wrench striking a hollow metal machine casing, one loud bright clang that rings briefly, steel on a thin steel shell, resonant metal, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "wrench-hit-metal-4.wav",
+  "chosen": false,
+  "seed": 745486550,
+  "score": -0.61,
+  "measured": "начало 0.00 с, звучит 0.90 с, событий 1",
+  "seconds": 0.8,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, heavy steel wrench striking a hollow metal machine casing, one loud bright clang that rings briefly, steel on a thin steel shell, resonant metal, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ }
+]

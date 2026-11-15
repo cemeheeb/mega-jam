@@ -1,0 +1,12 @@
+title: Black Hole Swallow
+kind: sound
+priority: 2
+idea: "The hero is pulled into the black hole."
+prompt: "A long stretching whoosh that drops steeply in pitch as if everything is sucked into a point, with a low rumble underneath, ending in a sudden total cut to silence. One shot."
+seconds: 1.5
+notes: |
+  Приоритет 2. Героя затянуло в дыру: вытягивание и падение длятся 1,4 с (SpaghettiTime), затем смерть.
+  ElevenLabs Sound Effects: длительность 1.5 с, Prompt influence повыше — чтобы звук был ровно таким, как описан.
+  Скачанный файл перетащить в карточку и нажать «В игру»: Студия сделает WAV 48 кГц 16 бит для Unreal.
+  15.11: звук сгенерирован локально Stable Audio 3 (tools/audio/generate_sfx.py), дублей 4, выбран black-hole-swallow-1.wav по измерениям — на слух ассистент не проверял. Другой дубль: кнопка «В игру» у него, потом tools/ue/import_audio.py.
+take: black-hole-swallow-1.wav

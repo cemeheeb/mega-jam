@@ -1,0 +1,46 @@
+[
+ {
+  "file": "gasp-1.wav",
+  "chosen": false,
+  "seed": 242330464,
+  "score": -0.78,
+  "measured": "начало 0.08 с, звучит 1.99 с",
+  "seconds": 1.6,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, adult man gasping desperately for air, one strained wheezing inhale that finds nothing, tight and panicked, breathy, hoarse, no words, close, muffled.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "gasp-2.wav",
+  "chosen": false,
+  "seed": 242330465,
+  "score": -0.91,
+  "measured": "начало 0.08 с, звучит 2.15 с",
+  "seconds": 1.6,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, adult man gasping desperately for air, one strained wheezing inhale that finds nothing, tight and panicked, breathy, hoarse, no words, close, muffled.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "gasp-3.wav",
+  "chosen": false,
+  "seed": 242330466,
+  "score": -0.88,
+  "measured": "начало 0.10 с, звучит 2.16 с",
+  "seconds": 1.6,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, adult man gasping desperately for air, one strained wheezing inhale that finds nothing, tight and panicked, breathy, hoarse, no words, close, muffled.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "gasp-4.wav",
+  "chosen": true,
+  "seed": 242330467,
+  "score": -0.68,
+  "measured": "начало 0.09 с, звучит 1.92 с",
+  "seconds": 1.6,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, adult man gasping desperately for air, one strained wheezing inhale that finds nothing, tight and panicked, breathy, hoarse, no words, close, muffled.",
+  "model": "medium + same-l"
+ }
+]

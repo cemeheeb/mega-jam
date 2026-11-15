@@ -1,0 +1,10 @@
+title: Wrench Hit Metal
+kind: sound
+priority: 1
+idea: "The pipe wrench lands on the metal body of the maintenance robot."
+prompt: "heavy steel wrench striking a hollow metal machine casing, one loud bright clang that rings briefly, steel on a thin steel shell, resonant metal, close-up, dry, no reverb."
+seconds: 0.8
+notes: |
+  Приоритет 1. Удар ключом попал по роботу: лязг металла (ARunDirector::ResolveSwing). Ответ самого робота (сбой электроники) — enemies/robot-hit. Удар разделён на три (автор, 15.11): по предмету — wrench-hit, по живому — wrench-hit-flesh.
+  15.11: звук сгенерирован локально Stable Audio 3 (tools/audio/generate_sfx.py), дублей 4, выбран wrench-hit-metal-1.wav по измерениям — на слух ассистент не проверял. Другой дубль: кнопка «В игру» у него, потом tools/ue/import_audio.py.
+take: wrench-hit-metal-1.wav

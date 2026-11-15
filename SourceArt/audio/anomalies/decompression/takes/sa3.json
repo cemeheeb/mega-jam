@@ -1,0 +1,46 @@
+[
+ {
+  "file": "decompression-1.wav",
+  "chosen": false,
+  "seed": 1217205555,
+  "score": -0.26,
+  "measured": "начало 0.06 с, звучит 3.07 с",
+  "seconds": 3.11,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, air escaping from an airlock into vacuum, a violent sudden rush that howls for a moment and fades fast into muffled dead silence, pressurised air blast, roaring wind, inside a metal chamber, close.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "decompression-2.wav",
+  "chosen": true,
+  "seed": 1217205556,
+  "score": -0.09,
+  "measured": "начало 0.09 с, звучит 2.65 с",
+  "seconds": 2.69,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, air escaping from an airlock into vacuum, a violent sudden rush that howls for a moment and fades fast into muffled dead silence, pressurised air blast, roaring wind, inside a metal chamber, close.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "decompression-3.wav",
+  "chosen": false,
+  "seed": 1217205557,
+  "score": -0.43,
+  "measured": "начало 0.16 с, звучит 3.31 с",
+  "seconds": 3.2,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, air escaping from an airlock into vacuum, a violent sudden rush that howls for a moment and fades fast into muffled dead silence, pressurised air blast, roaring wind, inside a metal chamber, close.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "decompression-4.wav",
+  "chosen": false,
+  "seed": 1217205558,
+  "score": -0.17,
+  "measured": "начало 0.07 с, звучит 2.91 с",
+  "seconds": 2.95,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, air escaping from an airlock into vacuum, a violent sudden rush that howls for a moment and fades fast into muffled dead silence, pressurised air blast, roaring wind, inside a metal chamber, close.",
+  "model": "medium + same-l"
+ }
+]

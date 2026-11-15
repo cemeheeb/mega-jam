@@ -1,0 +1,12 @@
+title: Suit Breath
+kind: sound
+priority: 3
+idea: "Breathing inside the helmet."
+prompt: "Slow calm breathing inside a space helmet, very close and muffled, with a faint steady hiss of air supply. Nothing else. Seamless loop."
+seconds: 8
+loop: true
+later: true
+notes: |
+  Приоритет 3. Пока скафандр надет, особенно в комнате без воздуха: там это главный звук.
+  ElevenLabs Sound Effects: длительность 8 с, включить Loop (бесшовная петля), Prompt influence повыше — чтобы звук был ровно таким, как описан.
+  Скачанный файл перетащить в карточку и нажать «В игру»: Студия сделает WAV 48 кГц 16 бит для Unreal.

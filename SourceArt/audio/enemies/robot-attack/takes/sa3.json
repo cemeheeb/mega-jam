@@ -1,0 +1,46 @@
+[
+ {
+  "file": "robot-attack-1.wav",
+  "chosen": false,
+  "seed": 1322234675,
+  "score": -0.7,
+  "measured": "начало 0.00 с, звучит 1.26 с",
+  "seconds": 1.1,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, maintenance robot firing a welding torch, one short burst: a sharp electric crackle and a hissing zap with a quick servo swing, arc welder sparks, electric discharge, small servo motor, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "robot-attack-2.wav",
+  "chosen": false,
+  "seed": 1322234676,
+  "score": -0.77,
+  "measured": "начало 0.00 с, звучит 1.25 с",
+  "seconds": 1.1,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, maintenance robot firing a welding torch, one short burst: a sharp electric crackle and a hissing zap with a quick servo swing, arc welder sparks, electric discharge, small servo motor, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "robot-attack-3.wav",
+  "chosen": true,
+  "seed": 1322234677,
+  "score": -0.2,
+  "measured": "начало 0.00 с, звучит 0.94 с",
+  "seconds": 0.98,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, maintenance robot firing a welding torch, one short burst: a sharp electric crackle and a hissing zap with a quick servo swing, arc welder sparks, electric discharge, small servo motor, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "robot-attack-4.wav",
+  "chosen": false,
+  "seed": 1322234678,
+  "score": -0.49,
+  "measured": "начало 0.02 с, звучит 1.08 с",
+  "seconds": 1.1,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, maintenance robot firing a welding torch, one short burst: a sharp electric crackle and a hissing zap with a quick servo swing, arc welder sparks, electric discharge, small servo motor, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ }
+]

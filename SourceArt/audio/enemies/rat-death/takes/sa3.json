@@ -1,0 +1,46 @@
+[
+ {
+  "file": "rat-death-1.wav",
+  "chosen": false,
+  "seed": 1662741403,
+  "score": -1.1,
+  "measured": "начало 0.00 с, звучит 2.08 с",
+  "seconds": 1.4,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, large mutant rat creature dying, one pained high squeal that cuts off, followed by a soft body thump, raspy animal shriek, soft flesh thud, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "rat-death-2.wav",
+  "chosen": false,
+  "seed": 1662741404,
+  "score": -1.09,
+  "measured": "начало 0.01 с, звучит 1.99 с",
+  "seconds": 1.4,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, large mutant rat creature dying, one pained high squeal that cuts off, followed by a soft body thump, raspy animal shriek, soft flesh thud, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "rat-death-3.wav",
+  "chosen": false,
+  "seed": 1662741405,
+  "score": -0.87,
+  "measured": "начало 0.01 с, звучит 1.77 с",
+  "seconds": 1.4,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, large mutant rat creature dying, one pained high squeal that cuts off, followed by a soft body thump, raspy animal shriek, soft flesh thud, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "rat-death-4.wav",
+  "chosen": true,
+  "seed": 1662741406,
+  "score": -0.62,
+  "measured": "начало 0.01 с, звучит 1.41 с",
+  "seconds": 1.4,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, large mutant rat creature dying, one pained high squeal that cuts off, followed by a soft body thump, raspy animal shriek, soft flesh thud, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ }
+]

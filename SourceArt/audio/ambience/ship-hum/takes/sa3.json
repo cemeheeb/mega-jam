@@ -1,0 +1,35 @@
+[
+ {
+  "file": "ship-hum-1.wav",
+  "chosen": true,
+  "seed": 1157737716,
+  "score": -0.99,
+  "measured": "разброс громкости 1.0 дБ, провалов 0%",
+  "seconds": 20.0,
+  "kind": "loop",
+  "prompt_used": "TrackType: SFX, spaceship engine room tone and air ventilation, continuous steady drone at a constant level, no events, no fade in, no fade out, deep low engine hum, soft air hiss, faint electrical buzz, no melody, no beeps, inside a quiet metal ship corridor, enclosed, close.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "ship-hum-2.wav",
+  "chosen": false,
+  "seed": 1157737717,
+  "score": -2.78,
+  "measured": "разброс громкости 2.8 дБ, провалов 0%",
+  "seconds": 20.0,
+  "kind": "loop",
+  "prompt_used": "TrackType: SFX, spaceship engine room tone and air ventilation, continuous steady drone at a constant level, no events, no fade in, no fade out, deep low engine hum, soft air hiss, faint electrical buzz, no melody, no beeps, inside a quiet metal ship corridor, enclosed, close.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "ship-hum-3.wav",
+  "chosen": false,
+  "seed": 1157737718,
+  "score": -2.11,
+  "measured": "разброс громкости 2.1 дБ, провалов 0%",
+  "seconds": 20.0,
+  "kind": "loop",
+  "prompt_used": "TrackType: SFX, spaceship engine room tone and air ventilation, continuous steady drone at a constant level, no events, no fade in, no fade out, deep low engine hum, soft air hiss, faint electrical buzz, no melody, no beeps, inside a quiet metal ship corridor, enclosed, close.",
+  "model": "medium + same-l"
+ }
+]

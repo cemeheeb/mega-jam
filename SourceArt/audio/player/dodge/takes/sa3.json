@@ -1,0 +1,46 @@
+[
+ {
+  "file": "dodge-1.wav",
+  "chosen": false,
+  "seed": 1166592973,
+  "score": -1.92,
+  "measured": "начало 0.01 с, звучит 1.45 с, событий 1",
+  "seconds": 0.6,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, person in a heavy work suit lunging sideways, one quick fabric rustle with a boot scuff on a metal floor, thick canvas clothing, rubber sole, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "dodge-2.wav",
+  "chosen": false,
+  "seed": 1166592974,
+  "score": -2.17,
+  "measured": "начало 0.00 с, звучит 1.46 с, событий 1",
+  "seconds": 0.6,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, person in a heavy work suit lunging sideways, one quick fabric rustle with a boot scuff on a metal floor, thick canvas clothing, rubber sole, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "dodge-3.wav",
+  "chosen": true,
+  "seed": 1166592975,
+  "score": -1.69,
+  "measured": "начало 0.15 с, звучит 0.93 с, событий 3",
+  "seconds": 0.6,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, person in a heavy work suit lunging sideways, one quick fabric rustle with a boot scuff on a metal floor, thick canvas clothing, rubber sole, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "dodge-4.wav",
+  "chosen": false,
+  "seed": 1166592976,
+  "score": -2.03,
+  "measured": "начало 0.00 с, звучит 1.40 с, событий 1",
+  "seconds": 0.6,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, person in a heavy work suit lunging sideways, one quick fabric rustle with a boot scuff on a metal floor, thick canvas clothing, rubber sole, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ }
+]

@@ -1,0 +1,24 @@
+[
+ {
+  "file": "death-sting-1.wav",
+  "chosen": false,
+  "seed": 845750122,
+  "score": 4.94,
+  "measured": "длина 4.9 с",
+  "seconds": 4.94,
+  "kind": "music",
+  "prompt_used": "TrackType: Music, VocalType: Instrumental, Dark cinematic horror sting: a low synth and string cluster struck once that sinks in pitch and decays into silence, with a sub-bass impact, ominous and final.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "death-sting-2.wav",
+  "chosen": true,
+  "seed": 845750123,
+  "score": 5.12,
+  "measured": "длина 5.1 с",
+  "seconds": 5.12,
+  "kind": "music",
+  "prompt_used": "TrackType: Music, VocalType: Instrumental, Dark cinematic horror sting: a low synth and string cluster struck once that sinks in pitch and decays into silence, with a sub-bass impact, ominous and final.",
+  "model": "medium + same-l"
+ }
+]

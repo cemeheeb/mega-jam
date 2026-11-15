@@ -1,0 +1,46 @@
+[
+ {
+  "file": "airlock-refused-1.wav",
+  "chosen": false,
+  "seed": 80737185,
+  "score": -0.89,
+  "measured": "начало 0.00 с, звучит 2.00 с",
+  "seconds": 1.4,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, industrial airlock control panel, a harsh low double warning buzz followed by one heavy mechanical lock clunk, electric buzzer, thick steel latch, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "airlock-refused-2.wav",
+  "chosen": false,
+  "seed": 80737186,
+  "score": -1.05,
+  "measured": "начало 0.01 с, звучит 2.13 с",
+  "seconds": 1.4,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, industrial airlock control panel, a harsh low double warning buzz followed by one heavy mechanical lock clunk, electric buzzer, thick steel latch, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "airlock-refused-3.wav",
+  "chosen": false,
+  "seed": 80737187,
+  "score": -0.77,
+  "measured": "начало 0.05 с, звучит 1.74 с",
+  "seconds": 1.4,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, industrial airlock control panel, a harsh low double warning buzz followed by one heavy mechanical lock clunk, electric buzzer, thick steel latch, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "airlock-refused-4.wav",
+  "chosen": true,
+  "seed": 80737188,
+  "score": -0.72,
+  "measured": "начало 0.06 с, звучит 1.70 с",
+  "seconds": 1.4,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, industrial airlock control panel, a harsh low double warning buzz followed by one heavy mechanical lock clunk, electric buzzer, thick steel latch, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ }
+]

@@ -1,0 +1,46 @@
+[
+ {
+  "file": "item-drop-1.wav",
+  "chosen": false,
+  "seed": 1640230786,
+  "score": -0.31,
+  "measured": "начало 0.00 с, звучит 0.85 с",
+  "seconds": 0.88,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, small metal object dropped onto a metal floor, one short clatter that settles at once, small steel part, steel floor plate, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "item-drop-2.wav",
+  "chosen": false,
+  "seed": 1640230787,
+  "score": -0.6,
+  "measured": "начало 0.00 с, звучит 1.02 с",
+  "seconds": 0.9,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, small metal object dropped onto a metal floor, one short clatter that settles at once, small steel part, steel floor plate, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "item-drop-3.wav",
+  "chosen": true,
+  "seed": 1640230788,
+  "score": -0.15,
+  "measured": "начало 0.08 с, звучит 0.78 с",
+  "seconds": 0.82,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, small metal object dropped onto a metal floor, one short clatter that settles at once, small steel part, steel floor plate, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "item-drop-4.wav",
+  "chosen": false,
+  "seed": 1640230789,
+  "score": -0.56,
+  "measured": "начало 0.08 с, звучит 0.50 с",
+  "seconds": 0.53,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, small metal object dropped onto a metal floor, one short clatter that settles at once, small steel part, steel floor plate, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ }
+]

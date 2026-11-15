@@ -1,0 +1,46 @@
+[
+ {
+  "file": "wrench-hit-1.wav",
+  "chosen": false,
+  "seed": 534080690,
+  "score": -1.02,
+  "measured": "начало 0.09 с, звучит 0.30 с, событий 1",
+  "seconds": 0.34,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, heavy steel wrench hitting something solid, one dull crunching thud with a short metallic ring, solid steel tool, dense impact, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "wrench-hit-2.wav",
+  "chosen": true,
+  "seed": 534080691,
+  "score": -0.99,
+  "measured": "начало 0.00 с, звучит 0.32 с, событий 1",
+  "seconds": 0.35,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, heavy steel wrench hitting something solid, one dull crunching thud with a short metallic ring, solid steel tool, dense impact, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "wrench-hit-3.wav",
+  "chosen": false,
+  "seed": 534080692,
+  "score": -1.22,
+  "measured": "начало 0.08 с, звучит 0.27 с, событий 1",
+  "seconds": 0.3,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, heavy steel wrench hitting something solid, one dull crunching thud with a short metallic ring, solid steel tool, dense impact, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "wrench-hit-4.wav",
+  "chosen": false,
+  "seed": 534080693,
+  "score": -1.07,
+  "measured": "начало 0.06 с, звучит 0.30 с, событий 1",
+  "seconds": 0.33,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, heavy steel wrench hitting something solid, one dull crunching thud with a short metallic ring, solid steel tool, dense impact, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ }
+]

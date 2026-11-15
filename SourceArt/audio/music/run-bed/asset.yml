@@ -1,0 +1,13 @@
+title: Run Bed
+kind: sound
+priority: 3
+idea: "Quiet music under the whole run."
+prompt: "Minimal dark ambient bed for exploring a damaged spaceship: slow evolving low synth drones, rare soft metallic resonances, a single distant piano note now and then. No rhythm, no melody that calls attention to itself, tense but quiet. Instrumental only, no drums, no vocals. Ends the way it begins so that it can loop."
+seconds: 90
+loop: true
+notes: |
+  Приоритет 3. Тихая подложка во время забега, поверх фона комнаты. Делается в ElevenLabs Music. Отложено: сначала проверить, не спорит ли с фонами.
+  ElevenLabs Music: длительность 90 с, только инструментал.
+  Скачанный файл перетащить в карточку и нажать «В игру»: Студия сделает WAV 48 кГц 16 бит для Unreal.
+  15.11, ночь: трек автора из Suno «Pitch Drift» (takes/, mp3), в игре /Game/Audio/S_RunBed. Кому какая роль, ассистент решил по анализу ритма (на слух не проверял): если роли перепутаны — поменять дубли местами и нажать «В игру» ещё раз, потом tools/ue/import_audio.py.
+take: run-bed-1.mp3

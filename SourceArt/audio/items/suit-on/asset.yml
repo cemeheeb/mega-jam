@@ -1,0 +1,12 @@
+title: Suit On
+kind: sound
+priority: 2
+idea: "The hero puts on the space suit."
+prompt: "Putting on a spacesuit: heavy fabric rustling, metal latches snapping shut one after another, a helmet locking with a twist and a short pressurising hiss. Close, dry, one shot."
+seconds: 3
+notes: |
+  Приоритет 2. Скафандр надет (E рядом со скафандром, ARunDirector::PutOnSuit).
+  ElevenLabs Sound Effects: длительность 3 с, Prompt influence повыше — чтобы звук был ровно таким, как описан.
+  Скачанный файл перетащить в карточку и нажать «В игру»: Студия сделает WAV 48 кГц 16 бит для Unreal.
+  15.11: звук сгенерирован локально Stable Audio 3 (tools/audio/generate_sfx.py), дублей 4, выбран suit-on-4.wav по измерениям — на слух ассистент не проверял. Другой дубль: кнопка «В игру» у него, потом tools/ue/import_audio.py.
+take: suit-on-4.wav

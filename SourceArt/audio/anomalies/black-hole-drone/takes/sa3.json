@@ -1,0 +1,35 @@
+[
+ {
+  "file": "black-hole-drone-1.wav",
+  "chosen": true,
+  "seed": 1450020125,
+  "score": -4.81,
+  "measured": "разброс громкости 4.8 дБ, провалов 0%",
+  "seconds": 15.0,
+  "kind": "loop",
+  "prompt_used": "TrackType: SFX, gravitational anomaly bending space, continuous ominous steady drone, constant level, no pulses, no swells, no rhythm, no fade in, no fade out, deep sub-bass with a low warbling whistle above it, unsettling, no melody, small metal room, close, enveloping.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "black-hole-drone-2.wav",
+  "chosen": false,
+  "seed": 1450020126,
+  "score": -9.03,
+  "measured": "разброс громкости 8.8 дБ, провалов 4%",
+  "seconds": 15.0,
+  "kind": "loop",
+  "prompt_used": "TrackType: SFX, gravitational anomaly bending space, continuous ominous steady drone, constant level, no pulses, no swells, no rhythm, no fade in, no fade out, deep sub-bass with a low warbling whistle above it, unsettling, no melody, small metal room, close, enveloping.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "black-hole-drone-3.wav",
+  "chosen": false,
+  "seed": 1450020127,
+  "score": -5.26,
+  "measured": "разброс громкости 5.3 дБ, провалов 0%",
+  "seconds": 15.0,
+  "kind": "loop",
+  "prompt_used": "TrackType: SFX, gravitational anomaly bending space, continuous ominous steady drone, constant level, no pulses, no swells, no rhythm, no fade in, no fade out, deep sub-bass with a low warbling whistle above it, unsettling, no melody, small metal room, close, enveloping.",
+  "model": "medium + same-l"
+ }
+]

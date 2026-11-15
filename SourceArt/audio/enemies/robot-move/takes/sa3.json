@@ -1,0 +1,35 @@
+[
+ {
+  "file": "robot-move-1.wav",
+  "chosen": false,
+  "seed": 24289038,
+  "score": -2.33,
+  "measured": "разброс громкости 2.3 дБ, провалов 0%",
+  "seconds": 4.0,
+  "kind": "loop",
+  "prompt_used": "TrackType: SFX, small tracked maintenance robot driving over a metal floor, continuous steady electric motor whine with rubber tracks rattling, constant speed, no fade in, no fade out, servo motor, rubber treads, metal plates, close, dry.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "robot-move-2.wav",
+  "chosen": true,
+  "seed": 24289039,
+  "score": -1.98,
+  "measured": "разброс громкости 2.0 дБ, провалов 0%",
+  "seconds": 4.0,
+  "kind": "loop",
+  "prompt_used": "TrackType: SFX, small tracked maintenance robot driving over a metal floor, continuous steady electric motor whine with rubber tracks rattling, constant speed, no fade in, no fade out, servo motor, rubber treads, metal plates, close, dry.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "robot-move-3.wav",
+  "chosen": false,
+  "seed": 24289040,
+  "score": -2.77,
+  "measured": "разброс громкости 2.8 дБ, провалов 0%",
+  "seconds": 4.0,
+  "kind": "loop",
+  "prompt_used": "TrackType: SFX, small tracked maintenance robot driving over a metal floor, continuous steady electric motor whine with rubber tracks rattling, constant speed, no fade in, no fade out, servo motor, rubber treads, metal plates, close, dry.",
+  "model": "medium + same-l"
+ }
+]

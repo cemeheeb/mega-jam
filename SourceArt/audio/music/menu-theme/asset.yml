@@ -1,0 +1,13 @@
+title: Menu Theme
+kind: sound
+priority: 1
+idea: "Music of the main menu: the ship falls towards the black hole."
+prompt: "Slow lonely ambient science fiction theme: deep analog synth pads, a sparse felt piano motif of a few notes, a distant wordless choir-like texture and long sub-bass swells. Around sixty beats per minute, melancholic, vast and cold, with a quiet unease underneath. Instrumental only, no drums, no vocals. Ends the way it begins so that it can loop."
+seconds: 90
+loop: true
+notes: |
+  Приоритет 1. Главное меню (Lvl_Menu: корабль у чёрной дыры). Делается в ElevenLabs Music, не в Sound Effects.
+  ElevenLabs Music: длительность 90 с, только инструментал.
+  Скачанный файл перетащить в карточку и нажать «В игру»: Студия сделает WAV 48 кГц 16 бит для Unreal.
+  15.11, ночь: трек автора из Suno «Deep Space Silence» (takes/, mp3), в игре /Game/Audio/S_MenuTheme. Кому какая роль, ассистент решил по анализу ритма (на слух не проверял): если роли перепутаны — поменять дубли местами и нажать «В игру» ещё раз, потом tools/ue/import_audio.py.
+take: menu-theme-1.mp3

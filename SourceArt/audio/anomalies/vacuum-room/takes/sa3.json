@@ -1,0 +1,35 @@
+[
+ {
+  "file": "vacuum-room-1.wav",
+  "chosen": true,
+  "seed": 186632275,
+  "score": -0.74,
+  "measured": "разброс громкости 0.7 дБ, провалов 0%",
+  "seconds": 15.0,
+  "kind": "loop",
+  "prompt_used": "TrackType: SFX, airless room heard from inside a space helmet, continuous near silence with a very low rumble felt through the floor and rare dull distant thuds, no fade in, no fade out, muffled, low-passed, a faint high ringing, empty and cold, inside a helmet, very close, dead.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "vacuum-room-2.wav",
+  "chosen": false,
+  "seed": 186632276,
+  "score": -1.4,
+  "measured": "разброс громкости 1.4 дБ, провалов 0%",
+  "seconds": 15.0,
+  "kind": "loop",
+  "prompt_used": "TrackType: SFX, airless room heard from inside a space helmet, continuous near silence with a very low rumble felt through the floor and rare dull distant thuds, no fade in, no fade out, muffled, low-passed, a faint high ringing, empty and cold, inside a helmet, very close, dead.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "vacuum-room-3.wav",
+  "chosen": false,
+  "seed": 186632277,
+  "score": -0.94,
+  "measured": "разброс громкости 0.9 дБ, провалов 0%",
+  "seconds": 15.0,
+  "kind": "loop",
+  "prompt_used": "TrackType: SFX, airless room heard from inside a space helmet, continuous near silence with a very low rumble felt through the floor and rare dull distant thuds, no fade in, no fade out, muffled, low-passed, a faint high ringing, empty and cold, inside a helmet, very close, dead.",
+  "model": "medium + same-l"
+ }
+]

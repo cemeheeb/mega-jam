@@ -1,0 +1,10 @@
+title: Wrench Hit Flesh
+kind: sound
+priority: 1
+idea: "The pipe wrench lands on a living body: the human enemy or a rat."
+prompt: "heavy steel wrench hitting a living body, one dull meaty thud with a wet crunch, flesh and bone impact, soft and heavy, no metallic ring, close-up, dry, no reverb."
+seconds: 0.6
+notes: |
+  Приоритет 1. Удар ключом попал по живому: противник-человек или крыса (ARunDirector::ResolveSwing). Удар разделён на три (автор, 15.11): по предмету — wrench-hit, по роботу — wrench-hit-metal.
+  15.11: звук сгенерирован локально Stable Audio 3 (tools/audio/generate_sfx.py), дублей 4, выбран wrench-hit-flesh-1.wav по измерениям — на слух ассистент не проверял. Другой дубль: кнопка «В игру» у него, потом tools/ue/import_audio.py.
+take: wrench-hit-flesh-1.wav

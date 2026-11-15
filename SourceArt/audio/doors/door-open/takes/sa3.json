@@ -1,0 +1,35 @@
+[
+ {
+  "file": "door-open-1.wav",
+  "chosen": true,
+  "seed": 280473703,
+  "score": -0.48,
+  "measured": "начало 0.00 с, звучит 1.81 с",
+  "seconds": 1.7,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, heavy sci-fi airlock sliding door opening, a short pneumatic hiss, a smooth electric motor whir and a solid metal clunk as it stops, thick steel leaf, pneumatic seals, electric motor, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "door-open-2.wav",
+  "chosen": false,
+  "seed": 280473704,
+  "score": -0.81,
+  "measured": "начало 0.00 с, звучит 2.22 с",
+  "seconds": 1.7,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, heavy sci-fi airlock sliding door opening, a short pneumatic hiss, a smooth electric motor whir and a solid metal clunk as it stops, thick steel leaf, pneumatic seals, electric motor, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "door-open-3.wav",
+  "chosen": false,
+  "seed": 280473705,
+  "score": -0.89,
+  "measured": "начало 0.00 с, звучит 2.26 с",
+  "seconds": 1.7,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, heavy sci-fi airlock sliding door opening, a short pneumatic hiss, a smooth electric motor whir and a solid metal clunk as it stops, thick steel leaf, pneumatic seals, electric motor, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ }
+]

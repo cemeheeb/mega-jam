@@ -1,0 +1,11 @@
+[
+ {
+  "file": "airlock-scan-1.wav",
+  "chosen": true,
+  "seed": null,
+  "score": 0.0,
+  "measured": "четыре писка по восходящей через 0,22 с и подтверждающий тон",
+  "seconds": 1.3,
+  "kind": "synth"
+ }
+]

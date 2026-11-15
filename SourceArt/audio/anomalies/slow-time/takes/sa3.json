@@ -1,0 +1,35 @@
+[
+ {
+  "file": "slow-time-1.wav",
+  "chosen": true,
+  "seed": 1183220195,
+  "score": -1.15,
+  "measured": "разброс громкости 1.2 дБ, провалов 0%",
+  "seconds": 15.0,
+  "kind": "loop",
+  "prompt_used": "TrackType: SFX, deep slowed-down underwater hum, as if all sound is stretched, continuous steady low drone at a constant level, no swells, no events, no rhythm, no fade in, no fade out, deep, muffled, heavy, with soft shimmering overtones, no melody, enveloping, wide.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "slow-time-2.wav",
+  "chosen": false,
+  "seed": 1183220196,
+  "score": -1.18,
+  "measured": "разброс громкости 1.2 дБ, провалов 0%",
+  "seconds": 15.0,
+  "kind": "loop",
+  "prompt_used": "TrackType: SFX, deep slowed-down underwater hum, as if all sound is stretched, continuous steady low drone at a constant level, no swells, no events, no rhythm, no fade in, no fade out, deep, muffled, heavy, with soft shimmering overtones, no melody, enveloping, wide.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "slow-time-3.wav",
+  "chosen": false,
+  "seed": 1183220197,
+  "score": -1.93,
+  "measured": "разброс громкости 1.9 дБ, провалов 0%",
+  "seconds": 15.0,
+  "kind": "loop",
+  "prompt_used": "TrackType: SFX, deep slowed-down underwater hum, as if all sound is stretched, continuous steady low drone at a constant level, no swells, no events, no rhythm, no fade in, no fade out, deep, muffled, heavy, with soft shimmering overtones, no melody, enveloping, wide.",
+  "model": "medium + same-l"
+ }
+]

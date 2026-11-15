@@ -1,0 +1,46 @@
+[
+ {
+  "file": "suit-on-1.wav",
+  "chosen": false,
+  "seed": 653058169,
+  "score": -2.02,
+  "measured": "начало 1.24 с, звучит 1.74 с",
+  "seconds": 1.77,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, putting on a spacesuit, heavy fabric rustling, metal latches snapping shut one after another, a helmet locking with a twist and a short pressurising hiss, thick suit fabric, metal latches, air valve, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "suit-on-2.wav",
+  "chosen": false,
+  "seed": 653058170,
+  "score": -1.65,
+  "measured": "начало 1.11 с, звучит 1.88 с",
+  "seconds": 1.91,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, putting on a spacesuit, heavy fabric rustling, metal latches snapping shut one after another, a helmet locking with a twist and a short pressurising hiss, thick suit fabric, metal latches, air valve, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "suit-on-3.wav",
+  "chosen": false,
+  "seed": 653058171,
+  "score": -1.19,
+  "measured": "начало 0.94 с, звучит 2.81 с",
+  "seconds": 2.84,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, putting on a spacesuit, heavy fabric rustling, metal latches snapping shut one after another, a helmet locking with a twist and a short pressurising hiss, thick suit fabric, metal latches, air valve, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "suit-on-4.wav",
+  "chosen": true,
+  "seed": 653058172,
+  "score": -1.05,
+  "measured": "начало 0.72 с, звучит 1.73 с",
+  "seconds": 1.76,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, putting on a spacesuit, heavy fabric rustling, metal latches snapping shut one after another, a helmet locking with a twist and a short pressurising hiss, thick suit fabric, metal latches, air valve, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ }
+]

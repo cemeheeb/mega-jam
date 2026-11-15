@@ -1,0 +1,24 @@
+[
+ {
+  "file": "win-1.wav",
+  "chosen": true,
+  "seed": 1136621345,
+  "score": 29.76,
+  "measured": "длина 29.8 с",
+  "seconds": 29.76,
+  "kind": "music",
+  "prompt_used": "TrackType: Music, VocalType: Instrumental, Warm relieved cinematic resolution after a long tension: swelling synth strings and a simple felt piano melody that opens up, hopeful and tired, gentle slow ending, no drums.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "win-2.wav",
+  "chosen": false,
+  "seed": 1136621346,
+  "score": 29.32,
+  "measured": "длина 29.3 с",
+  "seconds": 29.32,
+  "kind": "music",
+  "prompt_used": "TrackType: Music, VocalType: Instrumental, Warm relieved cinematic resolution after a long tension: swelling synth strings and a simple felt piano melody that opens up, hopeful and tired, gentle slow ending, no drums.",
+  "model": "medium + same-l"
+ }
+]

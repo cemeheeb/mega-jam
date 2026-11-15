@@ -1,0 +1,35 @@
+[
+ {
+  "file": "smoke-room-1.wav",
+  "chosen": false,
+  "seed": 1176090224,
+  "score": -4.26,
+  "measured": "разброс громкости 4.3 дБ, провалов 0%",
+  "seconds": 12.0,
+  "kind": "loop",
+  "prompt_used": "TrackType: SFX, electrical fire smouldering behind wall panels, continuous soft crackling with an occasional small pop, constant level, no fade in, no fade out, low hiss of thick smoke, embers, no roaring flames, small metal room, close, dry.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "smoke-room-2.wav",
+  "chosen": false,
+  "seed": 1176090225,
+  "score": -5.11,
+  "measured": "разброс громкости 5.1 дБ, провалов 0%",
+  "seconds": 12.0,
+  "kind": "loop",
+  "prompt_used": "TrackType: SFX, electrical fire smouldering behind wall panels, continuous soft crackling with an occasional small pop, constant level, no fade in, no fade out, low hiss of thick smoke, embers, no roaring flames, small metal room, close, dry.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "smoke-room-3.wav",
+  "chosen": true,
+  "seed": 1176090226,
+  "score": -4.05,
+  "measured": "разброс громкости 4.1 дБ, провалов 0%",
+  "seconds": 12.0,
+  "kind": "loop",
+  "prompt_used": "TrackType: SFX, electrical fire smouldering behind wall panels, continuous soft crackling with an occasional small pop, constant level, no fade in, no fade out, low hiss of thick smoke, embers, no roaring flames, small metal room, close, dry.",
+  "model": "medium + same-l"
+ }
+]

@@ -1,0 +1,10 @@
+title: Human Death
+kind: sound
+priority: 2
+idea: "The human enemy, the hero's twisted double, is killed."
+prompt: "heavy brutish man dying, a low guttural choking groan that gurgles out, then a heavy body slumps onto a metal floor, deep hoarse throat, wet gurgle, dull body thud on a steel plate, no words, close-up, dry, no reverb."
+seconds: 2.4
+notes: |
+  Приоритет 2. Убит противник-человек, злой двойник героя (ARunEnemy::Die). У каждого своя смерть (автор, 15.11): крыса — rat-death, робот — robot-death, герой — player/death.
+  15.11: звук сгенерирован локально Stable Audio 3 (tools/audio/generate_sfx.py), дублей 4, выбран human-death-2.wav по измерениям — на слух ассистент не проверял. Другой дубль: кнопка «В игру» у него, потом tools/ue/import_audio.py.
+take: human-death-2.wav

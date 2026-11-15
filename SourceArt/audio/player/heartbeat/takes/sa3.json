@@ -1,0 +1,11 @@
+[
+ {
+  "file": "heartbeat-1.wav",
+  "chosen": true,
+  "seed": null,
+  "score": 0.0,
+  "measured": "60 ударов в минуту, 4 удара, петля ровно 4 с",
+  "seconds": 4.0,
+  "kind": "synth"
+ }
+]

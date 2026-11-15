@@ -1,0 +1,46 @@
+[
+ {
+  "file": "rat-attack-1.wav",
+  "chosen": false,
+  "seed": 1002960538,
+  "score": -0.75,
+  "measured": "начало 0.00 с, звучит 1.27 с",
+  "seconds": 1.1,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, large mutant rat creature attacking, one vicious screeching squeal with a snapping bite, harsh raspy animal shriek, teeth snap, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "rat-attack-2.wav",
+  "chosen": true,
+  "seed": 1002960539,
+  "score": -0.47,
+  "measured": "начало 0.01 с, звучит 1.11 с",
+  "seconds": 1.1,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, large mutant rat creature attacking, one vicious screeching squeal with a snapping bite, harsh raspy animal shriek, teeth snap, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "rat-attack-3.wav",
+  "chosen": false,
+  "seed": 1002960540,
+  "score": -0.68,
+  "measured": "начало 0.00 с, звучит 1.21 с",
+  "seconds": 1.1,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, large mutant rat creature attacking, one vicious screeching squeal with a snapping bite, harsh raspy animal shriek, teeth snap, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "rat-attack-4.wav",
+  "chosen": false,
+  "seed": 1002960541,
+  "score": -0.58,
+  "measured": "начало 0.00 с, звучит 1.15 с",
+  "seconds": 1.1,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, large mutant rat creature attacking, one vicious screeching squeal with a snapping bite, harsh raspy animal shriek, teeth snap, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ }
+]

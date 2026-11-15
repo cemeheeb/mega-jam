@@ -1,0 +1,12 @@
+title: Door Close
+kind: sound
+priority: 1
+idea: "Airlock door leaf slides shut and seals."
+prompt: "A heavy sci-fi airlock door sliding shut: an electric motor whir, a deep sealing thud and a short hiss of pressure at the end. Close, dry, no reverb, one shot."
+seconds: 1.5
+notes: |
+  Приоритет 1. Створка шлюза закрывается: игрок зашёл в глубину тамбура (ARunDirector::BeginTransition) или отошёл от двери.
+  ElevenLabs Sound Effects: длительность 1.5 с, Prompt influence повыше — чтобы звук был ровно таким, как описан.
+  Скачанный файл перетащить в карточку и нажать «В игру»: Студия сделает WAV 48 кГц 16 бит для Unreal.
+  15.11: звук сгенерирован локально Stable Audio 3 (tools/audio/generate_sfx.py), дублей 4, выбран door-close-1.wav по измерениям — на слух ассистент не проверял. Другой дубль: кнопка «В игру» у него, потом tools/ue/import_audio.py.
+take: door-close-1.wav

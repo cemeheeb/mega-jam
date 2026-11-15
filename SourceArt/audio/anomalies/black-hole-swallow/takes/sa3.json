@@ -1,0 +1,46 @@
+[
+ {
+  "file": "black-hole-swallow-1.wav",
+  "chosen": true,
+  "seed": 964482912,
+  "score": -0.75,
+  "measured": "начало 0.18 с, звучит 2.41 с",
+  "seconds": 2.0,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, everything sucked into a singularity, one stretching whoosh that drops steeply in pitch and ends in a sudden cut to silence, vacuum suction, descending tone, low rumble underneath, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "black-hole-swallow-2.wav",
+  "chosen": false,
+  "seed": 964482913,
+  "score": -0.91,
+  "measured": "начало 0.00 с, звучит 2.57 с",
+  "seconds": 2.0,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, everything sucked into a singularity, one stretching whoosh that drops steeply in pitch and ends in a sudden cut to silence, vacuum suction, descending tone, low rumble underneath, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "black-hole-swallow-3.wav",
+  "chosen": false,
+  "seed": 964482914,
+  "score": -0.98,
+  "measured": "начало 0.00 с, звучит 2.83 с",
+  "seconds": 2.0,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, everything sucked into a singularity, one stretching whoosh that drops steeply in pitch and ends in a sudden cut to silence, vacuum suction, descending tone, low rumble underneath, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "black-hole-swallow-4.wav",
+  "chosen": false,
+  "seed": 964482915,
+  "score": -2.16,
+  "measured": "начало 0.00 с, звучит 2.99 с, оборван в конце",
+  "seconds": 2.0,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, everything sucked into a singularity, one stretching whoosh that drops steeply in pitch and ends in a sudden cut to silence, vacuum suction, descending tone, low rumble underneath, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ }
+]

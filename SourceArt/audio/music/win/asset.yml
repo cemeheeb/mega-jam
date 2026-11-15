@@ -1,0 +1,12 @@
+title: Win
+kind: sound
+priority: 2
+idea: "The run is won."
+prompt: "A warm relieved resolution after a long tension: swelling synth strings and a simple felt piano melody that opens up, hopeful and tired, fading out gently. Instrumental only, no drums, no vocals."
+seconds: 30
+notes: |
+  Приоритет 2. Победа: герой вернулся в рубку с одним блокнотом (Phase = Won). Делается в ElevenLabs Music.
+  ElevenLabs Music: длительность 30 с, только инструментал.
+  Скачанный файл перетащить в карточку и нажать «В игру»: Студия сделает WAV 48 кГц 16 бит для Unreal.
+  15.11: звук сгенерирован локально Stable Audio 3 (tools/audio/generate_sfx.py), дублей 2, выбран win-1.wav по измерениям — на слух ассистент не проверял. Другой дубль: кнопка «В игру» у него, потом tools/ue/import_audio.py.
+take: win-1.wav

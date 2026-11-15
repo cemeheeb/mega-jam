@@ -1,0 +1,11 @@
+title: Notebook Write
+kind: sound
+priority: 3
+idea: "The hero writes a line into the notebook."
+prompt: "A pencil scribbling a few quick strokes on paper. Close, dry, one shot."
+seconds: 1.2
+later: true
+notes: |
+  Приоритет 3. Герой сам дописал строку в блокнот («You write it down», ARunDirector::WriteProgress).
+  ElevenLabs Sound Effects: длительность 1.2 с, Prompt influence повыше — чтобы звук был ровно таким, как описан.
+  Скачанный файл перетащить в карточку и нажать «В игру»: Студия сделает WAV 48 кГц 16 бит для Unreal.

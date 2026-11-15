@@ -1,0 +1,35 @@
+[
+ {
+  "file": "fungus-room-1.wav",
+  "chosen": false,
+  "seed": 866077166,
+  "score": -3.41,
+  "measured": "разброс громкости 3.4 дБ, провалов 0%",
+  "seconds": 15.0,
+  "kind": "loop",
+  "prompt_used": "TrackType: SFX, damp fungus overgrowth, something organic slowly growing, continuous slow irregular dripping and soft wet squelching, constant level, no fade in, no fade out, wet and slimy, a faint airy hiss of spores, no animals, enclosed damp room, close.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "fungus-room-2.wav",
+  "chosen": false,
+  "seed": 866077167,
+  "score": -4.35,
+  "measured": "разброс громкости 4.4 дБ, провалов 0%",
+  "seconds": 15.0,
+  "kind": "loop",
+  "prompt_used": "TrackType: SFX, damp fungus overgrowth, something organic slowly growing, continuous slow irregular dripping and soft wet squelching, constant level, no fade in, no fade out, wet and slimy, a faint airy hiss of spores, no animals, enclosed damp room, close.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "fungus-room-3.wav",
+  "chosen": true,
+  "seed": 866077168,
+  "score": -3.29,
+  "measured": "разброс громкости 3.3 дБ, провалов 0%",
+  "seconds": 15.0,
+  "kind": "loop",
+  "prompt_used": "TrackType: SFX, damp fungus overgrowth, something organic slowly growing, continuous slow irregular dripping and soft wet squelching, constant level, no fade in, no fade out, wet and slimy, a faint airy hiss of spores, no animals, enclosed damp room, close.",
+  "model": "medium + same-l"
+ }
+]

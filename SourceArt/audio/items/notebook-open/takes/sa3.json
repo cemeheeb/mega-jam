@@ -1,0 +1,46 @@
+[
+ {
+  "file": "notebook-open-1.wav",
+  "chosen": false,
+  "seed": 574849860,
+  "score": -0.71,
+  "measured": "начало 0.02 с, звучит 1.08 с",
+  "seconds": 0.9,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, small paper notebook flipped open, a few pages riffling briefly, paper pages, cardboard cover, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "notebook-open-2.wav",
+  "chosen": false,
+  "seed": 574849861,
+  "score": -0.89,
+  "measured": "начало 0.02 с, звучит 1.17 с",
+  "seconds": 0.9,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, small paper notebook flipped open, a few pages riffling briefly, paper pages, cardboard cover, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "notebook-open-3.wav",
+  "chosen": true,
+  "seed": 574849862,
+  "score": -0.65,
+  "measured": "начало 0.03 с, звучит 1.00 с",
+  "seconds": 0.9,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, small paper notebook flipped open, a few pages riffling briefly, paper pages, cardboard cover, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "notebook-open-4.wav",
+  "chosen": false,
+  "seed": 574849863,
+  "score": -0.75,
+  "measured": "начало 0.02 с, звучит 1.01 с",
+  "seconds": 0.9,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, small paper notebook flipped open, a few pages riffling briefly, paper pages, cardboard cover, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ }
+]

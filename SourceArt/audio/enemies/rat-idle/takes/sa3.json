@@ -1,0 +1,46 @@
+[
+ {
+  "file": "rat-idle-1.wav",
+  "chosen": true,
+  "seed": 1409472787,
+  "score": -0.41,
+  "measured": "начало 0.05 с, звучит 2.05 с",
+  "seconds": 2.08,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, large rat-like creature lurking close by, low guttural chittering, wet sniffing and a quiet hiss, throaty, wet, menacing animal, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "rat-idle-2.wav",
+  "chosen": false,
+  "seed": 1409472788,
+  "score": -0.7,
+  "measured": "начало 0.05 с, звучит 2.22 с",
+  "seconds": 2.2,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, large rat-like creature lurking close by, low guttural chittering, wet sniffing and a quiet hiss, throaty, wet, menacing animal, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "rat-idle-3.wav",
+  "chosen": false,
+  "seed": 1409472789,
+  "score": -0.45,
+  "measured": "начало 0.01 с, звучит 2.16 с",
+  "seconds": 2.19,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, large rat-like creature lurking close by, low guttural chittering, wet sniffing and a quiet hiss, throaty, wet, menacing animal, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "rat-idle-4.wav",
+  "chosen": false,
+  "seed": 1409472790,
+  "score": -0.51,
+  "measured": "начало 0.06 с, звучит 1.99 с",
+  "seconds": 2.02,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, large rat-like creature lurking close by, low guttural chittering, wet sniffing and a quiet hiss, throaty, wet, menacing animal, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ }
+]

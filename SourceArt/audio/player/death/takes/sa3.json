@@ -1,0 +1,46 @@
+[
+ {
+  "file": "death-1.wav",
+  "chosen": false,
+  "seed": 536718098,
+  "score": -0.95,
+  "measured": "начало 0.01 с, звучит 0.92 с",
+  "seconds": 0.96,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, adult man collapsing, a last strained exhale, then a heavy body falls onto a metal floor, breath, body thud on a steel plate, no words, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "death-2.wav",
+  "chosen": false,
+  "seed": 536718099,
+  "score": -0.16,
+  "measured": "начало 0.06 с, звучит 1.58 с",
+  "seconds": 1.61,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, adult man collapsing, a last strained exhale, then a heavy body falls onto a metal floor, breath, body thud on a steel plate, no words, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "death-3.wav",
+  "chosen": true,
+  "seed": 536718100,
+  "score": 0.01,
+  "measured": "начало 0.00 с, звучит 1.73 с",
+  "seconds": 1.76,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, adult man collapsing, a last strained exhale, then a heavy body falls onto a metal floor, breath, body thud on a steel plate, no words, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "death-4.wav",
+  "chosen": false,
+  "seed": 536718101,
+  "score": -0.07,
+  "measured": "начало 0.09 с, звучит 1.65 с",
+  "seconds": 1.68,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, adult man collapsing, a last strained exhale, then a heavy body falls onto a metal floor, breath, body thud on a steel plate, no words, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ }
+]

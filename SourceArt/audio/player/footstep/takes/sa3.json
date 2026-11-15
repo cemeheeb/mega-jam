@@ -1,0 +1,35 @@
+[
+ {
+  "file": "footstep-1.wav",
+  "chosen": false,
+  "seed": 666422820,
+  "score": -0.87,
+  "measured": "начало 0.00 с, звучит 0.63 с, событий 1",
+  "seconds": 0.45,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, heavy work boot on a metal floor panel, a single footstep, short dull thud with a slight metallic resonance, thin rubber coating, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "footstep-2.wav",
+  "chosen": false,
+  "seed": 666422821,
+  "score": -0.51,
+  "measured": "начало 0.00 с, звучит 0.50 с, событий 1",
+  "seconds": 0.45,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, heavy work boot on a metal floor panel, a single footstep, short dull thud with a slight metallic resonance, thin rubber coating, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "footstep-3.wav",
+  "chosen": true,
+  "seed": 666422822,
+  "score": -0.2,
+  "measured": "начало 0.00 с, звучит 0.41 с, событий 1",
+  "seconds": 0.44,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, heavy work boot on a metal floor panel, a single footstep, short dull thud with a slight metallic resonance, thin rubber coating, close-up, dry, no reverb.",
+  "model": "medium + same-l"
+ }
+]

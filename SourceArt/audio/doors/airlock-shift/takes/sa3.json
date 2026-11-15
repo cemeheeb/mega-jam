@@ -1,0 +1,46 @@
+[
+ {
+  "file": "airlock-shift-1.wav",
+  "chosen": false,
+  "seed": 2031691287,
+  "score": -0.56,
+  "measured": "начало 0.01 с, звучит 2.37 с",
+  "seconds": 2.2,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, small steel room displaced through folded space, a short reversed swell into a deep sub-bass whoomp that ends abruptly, then a faint settling rattle, warped metallic groan, heavy low impact, inside a small steel chamber, close, dry.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "airlock-shift-2.wav",
+  "chosen": false,
+  "seed": 2031691288,
+  "score": -0.49,
+  "measured": "начало 0.03 с, звучит 2.31 с",
+  "seconds": 2.2,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, small steel room displaced through folded space, a short reversed swell into a deep sub-bass whoomp that ends abruptly, then a faint settling rattle, warped metallic groan, heavy low impact, inside a small steel chamber, close, dry.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "airlock-shift-3.wav",
+  "chosen": false,
+  "seed": 2031691289,
+  "score": -0.61,
+  "measured": "начало 0.01 с, звучит 2.51 с",
+  "seconds": 2.2,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, small steel room displaced through folded space, a short reversed swell into a deep sub-bass whoomp that ends abruptly, then a faint settling rattle, warped metallic groan, heavy low impact, inside a small steel chamber, close, dry.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "airlock-shift-4.wav",
+  "chosen": true,
+  "seed": 2031691290,
+  "score": -0.42,
+  "measured": "начало 0.04 с, звучит 2.19 с",
+  "seconds": 2.2,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, small steel room displaced through folded space, a short reversed swell into a deep sub-bass whoomp that ends abruptly, then a faint settling rattle, warped metallic groan, heavy low impact, inside a small steel chamber, close, dry.",
+  "model": "medium + same-l"
+ }
+]

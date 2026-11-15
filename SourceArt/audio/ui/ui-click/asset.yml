@@ -1,0 +1,12 @@
+title: UI Click
+kind: sound
+priority: 1
+idea: "Menu item is highlighted or chosen."
+prompt: "A soft, very short digital tick of a clean futuristic interface. Subtle, dry, one shot."
+seconds: 0.5
+notes: |
+  Приоритет 1. Главное меню и пауза: переход по пунктам и выбор.
+  ElevenLabs Sound Effects: длительность 0.5 с, Prompt influence повыше — чтобы звук был ровно таким, как описан.
+  Скачанный файл перетащить в карточку и нажать «В игру»: Студия сделает WAV 48 кГц 16 бит для Unreal.
+  15.11: звук посчитан формулой (tools/audio/generate_sfx.py), дублей 1, выбран ui-click-1.wav по измерениям — на слух ассистент не проверял. Другой дубль: кнопка «В игру» у него, потом tools/ue/import_audio.py.
+take: ui-click-1.wav

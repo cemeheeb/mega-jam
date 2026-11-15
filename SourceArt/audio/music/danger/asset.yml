@@ -1,0 +1,13 @@
+title: Danger
+kind: sound
+priority: 3
+idea: "Music while an enemy is in the room or follows the player."
+prompt: "Tense pulsing science fiction chase underscore: a low synth ostinato, ticking dry percussion, rising dissonant strings, about one hundred beats per minute, relentless and close. Instrumental only, no vocals. Ends the way it begins so that it can loop."
+seconds: 45
+loop: true
+notes: |
+  Приоритет 3. Противник в комнате или идёт следом. Делается в ElevenLabs Music.
+  ElevenLabs Music: длительность 45 с, только инструментал.
+  Скачанный файл перетащить в карточку и нажать «В игру»: Студия сделает WAV 48 кГц 16 бит для Unreal.
+  15.11, ночь: трек автора из Suno «The Hull groans» (takes/, mp3), в игре /Game/Audio/S_Danger. Кому какая роль, ассистент решил по анализу ритма (на слух не проверял): если роли перепутаны — поменять дубли местами и нажать «В игру» ещё раз, потом tools/ue/import_audio.py.
+take: danger-1.mp3
