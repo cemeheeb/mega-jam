@@ -1,0 +1,10 @@
+title: Mirror Sting
+kind: sound
+priority: 2
+idea: "Opening scene: a dead face looks back from the mirror."
+prompt: "Horror film jump scare sting: a sudden loud shrill dissonant violin cluster stab with a deep sub-bass hit, then tense trembling high strings that fade into silence."
+seconds: 4.5
+notes: |
+  Приоритет 2.
+  15.11: звук сгенерирован локально Stable Audio 3 (tools/audio/generate_sfx.py), дублей 2, выбран mirror-sting-2.wav по измерениям — на слух ассистент не проверял. Другой дубль: кнопка «В игру» у него, потом tools/ue/import_audio.py.
+take: mirror-sting-2.wav

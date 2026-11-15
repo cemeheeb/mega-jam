@@ -135,6 +135,16 @@ SOUNDS = [
          act="continuous steady electric motor whine with rubber tracks rattling, constant speed, no fade in, no fade out",
          mat="servo motor, rubber treads, metal plates", space="close, dry"),
     # --- события ---
+    # вступительная сцена в каюте (автор, 16.11): «звуки взрыва», «тревожный эффект, когда появляется лицо, как в триллерах»
+    dict(name="DistantBlast", card="events/distant-blast", kind="shot", gen=5, keep=4.0, level=-2,
+         idea="Opening scene: a far explosion somewhere in the ship, heard from the cabin.",
+         src="a huge explosion far away inside a large metal spaceship",
+         act="one deep muffled boom heard through several thick bulkheads, then a low rumble that shakes the hull and dies away",
+         mat="sub-bass thud, dull, low-passed, groaning metal, no crackle, no debris", space="distant, heard from inside a small closed cabin"),
+    dict(name="MirrorSting", card="music/mirror-sting", kind="music", gen=5, keep=4.5, level=-2,
+         idea="Opening scene: a dead face looks back from the mirror.",
+         prompt="Horror film jump scare sting: a sudden loud shrill dissonant violin cluster stab with a deep sub-bass hit, "
+                "then tense trembling high strings that fade into silence"),
     dict(name="EnginesOnline", card="events/engines-online", kind="shot", gen=6, keep=5.6, level=-1.5,
          src="massive spaceship engines powering up",
          act="a deep rumble rising and building to a powerful roar, a bright electric surge at the peak, settling into a strong steady hum",

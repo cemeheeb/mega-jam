@@ -48,6 +48,9 @@ public:
 	FVector KeypadLocation() const;
 	bool IsNearKeypad(const FVector& PawnPos) const;
 
+	/** Середина стекла зеркала (мировые координаты); стекло смотрит в каюту, на +Y. */
+	FVector MirrorCenter() const;
+
 	/** Где игрок приходит в себя: у спальной капсулы, лицом к двери. */
 	FVector WakeLocation() const;
 

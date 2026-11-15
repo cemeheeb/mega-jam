@@ -525,6 +525,16 @@ void ARunHUD::DrawHUD()
 	const float SX = Canvas->SizeX, SY = Canvas->SizeY;
 	const float S = FMath::Max(1.f, SY / 720.f);   // масштаб под высоту экрана
 
+	// вступительная сцена: экрана игры нет — только помутнение (тот же расфокус, что под меню) и затемнение
+	if (D.IsIntro())
+	{
+		Director->SetMenuBlend(D.GetIntroBlur());
+		if (const float Fade = D.GetIntroFade(); Fade > 0.f)
+		{
+			DrawRect(FLinearColor(0.f, 0.f, 0.f, Fade), 0.f, 0.f, SX, SY);
+		}
+		return;
+	}
 	// меню на Tab: фон темнеет и расплывается за 0,18 с. Часы реальные: на паузе время мира стоит
 	MenuBlend = FMath::FInterpConstantTo(MenuBlend, D.IsReading() ? 1.f : 0.f, FApp::GetDeltaTime(), 1.f / 0.18f);
 	Director->SetMenuBlend(MenuBlend);

@@ -1,0 +1,24 @@
+[
+ {
+  "file": "mirror-sting-1.wav",
+  "chosen": false,
+  "seed": 1638673770,
+  "score": 4.03,
+  "measured": "длина 4.0 с",
+  "seconds": 4.03,
+  "kind": "music",
+  "prompt_used": "TrackType: Music, VocalType: Instrumental, Horror film jump scare sting: a sudden loud shrill dissonant violin cluster stab with a deep sub-bass hit, then tense trembling high strings that fade into silence.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "mirror-sting-2.wav",
+  "chosen": true,
+  "seed": 1638673771,
+  "score": 4.5,
+  "measured": "длина 4.5 с",
+  "seconds": 4.5,
+  "kind": "music",
+  "prompt_used": "TrackType: Music, VocalType: Instrumental, Horror film jump scare sting: a sudden loud shrill dissonant violin cluster stab with a deep sub-bass hit, then tense trembling high strings that fade into silence.",
+  "model": "medium + same-l"
+ }
+]

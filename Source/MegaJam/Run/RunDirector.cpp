@@ -2,11 +2,13 @@
 
 #include "Animation/AnimInstance.h"
 #include "Animation/AnimMontage.h"
+#include "AnimationRuntime.h"
 #include "Animation/AnimSequenceBase.h"
 #include "Animation/AnimSingleNodeInstance.h"
 #include "Camera/CameraActor.h"
 #include "Camera/CameraComponent.h"
 #include "Components/InputComponent.h"
+#include "Components/LightComponent.h"
 #include "Components/PostProcessComponent.h"
 #include "Components/SpotLightComponent.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -14,6 +16,8 @@
 #include "Components/TextRenderComponent.h"
 #include "Engine/SkeletalMesh.h"
 #include "Engine/StaticMesh.h"
+#include "Engine/Texture2D.h"
+#include "Materials/MaterialInstanceDynamic.h"
 #include "Engine/World.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/HUD.h"
@@ -126,6 +130,8 @@ void ARunDirector::BeginPlay()
 	Post->Settings.AutoExposureBias = ExposureBias;
 	Post->RegisterComponent();
 	bShowDebug = bDebugAtStart || FParse::Param(FCommandLine::Get(), TEXT("RunDebug"));
+	bStepsWalk = FParse::Param(FCommandLine::Get(), TEXT("RunStepsWalk"));
+	bLogSteps = bStepsWalk || FParse::Param(FCommandLine::Get(), TEXT("RunSteps"));   // проверка шагов: строка журнала на каждый стук
 
 	// Каюта (решение автора 15.11, вечер): обычная игра начинается в ней, код двери задаёт зерно. Самопроверки,
 	// -RunSeed и -RunNoCabin начинают сразу в рубке; -RunCabinTest — самопроверка каюты.
@@ -279,6 +285,11 @@ void ARunDirector::SetupPlayer()
 	if (Hero)
 	{
 		Hero->GetMesh()->SetReceivesDecals(false);   // копоть выгоревшей комнаты на героя не ложится
+		// кости обновляются всегда, даже когда героя не видно: по костям стоп играет звук шагов (UpdateAudio)
+		Hero->GetMesh()->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
+		// габарит меша с запасом: корень скелета ведётся за головой (ApplyFist), а габарит движок считает от корня —
+		// без запаса героя отсекало крупным планом, когда он лежит (вступительная сцена, 16.11)
+		Hero->GetMesh()->SetBoundsScale(1.5f);   // в сцене, где он лежит, запас больше (StartIntro)
 		// присед для дыма (решение автора 15.11): капсула 2 × 48 см, голова ниже слоя дыма (RunThreatTune::SmokeBottom)
 		Hero->GetCharacterMovement()->GetNavAgentPropertiesRef().bCanCrouch = true;
 		Hero->GetCharacterMovement()->SetCrouchedHalfHeight(48.f);
@@ -359,6 +370,39 @@ void ARunDirector::SetupPlayer()
 		Flashlight->SetCastShadows(true);
 		Flashlight->SetVisibility(false);
 		Flashlight->RegisterComponent();
+		// Линза (автор, 16.11: «если навести фонарик на камеру, то он как будто выключен, нужно… световое пятно в том
+		// месте, где лампочка»): плоский диск на торце фонарика, светит своим материалом. Материал — тот же, что у
+		// зеркала каюты (кадр × Gain без освещения), вместо кадра — белая точка, собранная на месте
+		UStaticMesh* Ball = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Sphere.Sphere"));
+		UMaterialInterface* Unlit = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/Game/Materials/M_Mirror.M_Mirror"), nullptr, LOAD_NoWarn | LOAD_Quiet);
+		if (Ball && Unlit)
+		{
+			UTexture2D* White = UTexture2D::CreateTransient(1, 1, PF_B8G8R8A8);
+			if (White && White->GetPlatformData() && White->GetPlatformData()->Mips.Num() > 0)
+			{
+				uint8* Px = static_cast<uint8*>(White->GetPlatformData()->Mips[0].BulkData.Lock(LOCK_READ_WRITE));
+				Px[0] = 205; Px[1] = 238; Px[2] = 255; Px[3] = 255;   // B, G, R, A: тёплый белый, как у луча
+				White->GetPlatformData()->Mips[0].BulkData.Unlock();
+				White->UpdateResource();
+			}
+			UMaterialInstanceDynamic* Glow = UMaterialInstanceDynamic::Create(Unlit, this);
+			Glow->SetTextureParameterValue(TEXT("Tex"), White);
+			Glow->SetScalarParameterValue(TEXT("Gain"), 40.f);
+			FlashGlow = NewObject<UStaticMeshComponent>(this, TEXT("FlashGlow"));
+			FlashGlow->SetupAttachment(GetRootComponent());
+			FlashGlow->SetUsingAbsoluteLocation(true);
+			FlashGlow->SetUsingAbsoluteRotation(true);
+			FlashGlow->SetUsingAbsoluteScale(true);
+			FlashGlow->SetMobility(EComponentMobility::Movable);
+			FlashGlow->SetStaticMesh(Ball);
+			FlashGlow->SetMaterial(0, Glow);
+			FlashGlow->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			FlashGlow->SetCastShadow(false);
+			FlashGlow->SetReceivesDecals(false);
+			FlashGlow->SetWorldScale3D(FVector(0.012f, 0.045f, 0.045f));   // диск 4,5 см, тонкий вдоль луча
+			FlashGlow->SetVisibility(false);
+			FlashGlow->RegisterComponent();
+		}
 	}
 	// вещь на осмотре: перед камерой. Рисуется как «от первого лица» — придвинута к камере и не уходит в стену
 	if (UCameraComponent* Camera = Pawn->FindComponentByClass<UCameraComponent>())
@@ -424,7 +468,11 @@ void ARunDirector::SetupPlayer()
 	}
 	PC->ClientSetHUD(ARunHUD::StaticClass());
 	bPlayerReady = true;
-	if (Cabin)
+	if (ShouldPlayIntro())
+	{
+		StartIntro();   // вступительная сцена у зеркала; реплика про каюту — после неё (EndIntro)
+	}
+	else if (Cabin)
 	{
 		Say(TEXT("My cabin? I don't remember falling asleep. And the door is locked with a code."), 8.f);
 		ShowTip(TEXT("[E] at the keypad left of the door"), 8.f);
@@ -432,6 +480,7 @@ void ARunDirector::SetupPlayer()
 	else
 	{
 		Say(TEXT("Someone is lying by the bridge door. Same suit, same face... That is me."), 8.f);
+		LookAtSelfBody();
 	}
 }
 
@@ -738,6 +787,7 @@ void ARunDirector::LeaveCabin(ARunCabin* From)
 	RoomTitleAt = GetWorld()->GetTimeSeconds();
 	RunAudio::Play(this, TEXT("AirlockShift"));
 	Say(TEXT("Someone is lying by the bridge door. Same suit, same face... That is me."), 8.f);
+	LookAtSelfBody();
 	LogRoom(TEXT("from cabin"));
 }
 
@@ -1567,6 +1617,67 @@ void ARunDirector::ApplyFist()
 	}
 	// кости кадра уже отданы на чтение; правим их на месте — до того, как меш отправит кадр на отрисовку
 	TArray<FTransform>& CS = const_cast<TArray<FTransform>&>(Mesh->GetComponentSpaceTransforms());
+	// вступительная сцена (автор, 16.11: «пусть не всем корпусом, а головой поворачивает, корпусом только слегка»):
+	// поворот вокруг вертикали делят шея и голова — каждая кость поворачивает себя и всё, что выше
+	// Лёжа ничком (IntroHeadRoll) голова так же поворачивается вокруг оси шеи — щекой к полу, лицом к камере
+	const bool bHeadRoll = FMath::Abs(IntroHeadRoll) > 0.1f;
+	if (FMath::Abs(IntroHeadYaw) > 0.1f || FMath::Abs(IntroHeadPitch) > 0.1f || bHeadRoll)
+	{
+		const int32 Chain[3] = { Mesh->GetBoneIndex(TEXT("neck_01")), Mesh->GetBoneIndex(TEXT("neck_02")), Mesh->GetBoneIndex(TEXT("head")) };
+		if (CS.IsValidIndex(Chain[0]) && CS.IsValidIndex(Chain[1]) && CS.IsValidIndex(Chain[2])
+			&& !(bHeadMarked && CS[Chain[2]].Equals(HeadMark, 0.f)))
+		{
+			static const float Share[3] = { 0.2f, 0.3f, 0.5f };
+			const FVector Axis = bHeadRoll ? (CS[Chain[2]].GetLocation() - CS[Chain[0]].GetLocation()).GetSafeNormal() : FVector::UpVector;
+			const float Angle = bHeadRoll ? IntroHeadRoll : IntroHeadYaw;
+			// наклон взгляда вверх-вниз — вокруг «права» героя, уже повёрнутого вслед за головой
+			FVector SideAxis = FVector::ZeroVector;
+			if (!bHeadRoll && FMath::Abs(IntroHeadPitch) > 0.1f && Mesh->GetOwner())
+			{
+				SideAxis = FQuat(FVector::UpVector, FMath::DegreesToRadians(IntroHeadYaw)).RotateVector(
+					Mesh->GetComponentTransform().InverseTransformVectorNoScale(Mesh->GetOwner()->GetActorRightVector()));
+			}
+			for (int32 I = 0; I < 3; ++I)
+			{
+				FQuat Q(Axis, FMath::DegreesToRadians(Angle * Share[I]));
+				if (!SideAxis.IsNearlyZero())
+				{
+					Q = FQuat(SideAxis, FMath::DegreesToRadians(-IntroHeadPitch * Share[I])) * Q;   // вокруг «права» плюс — это вниз
+				}
+				const FVector Pivot = CS[Chain[I]].GetLocation();
+				for (int32 J = I; J < 3; ++J)
+				{
+					FTransform& Bone = CS[Chain[J]];
+					Bone.SetLocation(Pivot + Q.RotateVector(Bone.GetLocation() - Pivot));
+					Bone.SetRotation(Q * Bone.GetRotation());
+				}
+			}
+			HeadMark = CS[Chain[2]];
+			bHeadMarked = true;
+		}
+	}
+	else
+	{
+		bHeadMarked = false;
+	}
+	// Корень идёт за головой. У меша героя несколько вершин во рту привязаны к корню скелета, а не к голове (при
+	// импорте вершина без весов уходит на корень). Пока голова там же, где в позе покоя, этого не видно; стоит герою
+	// присесть или лечь — вершины остаются на месте и тянутся из головы шипом в полтора метра (кадры вступительной
+	// сцены, 16.11). Других вершин у корня нет, поэтому корень просто ставится так, будто он жёстко связан с головой.
+	// Детей корня это не трогает: кости кадра уже посчитаны. Стоит после поворота головы: иначе эти вершины
+	// отставали от неё на этот поворот (зубцы у щеки и губы на крупном плане).
+	{
+		const int32 HeadBone = Mesh->GetBoneIndex(TEXT("head"));
+		if (!bHeadRef && HeadBone != INDEX_NONE && Mesh->GetSkeletalMeshAsset())
+		{
+			HeadRefInv = FAnimationRuntime::GetComponentSpaceTransformRefPose(Mesh->GetSkeletalMeshAsset()->GetRefSkeleton(), HeadBone).Inverse();
+			bHeadRef = true;
+		}
+		if (bHeadRef && CS.IsValidIndex(HeadBone) && CS.Num() > 0)
+		{
+			CS[0] = HeadRefInv * CS[HeadBone];
+		}
+	}
 	// стойки рук — до кулаков: кулак считается уже от поставленной кисти. Направления заданы в осях героя.
 	if (const AActor* Hero = Mesh->GetOwner())
 	{
@@ -2682,6 +2793,7 @@ void ARunDirector::PutOnSuit()
 	}
 	bSuitOn = true;
 	bSuitWorn = true;
+	TouchRoom();   // скафандр взят из комнаты
 	if (!Helmet)
 	{
 		// шлем — стеклянный пузырь на голове героя (пока нет модели скафандра); место — каждый кадр в Tick
@@ -2736,6 +2848,7 @@ void ARunDirector::TakeOffSuit()
 		return;
 	}
 	bSuitOn = false;
+	TouchRoom();   // скафандр оставлен в комнате
 	if (Helmet)
 	{
 		Helmet->SetVisibility(false);
@@ -2964,7 +3077,21 @@ void ARunDirector::DoSwap()
 		const int32 Key = Layout->PocketKey(Pocket);
 		FRunRoomState State;
 		State.Key = Key;
-		State.Doors[RunRoomGeo::Opposite(Door)] = From;              // обратный путь ведёт туда, откуда пришёл
+		// Обратная дверь (автор, 16.11: «если не трогал вещи в комнате и не оставлял, т.е. не менял состояние, то она
+		// оказывается в суперпозиции»): назад ведёт только в комнату, где игрок что-то взял или оставил. Нетронутая
+		// комната забывается, и обратная дверь перескакивает через неё — в последнюю тронутую (туда вела обратная
+		// дверь нетронутой). Без этого вещь, выброшенная не в той комнате, терялась бы после первой же лишней двери:
+		// по карману в ту комнату без самой вещи не попасть. Тронутых комнат ещё не было — дверь ведёт по карману
+		int32 Back = From;
+		if (!Rooms[From].bTouched)
+		{
+			Back = -1;
+			for (const int32 Remembered : Rooms[From].Doors)
+			{
+				Back = FMath::Max(Back, Remembered);
+			}
+		}
+		State.Doors[RunRoomGeo::Opposite(Door)] = Back;
 		To = Rooms.Add(State);
 	}
 	// для мыслей героя при входе (EnterRoom): назад ли он шёл и та же ли вышла комната
@@ -3384,6 +3511,7 @@ void ARunDirector::OnInteract()
 			State.Items.RemoveAt(Index);
 		}
 		Pocket.Add(Item);
+		TouchRoom();
 		RunAudio::Play(this, TEXT("ItemPickup"));
 		if (GetHeldSlot() < 0)
 		{
@@ -3429,7 +3557,7 @@ void ARunDirector::OnInteract()
 		else if (IsFlashlight(Item) && !bTipLight)
 		{
 			bTipLight = true;
-			ShowTip(TEXT("The flashlight goes to my left hand. [V] switches it on and off"), 7.f);
+			ShowTip(TEXT("The flashlight goes to my left hand. It lights up in dark rooms. [V] switches it off"), 7.f);
 		}
 		else if (Pocket.Num() >= 2 && !bTipWheel)
 		{
@@ -3439,6 +3567,14 @@ void ARunDirector::OnInteract()
 	}
 	ItemActors.Remove(A);
 	A->Destroy();
+}
+
+void ARunDirector::TouchRoom()
+{
+	if (Rooms.IsValidIndex(CurrentRoom))
+	{
+		Rooms[CurrentRoom].bTouched = true;
+	}
 }
 
 void ARunDirector::DropSlot(int32 Slot)
@@ -3454,6 +3590,7 @@ void ARunDirector::DropSlot(int32 Slot)
 	}
 	const int32 Item = Pocket[Slot];
 	RemoveFromPocket(Slot);
+	TouchRoom();
 	// выброшенный предмет остаётся лежать там, где его выбросили (5.3)
 	FVector Loc = Pawn->GetActorLocation() + Pawn->GetActorForwardVector() * 70.f;
 	FCollisionQueryParams DropParams(FName(TEXT("RunDrop")), false, Pawn);
@@ -3860,26 +3997,46 @@ void ARunDirector::TickHeldItem(float DeltaSeconds)
 		const float NowT = GetWorld()->GetTimeSeconds();
 		const bool bFree = NowT < DodgeUntil;        // на рывке руку ведёт клип рывка; удар ведёт сама стойка (SwingPose)
 		Guard[0] = FMath::FInterpTo(Guard[0], bRight && !bFree ? 1.f : 0.f, DeltaSeconds, bFree ? 16.f : 7.f);
-		Guard[1] = FMath::FInterpTo(Guard[1], bLeft && bLightOn && NowT >= DodgeUntil ? 1.f : 0.f, DeltaSeconds, 7.f);
+		// Фонарик (автор, 16.11): «должен включаться только в темноте», «рука должна двигаться вместе с фонариком»,
+		// «ограничить углы движения фонарика положением тела: сейчас я могу светить назад, когда он стоит прямо, и
+		// фонарик проходит сквозь тело и светит изнутри». Темно — это комната на аварийном свете. Направление одно
+		// на руку и на луч: взгляд камеры, но не дальше 55° в сторону от груди героя и 35° вверх-вниз
+		const bool bDark = RoomActor && RoomActor->IsEmergency();
+		const bool bLightWanted = bLeft && bLightOn && bDark;
+		Guard[1] = FMath::FInterpTo(Guard[1], bLightWanted && NowT >= DodgeUntil ? 1.f : 0.f, DeltaSeconds, 7.f);
 		if (const APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
 		{
-			LightAim = PC->GetControlRotation();
+			const FRotator Look = PC->GetControlRotation();
+			const float BodyYaw = Ch->GetActorRotation().Yaw;
+			const FRotator Want(FMath::Clamp(FRotator::NormalizeAxis(Look.Pitch), -35.f, 35.f),
+				BodyYaw + FMath::Clamp(FMath::FindDeltaAngleDegrees(BodyYaw, Look.Yaw), -55.f, 55.f), 0.f);
+			LightAim = FMath::RInterpTo(LightAim, Want, DeltaSeconds, 10.f);   // взгляд ушёл за спину — луч переходит на другой бок плавно
 		}
 		HandPivot->SetWorldRotation(FRotator(0.f, Ch->GetActorRotation().Yaw, 0.f));
 		if (Flashlight)
 		{
-			const bool bLit = bLeft && bLightOn;
+			const bool bLit = bLightWanted;
 			if (bLit != bFlashlightLit)
 			{
 				bFlashlightLit = bLit;
 				RunAudio::Play(this, TEXT("FlashlightClick"));
 			}
 			Flashlight->SetVisibility(bLit);
-			if (const APlayerController* PC = bLit ? UGameplayStatics::GetPlayerController(this, 0) : nullptr)
+			if (bLit)
 			{
-				// луч идёт от левой кисти вдоль взгляда камеры; чуть вынесен вперёд, чтобы герой не затенял его бедром
-				const FRotator Aim = PC->GetControlRotation();
-				Flashlight->SetWorldLocationAndRotation(HandPivot->GetComponentLocation() + Aim.Vector() * 18.f + FVector(0.f, 0.f, 8.f), Aim);
+				// луч идёт от левой кисти туда же, куда смотрит рука (LightAim); чуть вынесен вперёд, чтобы герой не затенял его бедром
+				Flashlight->SetWorldLocationAndRotation(HandPivot->GetComponentLocation() + LightAim.Vector() * 18.f + FVector(0.f, 0.f, 8.f), LightAim);
+			}
+			if (FlashGlow)
+			{
+				// диск — на торце фонарика, который смотрит по лучу: от середины модели на половину её длины
+				const bool bGlow = bLit && GripMeshLeft && GripMeshLeft->IsVisible() && GripMeshLeft->GetStaticMesh();
+				FlashGlow->SetVisibility(bGlow);
+				if (bGlow)
+				{
+					const float Half = GripMeshLeft->GetStaticMesh()->GetBoundingBox().GetExtent().GetMax() * GripMeshLeft->GetComponentScale().GetMax();
+					FlashGlow->SetWorldLocationAndRotation(GripMeshLeft->Bounds.Origin + LightAim.Vector() * (Half - 0.3f), LightAim);
+				}
 			}
 		}
 	}
@@ -4022,16 +4179,74 @@ void ARunDirector::UpdateAudio(float DeltaSeconds, ACharacter* Ch)
 		Heartbeat = nullptr;
 	}
 
-	// шаги: по пройденному пути. Бегом шаг длиннее и громче, вприсядку — тише
-	if (Ch && Ch->GetCharacterMovement() && Ch->GetCharacterMovement()->IsMovingOnGround() && Phase == ERunPhase::Playing)
+	// Шаги — когда стопа встаёт на пол (автор, 16.11: «стук ног об пол не синхронизирован с ходьбой, если я бегаю,
+	// то звуков стука больше… чтобы всегда звук совпадал с касанием ноги пола»). Раньше звук шёл по пройденному пути
+	// (72 см шагом, 105 бегом) и с анимацией не совпадал. Теперь смотрим на кости стоп: в махе стопа летит вперёд
+	// быстрее тела, на опоре стоит на месте. Перешла от первого ко второму — шаг. Бегом громче, вприсядку тише.
+	// Если кости молчат секунду ходьбы (анимация не идёт), включается прежний счёт по пути.
+	const float StepNow = GetWorld()->GetTimeSeconds();
+	const float Speed = Ch ? Ch->GetVelocity().Size2D() : 0.f;
+	const bool bWalking = Ch && Ch->GetCharacterMovement() && Ch->GetCharacterMovement()->IsMovingOnGround()
+		&& Phase == ERunPhase::Playing && Speed > 30.f;
+	bool bStep = false;
+	int32 StepFoot = -1;
+	if (USkeletalMeshComponent* Body = Ch ? Ch->GetMesh() : nullptr)
 	{
-		const float Speed = Ch->GetVelocity().Size2D();
-		StepLeft -= Speed * DeltaSeconds;
-		if (Speed > 30.f && StepLeft <= 0.f)
+		static const FName Feet[2] = { TEXT("foot_l"), TEXT("foot_r") };
+		for (int32 F = 0; F < 2; ++F)
 		{
-			const bool bRun = Speed > WalkSpeed + 40.f;
-			StepLeft = bRun ? 105.f : IsPlayerCrouched() ? 60.f : 72.f;
+			const FVector At = Body->GetSocketLocation(Feet[F]);
+			const float FootSpeed = bFootSeen && DeltaSeconds > KINDA_SMALL_NUMBER ? FVector::Dist2D(At, FootPrev[F]) / DeltaSeconds : 0.f;
+			FootPrev[F] = At;
+			if (!bWalking)
+			{
+				bFootSwing[F] = false;
+			}
+			else if (!bFootSwing[F] && FootSpeed > Speed * 1.2f)
+			{
+				bFootSwing[F] = true;
+			}
+			else if (bFootSwing[F] && FootSpeed < Speed * 0.5f)
+			{
+				bFootSwing[F] = false;
+				if (StepNow - FootStepAt > 0.1f)   // обе стопы в один кадр — один стук
+				{
+					bStep = true;
+					StepFoot = F;
+				}
+			}
+		}
+		bFootSeen = true;
+	}
+	if (!bWalking)
+	{
+		FootMoveAt = StepNow;
+	}
+	else
+	{
+		const bool bRun = Speed > WalkSpeed + 40.f;
+		const float Stride = bRun ? 105.f : IsPlayerCrouched() ? 60.f : 72.f;
+		if (bStep)
+		{
+			FootStepAt = StepNow;
+			StepLeft = Stride;
+		}
+		else if (StepNow - FMath::Max(FootStepAt, FootMoveAt) > 1.f)
+		{
+			StepLeft -= Speed * DeltaSeconds;
+			if (StepLeft <= 0.f)
+			{
+				StepLeft = Stride;
+				bStep = true;
+			}
+		}
+		if (bStep)
+		{
 			RunAudio::Play(this, TEXT("Footstep"), IsPlayerCrouched() ? 0.25f : bRun ? 0.7f : 0.45f, FMath::FRandRange(0.9f, 1.1f));
+			if (bLogSteps)
+			{
+				UE_LOG(LogRun, Display, TEXT("Run: step %s speed=%.0f t=%.2f"), StepFoot == 0 ? TEXT("L") : StepFoot == 1 ? TEXT("R") : TEXT("path"), Speed, StepNow);
+			}
 		}
 	}
 }
@@ -4092,9 +4307,15 @@ void ARunDirector::Tick(float DeltaSeconds)
 		SetupPlayer();
 		return;
 	}
+	if (bIntro)
+	{
+		TickIntro(DeltaSeconds);   // вступительная сцена: игры пока нет — ни реплик, ни шагов, ни подсказок
+		return;
+	}
 	TickVoice(Now);
 	if (ACharacter* Ch = Cast<ACharacter>(UGameplayStatics::GetPlayerPawn(this, 0)))
 	{
+		TickLook(DeltaSeconds, Ch);
 		if (BaseWalkSpeed <= 0.f)
 		{
 			BaseWalkSpeed = Ch->GetCharacterMovement()->MaxWalkSpeed;
@@ -4102,7 +4323,23 @@ void ARunDirector::Tick(float DeltaSeconds)
 		// по умолчанию шаг, бег — пока зажат Shift (решение автора 14.11); скорость бега — из персонажа шаблона.
 		// Клавиша опрашивается каждый кадр, а не ловится нажатием: отпущенная на паузе не залипнет.
 		const APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
-		const bool bRun = PC && (PC->IsInputKeyDown(EKeys::LeftShift) || PC->IsInputKeyDown(EKeys::RightShift));
+		// проверка шагов без рук (-RunStepsWalk): 4 с стоит, 6 с идёт шагом, 6 с бежит — туда и обратно вдоль стены
+		bool bTestRun = false;
+		if (bStepsWalk)
+		{
+			if (Now > 16.5f)
+			{
+				UE_LOG(LogRun, Display, TEXT("Run: steps test done"));
+				bStepsWalk = false;
+				FPlatformMisc::RequestExit(false);
+			}
+			else if (Now > 4.f)
+			{
+				bTestRun = Now > 10.f;
+				Ch->AddMovementInput(FVector(0.f, FMath::Fmod(Now, 2.4f) < 1.2f ? 1.f : -1.f, 0.f), 1.f);
+			}
+		}
+		const bool bRun = bTestRun || (PC && (PC->IsInputKeyDown(EKeys::LeftShift) || PC->IsInputKeyDown(EKeys::RightShift)));
 		{
 			const float NowT = GetWorld()->GetTimeSeconds();
 			if (AttackHitTime >= 0.f && NowT >= AttackHitTime)
@@ -4723,5 +4960,577 @@ void ARunDirector::TickSelfTest()
 	}
 	case -1: MoveTo(RoomActor->GetActorLocation() + FVector(-330.f, 120.f, 0.f)); break;
 	default: MoveTo(RoomActor->VestibuleCenter(Step)); break;
+	}
+}
+
+// ---------- вступительная сцена в каюте (автор, 16.11) ----------
+//
+// Дословно: «игрок смотрит на себя в зеркало, слышит какие-то звуки, как будто отдалённые приглушённые взрывы,
+// поворачивается, а потом снова смотрит в зеркало, но там на него смотрит мумия, он пугается, затем тряска, ракурс
+// меняется, и на него смотрит уже толстая версия с кровавым лицом (модель врага), ему становится плохо, взгляд
+// мутнеет, и потом он оказывается на полу, показать крупно его лицо, как он открывает глаза, поднимается,
+// и начинается игра».
+//
+// Как сделано:
+// - камера — отдельный актёр, ход сцены — по часам IntroClock; управление на это время снято, любая клавиша пропускает;
+// - в каюте всё время стоит герой, меняется только отражение: сам герой в зеркале скрыт, а на его месте стоит
+//   меш, видимый только камере зеркала;
+// - мумия и двойник — меши на скелете манекена (SK_DeadManRig, SK_OldEnemy), ведомые костями героя: отражение
+//   повторяет его позу кость в кость (автор: «чтобы в зеркале отражение не было статичным»);
+// - на взрывы герой оборачивается головой, корпус поворачивается чуть-чуть (IntroHeadYaw, правка костей шеи);
+// - когда герою плохо, кадр темнеет; расфокус (тот же, что под меню, SetMenuBlend) — только в последнюю секунду,
+//   от нуля до полного (автор: «пусть будет не блур, а затемнение экрана и лишь в конце блур за 1 секунду»);
+// - на полу герой лежит в первой позе анимации подъёма MM_GetUp (Mixamo «Getting Up», перенесена на скелет манекена:
+//   tools/ue/import_getup.py) — ничком, голова повёрнута щекой к полу (IntroHeadRoll), камера у пола смотрит в лицо;
+//   глаза — морфы моргания eyeBlinkLeft/Right;
+// - встаёт без затемнения (автор: «анимацию того, как он поднимается с пола и встаёт в свою позу, чтобы было
+//   бесшовно»): та же анимация играет дальше, камера отъезжает от лица вбок и в конце переходит в игровую.
+//   Анимация кончается стоя в 60 см позади начала — меш на это время сдвинут навстречу. Играется она прямо на
+//   меше, без блюпринта анимации героя: его ножная IK ломала ноги; в конце блюпринт включается обратно;
+// - сцена идёт один раз за запуск игры (GIntroSeen); -RunIntro показывает всегда, -RunNoIntro — никогда,
+//   -RunIntroShots снимает кадры в Saved/Screenshots/Intro и закрывает игру.
+namespace RunIntro
+{
+	constexpr float Length = 21.9f;
+	constexpr float RevealAt = 6.2f;     // в зеркале мумия
+	constexpr float TwinAt = 9.0f;       // смена ракурса: в зеркале двойник
+	constexpr float FallAt = 12.8f;      // темнота: герой уже на полу
+	constexpr float RiseAt = 16.4f;      // начинает вставать (MM_GetUp с 0,6 с, в полтора раза быстрее: 4,7 с)
+	constexpr float RiseRate = 1.5f;
+	constexpr float RiseFrom = 0.6f;
+	constexpr float GameCamAt = 20.2f;   // камера переходит в игровую
+	const FVector RiseShift(59.8f, 0.f, 0.f);   // на сколько конец MM_GetUp позади начала, в осях героя
+	constexpr float RiseYaw = 180.f;            // лежит головой к койке, ногами к двери; встаёт там, где обычно
+	                                            // приходит в себя (ARunCabin::WakeLocation), лицом к койке
+	constexpr float HeadRoll = -80.f;           // градусы: голова повёрнута щекой к полу
+	const FVector Stand(37.5f, -68.f, 0.f);   // где герой стоит перед зеркалом, от середины каюты
+	bool GIntroSeen = false;
+
+	float Ramp(float T, float A, float B)
+	{
+		return FMath::SmoothStep(0.f, 1.f, FMath::Clamp((T - A) / FMath::Max(B - A, 0.001f), 0.f, 1.f));
+	}
+}
+
+bool ARunDirector::ShouldPlayIntro() const
+{
+	if (!Cabin || bSelfTest || CabinTestStep >= 0 || FParse::Param(FCommandLine::Get(), TEXT("RunNoIntro")))
+	{
+		return false;
+	}
+	return !RunIntro::GIntroSeen || FParse::Param(FCommandLine::Get(), TEXT("RunIntro"));
+}
+
+void ARunDirector::StartIntro()
+{
+	APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
+	ACharacter* Hero = PC ? Cast<ACharacter>(PC->GetPawn()) : nullptr;
+	if (!Hero || !Cabin)
+	{
+		return;
+	}
+	bIntro = true;
+	IntroClock = 0.f;
+	IntroBeats = 0;
+	IntroShots = 0;
+	IntroFade = 1.f;
+	IntroBlur = 0.f;
+	PC->SetIgnoreMoveInput(true);
+	PC->SetIgnoreLookInput(true);
+	DisableInput(PC);
+	const FVector C = Cabin->GetActorLocation();
+	const float Half = Hero->GetSimpleCollisionHalfHeight();
+	Hero->SetActorLocationAndRotation(C + RunIntro::Stand + FVector(0.f, 0.f, Half + 2.f), FRotator(0.f, -90.f, 0.f), false, nullptr, ETeleportType::TeleportPhysics);
+	Hero->GetMesh()->SetBoundsScale(4.f);   // лёжа голова далеко от места в позе покоя: см. SetupPlayer
+	IntroMeshLoc = Hero->GetMesh()->GetRelativeLocation();
+	IntroMeshRot = Hero->GetMesh()->GetRelativeRotation();
+	IntroCam = GetWorld()->SpawnActor<ACameraActor>();
+	IntroCam->GetCameraComponent()->bConstrainAspectRatio = false;
+	IntroCam->GetCameraComponent()->SetFieldOfView(50.f);
+	PC->SetViewTarget(IntroCam);
+
+	// мумия и двойник: тот же скелет, что у героя, поэтому повторяют его позу кость в кость; видны только камере зеркала
+	auto Reflection = [Hero](const TCHAR* Name, const TCHAR* Path) -> USkeletalMeshComponent*
+	{
+		USkeletalMesh* Asset = LoadObject<USkeletalMesh>(nullptr, Path, nullptr, LOAD_NoWarn | LOAD_Quiet);
+		if (!Asset)
+		{
+			return nullptr;
+		}
+		USkeletalMeshComponent* Comp = NewObject<USkeletalMeshComponent>(Hero, Name);
+		Comp->SetupAttachment(Hero->GetMesh());
+		Comp->SetSkeletalMeshAsset(Asset);
+		Comp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		Comp->SetCastShadow(false);
+		Comp->SetVisibleInSceneCaptureOnly(true);
+		Comp->SetVisibility(false);
+		// текстуры — сразу в полном размере: меш появляется в кадре внезапно, и первые кадры они были мутными (автор, 16.11)
+		Comp->bForceMipStreaming = true;
+		Comp->RegisterComponent();
+		Comp->PrestreamTextures(60.f, true);
+		Comp->SetLeaderPoseComponent(Hero->GetMesh());
+		return Comp;
+	};
+	IntroMummy = Reflection(TEXT("IntroMummy"), TEXT("/Game/Characters/DeadMan/SK_DeadManRig.SK_DeadManRig"));
+	IntroTwin = Reflection(TEXT("IntroTwin"), TEXT("/Game/Characters/OldEnemy/SK_OldEnemy.SK_OldEnemy"));
+	// звуки сцены — в память заранее: первый вызов грузил звук с диска посреди сцены
+	for (const TCHAR* Name : { TEXT("DistantBlast"), TEXT("MirrorSting"), TEXT("Gasp"), TEXT("Heartbeat"), TEXT("WrenchHitFlesh"), TEXT("RunBed") })
+	{
+		RunAudio::Find(Name);
+	}
+	// свет каюты: на взрывах почти гаснет, на смене мумии двойником мигает
+	IntroLights.Reset();
+	IntroLightBase.Reset();
+	TInlineComponentArray<ULightComponent*> Lights(Cabin);
+	for (ULightComponent* L : Lights)
+	{
+		IntroLights.Add(L);
+		IntroLightBase.Add(L->Intensity);
+	}
+	UE_LOG(LogRun, Display, TEXT("Run: intro start mummy=%d twin=%d lights=%d"), IntroMummy ? 1 : 0, IntroTwin ? 1 : 0, IntroLights.Num());
+	TickIntro(0.f);
+}
+
+void ARunDirector::TickIntro(float DeltaSeconds)
+{
+	using namespace RunIntro;
+	APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
+	ACharacter* Hero = PC ? Cast<ACharacter>(PC->GetPawn()) : nullptr;
+	if (!Hero || !Cabin || !IntroCam)
+	{
+		EndIntro();
+		return;
+	}
+	IntroClock += DeltaSeconds;
+	const float T = IntroClock;
+	// пропуск: любая из обычных клавиш подтверждения, не раньше секунды
+	if (T > 1.f)
+	{
+		for (const FKey& Key : { EKeys::Enter, EKeys::SpaceBar, EKeys::Escape, EKeys::E, EKeys::LeftMouseButton })
+		{
+			if (PC->WasInputKeyJustPressed(Key))
+			{
+				UE_LOG(LogRun, Display, TEXT("Run: intro skipped at %.1f s"), T);
+				EndIntro();
+				return;
+			}
+		}
+	}
+	if (T >= Length)
+	{
+		EndIntro();
+		return;
+	}
+	auto Once = [this, T](int32 Bit, float At)
+	{
+		if (T >= At && !(IntroBeats & (1u << Bit)))
+		{
+			IntroBeats |= 1u << Bit;
+			return true;
+		}
+		return false;
+	};
+	const FVector C = Cabin->GetActorLocation();
+	const FVector Glass = Cabin->MirrorCenter();
+	const float Half = Hero->GetSimpleCollisionHalfHeight();
+	const FVector Feet = C + Stand;
+	USkeletalMeshComponent* Body = Hero->GetMesh();
+	UCameraComponent* Lens = IntroCam->GetCameraComponent();
+
+	// --- звук и события ---
+	float Shake = 0.f;
+	// далёкие глухие взрывы (звук DistantBlast, 3 с): на каждом свет каюты почти гаснет и, мигнув, возвращается
+	float Dark = 0.f;
+	static const float Booms[] = { 3.0f, 4.6f };
+	for (int32 I = 0; I < UE_ARRAY_COUNT(Booms); ++I)
+	{
+		if (Once(I, Booms[I]))
+		{
+			RunAudio::Play(this, TEXT("DistantBlast"), I == 0 ? 1.f : 0.8f, I == 0 ? 1.f : 0.9f);
+		}
+		const float X = T - Booms[I];
+		if (X >= 0.f)
+		{
+			Shake = FMath::Max(Shake, 0.6f * FMath::Exp(-X * 2.5f));
+			if (X < 0.9f)
+			{
+				Dark = FMath::Max(Dark, X < 0.35f ? 1.f : X < 0.45f ? 0.3f : X < 0.6f ? 0.85f : 1.f - (X - 0.6f) / 0.3f);
+			}
+		}
+	}
+	// мумия сменяется двойником: полсекунды свет часто мигает, на самой смене гаснет
+	if (T >= TwinAt - 0.5f && T < TwinAt + 0.12f)
+	{
+		Dark = FMath::Max(Dark, T >= TwinAt - 0.06f ? 1.f : (FMath::Sin(T * 55.f) > 0.f ? 0.9f : 0.15f));
+	}
+	for (int32 I = 0; I < IntroLights.Num(); ++I)
+	{
+		if (ULightComponent* L = IntroLights[I].Get())
+		{
+			L->SetIntensity(IntroLightBase[I] * (1.f - 0.94f * Dark));
+		}
+	}
+	if (Once(4, RevealAt - 0.7f))
+	{
+		// пока герой смотрел на дверь: в зеркале на его месте встал мертвец
+		Body->SetHiddenInSceneCapture(true);
+		if (IntroMummy)
+		{
+			IntroMummy->SetVisibility(true);
+		}
+	}
+	if (Once(5, RevealAt + 0.15f))
+	{
+		RunAudio::Play(this, TEXT("MirrorSting"), 0.5f);   // резкий акцент, как в триллерах (автор: «тише в 2 раза»)
+		RunAudio::Play(this, TEXT("Gasp"), 0.9f);
+	}
+	if (T >= RevealAt + 0.15f)
+	{
+		Shake = FMath::Max(Shake, 0.9f * FMath::Exp(-(T - RevealAt - 0.15f) * 2.5f));
+	}
+	if (T >= TwinAt - 0.5f && T < TwinAt)
+	{
+		Shake = 1.6f;   // тряска перед сменой ракурса
+	}
+	if (Once(6, TwinAt))
+	{
+		if (IntroMummy)
+		{
+			IntroMummy->SetVisibility(false);
+		}
+		if (IntroTwin)
+		{
+			IntroTwin->SetVisibility(true);
+		}
+		// Danger здесь не играет: это боевой трек целиком, он шёл дальше поверх игры и глушил обычную музыку
+		RunAudio::Play(this, TEXT("MirrorSting"), 0.45f, 0.8f);
+		IntroHeart = RunAudio::Loop(this, TEXT("Heartbeat"), 0.9f, 0.4f);
+	}
+	if (Once(7, FallAt - 0.25f))
+	{
+		RunAudio::Play(this, TEXT("WrenchHitFlesh"), 0.8f, 0.6f);   // тело падает на пол
+		if (IntroHeart)
+		{
+			IntroHeart->FadeOut(2.5f, 0.f);
+			IntroHeart = nullptr;
+		}
+	}
+	if (Once(8, FallAt))
+	{
+		// темнота: герой лежит на спине у капсулы, головой к ней; двойника в зеркале больше нет
+		if (IntroTwin)
+		{
+			IntroTwin->SetVisibility(false);
+		}
+		Body->SetHiddenInSceneCapture(false);
+		Hero->SetActorLocationAndRotation(Cabin->WakeLocation(), FRotator(0.f, RiseYaw, 0.f), false, nullptr, ETeleportType::TeleportPhysics);
+		// Подъём играется прямо на меше, без блюпринта анимации героя: ножная IK блюпринта спорила с анимацией и
+		// ломала ноги (автор, 16.11: «всё ещё косяк с ногами»). Первая поза — лёжа; стоит, пока он не откроет глаза
+		if (UAnimationAsset* Rise = LoadObject<UAnimationAsset>(nullptr, TEXT("/Game/Characters/Mannequins/Anims/GetUp/MM_GetUp.MM_GetUp"), nullptr, LOAD_NoWarn | LOAD_Quiet))
+		{
+			Body->PlayAnimation(Rise, false);
+			Body->SetPosition(RiseFrom, false);
+			Body->SetPlayRate(0.f);
+			bIntroRise = true;
+			if (const UAnimSequenceBase* Clip = Cast<UAnimSequenceBase>(Rise))
+			{
+				IntroRiseEnd = RiseAt + (Clip->GetPlayLength() - RiseFrom) / RiseRate;
+			}
+		}
+	}
+	if (Once(10, RiseAt) && bIntroRise)
+	{
+		Body->SetPlayRate(RiseRate);
+	}
+	if (Once(14, RiseAt) && !MusicCalm)
+	{
+		// музыка забега вступает, когда он начинает вставать, и к началу игры уже звучит (обычно её запускает UpdateAudio)
+		MusicCalm = RunAudio::Loop(this, TEXT("RunBed"), MusicVolume, 4.f);
+	}
+	if (bIntroRise && T >= IntroRiseEnd - 0.03f)
+	{
+		// встал: дальше им снова ведёт блюпринт анимации; меш возвращается в капсулу в тот же кадр
+		bIntroRise = false;
+		Body->SetAnimationMode(EAnimationMode::AnimationBlueprint);
+	}
+	if (T >= FallAt)
+	{
+		// анимация кончается в 60 см позади начала — меш на это время сдвинут навстречу
+		Body->SetRelativeLocation(IntroMeshLoc + (bIntroRise ? RiseShift : FVector::ZeroVector));
+	}
+	if (Once(12, GameCamAt))
+	{
+		PC->SetControlRotation(FRotator(-10.f, 0.f, 0.f));
+		PC->SetViewTargetWithBlend(Hero, 0.9f, VTBlend_EaseInOut, 2.f);
+	}
+	if (Once(9, 14.9f))
+	{
+		RunAudio::Play(this, TEXT("Gasp"), 0.5f, 0.9f);
+	}
+
+	// --- глаза: закрыты, пока лежит; открываются в два приёма ---
+	float Blink = 0.f;
+	if (T >= FallAt && T < RiseAt + 0.5f)
+	{
+		Blink = 1.f - 0.5f * Ramp(T, 14.9f, 15.3f) + 0.5f * Ramp(T, 15.4f, 15.55f) - Ramp(T, 15.7f, 16.1f);
+	}
+	Body->SetMorphTarget(TEXT("eyeBlinkLeft"), Blink);
+	Body->SetMorphTarget(TEXT("eyeBlinkRight"), Blink);
+
+	// --- затемнение и расфокус ---
+	// герою плохо: кадр темнеет до 70 % за 1,6 с, в последнюю секунду — расфокус от нуля до полного и полная темнота;
+	// на полу — только выход из темноты, без расфокуса
+	const float Dim = 0.7f * Ramp(T, 10.2f, FallAt - 1.f) + 0.3f * Ramp(T, FallAt - 1.f, FallAt - 0.1f);
+	// лампы на панелях потолка светят своим материалом и не гаснут вместе со светом — кадр притемняется и сам
+	IntroFade = FMath::Max3(1.f - Ramp(T, 0.2f, 1.6f), Dim * (1.f - Ramp(T, 13.5f, 15.f)), 0.85f * Dark);
+	IntroBlur = T < FallAt ? FMath::Clamp(T - (FallAt - 1.f), 0.f, 1.f) : 0.f;
+	IntroDizzy = Ramp(T, 10.2f, 12.2f) * (T < FallAt ? 1.f : 0.f);
+
+	// --- герой ---
+	IntroHeadYaw = 0.f;
+	IntroHeadRoll = T >= FallAt ? HeadRoll * (1.f - Ramp(T, RiseAt, RiseAt + 0.7f)) : 0.f;
+
+	if (T < FallAt)
+	{
+		// стоит у зеркала (yaw −90); на взрывы оборачивается к двери — головой, корпус идёт следом чуть-чуть —
+		// и возвращается; от мумии отшатывается на шаг
+		const float Turn = Ramp(T, 3.6f, 4.4f) * (1.f - Ramp(T, RevealAt - 0.75f, RevealAt - 0.1f));
+		const float Back = 28.f * Ramp(T, RevealAt + 0.15f, RevealAt + 0.45f);
+		IntroHeadYaw = 62.f * Turn;
+		Hero->SetActorLocationAndRotation(Feet + FVector(0.f, Back, Half + 2.f), FRotator(0.f, -90.f + 20.f * Turn, 0.f), false, nullptr, ETeleportType::TeleportPhysics);
+	}
+
+	// --- камера ---
+	FVector Eye, Aim, Up = FVector::UpVector;
+	float Fov = 50.f;
+	const float HeadZ = C.Z + 166.f;
+	if (T < 3.6f || (T >= RevealAt - 0.6f && T < TwinAt))
+	{
+		// из-за правого плеча: затылок слева, отражение в зеркале справа от него; после оборота — ближе
+		const bool bClose = T >= 3.6f;
+		const float Push = bClose ? Ramp(T, RevealAt, TwinAt) : Ramp(T, 0.f, 3.6f);
+		const float Jolt = bClose ? 14.f * Ramp(T, RevealAt + 0.15f, RevealAt + 0.35f) : 0.f;   // отшатнулся
+		Eye = FVector(Feet.X + (bClose ? 30.f : 40.f) - 6.f * Push, Feet.Y + (bClose ? 82.f : 105.f) - (bClose ? 6.f : 14.f) * Push + Jolt, HeadZ + 8.f);
+		Aim = FVector(Glass.X - 6.f, Glass.Y, HeadZ - 6.f);
+		Fov = bClose ? 42.f : 50.f;
+	}
+	else if (T < RevealAt - 0.6f)
+	{
+		// обернулся на звук: камера за спиной у зеркала, герой справа, смотрит на дверь
+		const float Pan = Ramp(T, 3.6f, 4.6f);
+		Eye = FVector(Feet.X - 95.f + 10.f * Pan, Feet.Y - 30.f, HeadZ + 6.f);
+		Aim = FMath::Lerp(FVector(Feet.X, Feet.Y, HeadZ), C + FVector(RunCabinGeo::InnerFace, 0.f, 150.f), 0.35f + 0.65f * Pan);
+		Fov = 55.f;
+	}
+	else if (T < FallAt)
+	{
+		// другой ракурс: из-за левого плеча, ближе; в зеркале — двойник. Потом плывёт и заваливается
+		const float Push = Ramp(T, TwinAt, FallAt);
+		Eye = FVector(Feet.X - 34.f + 8.f * Push, Feet.Y + 98.f - 16.f * Push, HeadZ + 4.f - 30.f * FMath::Square(IntroDizzy));
+		Aim = FVector(Glass.X + 5.f, Glass.Y, HeadZ - 8.f);
+		Fov = 38.f + 5.f * IntroDizzy * FMath::Sin(T * 2.3f);
+		Up = FRotator(0.f, 0.f, 9.f * IntroDizzy * FMath::Sin(T * 1.7f)).RotateVector(FVector::UpVector);
+	}
+	else
+	{
+		// на полу: он лежит ничком, щекой к полу; камера у самого пола смотрит ему в лицо и чуть отходит, пока он
+		// открывает глаза. Куда смотрит лицо — по костям: «право» (от левой ключицы к правой) × «вверх по шее»,
+		// повёрнутое на тот же угол, что и голова (IntroHeadRoll)
+		const FVector Head = Body->GetSocketLocation(TEXT("head"));
+		const FVector Crown = (Head - Body->GetSocketLocation(TEXT("neck_01"))).GetSafeNormal();
+		const FVector Side = (Body->GetSocketLocation(TEXT("clavicle_r")) - Body->GetSocketLocation(TEXT("clavicle_l"))).GetSafeNormal();
+		FVector Face = FQuat(Crown, FMath::DegreesToRadians(IntroHeadRoll)).RotateVector(FVector::CrossProduct(Side, Crown).GetSafeNormal());
+		Face.Z = FMath::Max(Face.Z, 0.05f);   // камера не уходит под пол
+		Face.Normalize();
+		const float Rise = Ramp(T, 15.2f, RiseAt);
+		Aim = Head - Crown * 5.f + Face * 7.f;   // кость головы — у макушки шеи; середина лица (нос) ниже неё вдоль шеи
+		Eye = Aim + Face * (52.f + 10.f * Rise);
+		Eye.Z = FMath::Max(Eye.Z, C.Z + 7.f);
+		Fov = 36.f;
+	}
+	if (T >= RiseAt - 0.2f)
+	{
+		// встаёт: камера отъезжает от лица вбок, к стене с зеркалом, и ведёт его по тазу
+		const FVector Base = Hero->GetActorLocation() - FVector(0.f, 0.f, Half);
+		const float Wide = Ramp(T, RiseAt - 0.2f, RiseAt + 1.2f);
+		const FVector WideEye = Base + FVector(-15.f, -200.f, 105.f);
+		const FVector WideAim = Body->GetSocketLocation(TEXT("pelvis")) + FVector(0.f, 0.f, 12.f);
+		const FQuat From = FRotationMatrix::MakeFromXZ((Aim - Eye).GetSafeNormal(), Up).ToQuat();
+		const FQuat To = FRotationMatrix::MakeFromXZ((WideAim - WideEye).GetSafeNormal(), FVector::UpVector).ToQuat();
+		const FQuat Mix = FQuat::Slerp(From, To, Wide);
+		Eye = FMath::Lerp(Eye, WideEye, Wide);
+		Aim = Eye + Mix.GetForwardVector() * 100.f;
+		Up = Mix.GetUpVector();
+		Fov = FMath::Lerp(36.f, 62.f, Wide);
+	}
+	if (T < GameCamAt)
+	{
+		FRotator Rot = FRotationMatrix::MakeFromXZ((Aim - Eye).GetSafeNormal(), Up).Rotator();
+		Rot += FRotator(FMath::Sin(T * 37.f) * 0.5f * Shake, FMath::Sin(T * 29.f + 1.f) * 0.6f * Shake, FMath::Sin(T * 23.f) * 0.4f * Shake);
+		IntroCam->SetActorLocationAndRotation(Eye + FVector(FMath::Sin(T * 0.7f), 0.f, FMath::Sin(T * 0.9f + 1.f)) * 0.6f, Rot);
+		Lens->SetFieldOfView(Fov);
+	}
+
+	// проверка без рук (-RunIntroShots): кадры сцены с экраном поверх
+	static const float ShotAt[] = { 1.8f, 3.15f, 3.42f, 3.8f, 6.6f, 8.7f, 8.98f, 9.04f, 9.1f, 9.5f, 15.2f, 16.0f, 18.2f, 20.0f, 21.5f };
+	if (IntroShots < UE_ARRAY_COUNT(ShotAt) && T > ShotAt[IntroShots] && FParse::Param(FCommandLine::Get(), TEXT("RunIntroShots")))
+	{
+		FScreenshotRequest::RequestScreenshot(FPaths::ProjectSavedDir() / FString::Printf(TEXT("Screenshots/Intro/intro_%02d.png"), IntroShots), true, false);
+		UE_LOG(LogRun, Display, TEXT("Run: intro shot %d at %.2f s"), IntroShots, T);
+		++IntroShots;
+	}
+}
+
+void ARunDirector::EndIntro()
+{
+	if (!bIntro)
+	{
+		return;
+	}
+	bIntro = false;
+	RunIntro::GIntroSeen = true;
+	IntroFade = 0.f;
+	IntroBlur = 0.f;
+	IntroDizzy = 0.f;
+	IntroHeadYaw = 0.f;
+	IntroHeadRoll = 0.f;
+	APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
+	ACharacter* Hero = PC ? Cast<ACharacter>(PC->GetPawn()) : nullptr;
+	if (Hero)
+	{
+		USkeletalMeshComponent* Body = Hero->GetMesh();
+		Body->SetBoundsScale(1.5f);
+		Body->SetRelativeLocationAndRotation(IntroMeshLoc, IntroMeshRot);
+		if (bIntroRise || Body->GetAnimationMode() != EAnimationMode::AnimationBlueprint)
+		{
+			Body->SetAnimationMode(EAnimationMode::AnimationBlueprint);
+		}
+		bIntroRise = false;
+		Body->SetHiddenInSceneCapture(false);
+		Body->SetMorphTarget(TEXT("eyeBlinkLeft"), 0.f);
+		Body->SetMorphTarget(TEXT("eyeBlinkRight"), 0.f);
+		if (Cabin)
+		{
+			// там же и так же, как он встал: сцена переходит в игру без скачка (и при пропуске тоже)
+			Hero->SetActorLocationAndRotation(Cabin->WakeLocation(), FRotator(0.f, RunIntro::RiseYaw, 0.f), false, nullptr, ETeleportType::TeleportPhysics);
+		}
+	}
+	if (IntroTwin)
+	{
+		IntroTwin->DestroyComponent();
+		IntroTwin = nullptr;
+	}
+	if (IntroMummy)
+	{
+		IntroMummy->DestroyComponent();
+		IntroMummy = nullptr;
+	}
+	if (IntroHeart)
+	{
+		IntroHeart->FadeOut(1.f, 0.f);
+		IntroHeart = nullptr;
+	}
+	for (int32 I = 0; I < IntroLights.Num(); ++I)
+	{
+		if (ULightComponent* L = IntroLights[I].Get())
+		{
+			L->SetIntensity(IntroLightBase[I]);
+		}
+	}
+	IntroLights.Reset();
+	if (PC)
+	{
+		PC->SetControlRotation(FRotator(-10.f, 0.f, 0.f));
+		if (Hero)
+		{
+			PC->SetViewTarget(Hero);
+		}
+		PC->ResetIgnoreMoveInput();
+		PC->ResetIgnoreLookInput();
+		EnableInput(PC);
+	}
+	if (IntroCam)
+	{
+		IntroCam->Destroy();
+		IntroCam = nullptr;
+	}
+	UE_LOG(LogRun, Display, TEXT("Run: intro done"));
+	if (Cabin)
+	{
+		Say(TEXT("My cabin? I don't remember falling asleep. And the door is locked with a code."), 8.f);
+		ShowTip(TEXT("[E] at the keypad left of the door"), 8.f);
+	}
+	if (FParse::Param(FCommandLine::Get(), TEXT("RunIntroShots")))
+	{
+		FPlatformMisc::RequestExit(false);
+	}
+}
+
+// ---------- взгляд на предмет ----------
+// Автор, 16.11: «когда он видит труп при выходе, камера наводилась на него, а его голова смотрела на труп, пока он
+// говорит про него». Голова поворачивается правкой костей шеи (IntroHeadYaw, IntroHeadPitch в ApplyFist), не дальше
+// 75° в сторону: за спину герой не оглядывается. Камера наводится сама первые секунды, потом снова слушается мыши.
+
+void ARunDirector::LookAt(const FVector& Target, float HeadSeconds, float CameraSeconds)
+{
+	const float Now = GetWorld()->GetTimeSeconds();
+	LookTarget = Target;
+	LookUntil = Now + HeadSeconds;
+	LookCamUntil = Now + CameraSeconds;
+}
+
+void ARunDirector::LookAtSelfBody()
+{
+	if (RoomActor && !bSelfTest)
+	{
+		// тело у южной двери рубки (RunStory::SelfBody), смотреть — на грудь; голова — пока идёт реплика
+		const float Speak = FMath::Max(VoiceUntil - GetWorld()->GetTimeSeconds(), 4.f);
+		LookAt(RoomActor->GetActorLocation() + RunStory::SelfBody + FVector(0.f, 0.f, 20.f), Speak, 2.6f);
+	}
+}
+
+void ARunDirector::TickLook(float DeltaSeconds, ACharacter* Ch)
+{
+	const float Now = GetWorld()->GetTimeSeconds();
+	APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
+	const bool bOn = Now < LookUntil && Phase == ERunPhase::Playing;
+	// голова
+	float Yaw = 0.f, Pitch = 0.f;
+	bool bInFront = false;
+	if (bOn)
+	{
+		const FVector Head = Ch->GetMesh()->GetSocketLocation(TEXT("head"));
+		const FVector Local = Ch->GetActorRotation().UnrotateVector(LookTarget - Head);
+		Yaw = FMath::RadiansToDegrees(FMath::Atan2(Local.Y, Local.X));
+		Pitch = FMath::RadiansToDegrees(FMath::Atan2(Local.Z, FVector2D(Local.X, Local.Y).Size()));
+		bInFront = FMath::Abs(Yaw) < 115.f;
+	}
+	LookAlpha = FMath::FInterpTo(LookAlpha, bInFront ? 1.f : 0.f, DeltaSeconds, 4.f);
+	if (LookAlpha > 0.005f && bOn)
+	{
+		IntroHeadYaw = FMath::Clamp(Yaw, -75.f, 75.f) * LookAlpha;
+		IntroHeadPitch = FMath::Clamp(Pitch, -45.f, 25.f) * LookAlpha;
+	}
+	else if (LookAlpha <= 0.005f || !bOn)
+	{
+		// взгляд отпущен: голова возвращается за ту же четверть секунды
+		IntroHeadYaw = FMath::FInterpTo(IntroHeadYaw, 0.f, DeltaSeconds, 5.f);
+		IntroHeadPitch = FMath::FInterpTo(IntroHeadPitch, 0.f, DeltaSeconds, 5.f);
+	}
+	// камера: первые секунды сама поворачивается к предмету
+	const bool bCam = PC && Now < LookCamUntil && Phase == ERunPhase::Playing && !bMenuOpen;
+	if (bCam != bLookCam && PC)
+	{
+		bLookCam = bCam;
+		PC->SetIgnoreLookInput(bCam);
+		if (!bCam)
+		{
+			PC->ResetIgnoreLookInput();
+		}
+	}
+	if (bCam && PC->PlayerCameraManager)
+	{
+		const FRotator Want = (LookTarget - PC->PlayerCameraManager->GetCameraLocation()).Rotation();
+		PC->SetControlRotation(FMath::RInterpTo(PC->GetControlRotation(), Want, DeltaSeconds, 3.5f));
 	}
 }

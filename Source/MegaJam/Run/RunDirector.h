@@ -52,6 +52,7 @@ struct FRunRoomState
 	int32 Key = 0;
 	int32 Doors[4] = { -1, -1, -1, -1 };   // номер комнаты есть только у обратной двери; −1 — ведёт по карману
 	bool bVisited = false;
+	bool bTouched = false;                 // игрок здесь что-то взял или оставил: такая комната не забывается (DoSwap)
 };
 
 /** Противник. Живёт в комнате своего набора, как и вещи; человек идёт за игроком (решение автора 13.11). */
@@ -163,6 +164,10 @@ public:
 	float GetRunSeconds() const;
 	/** Затемнение перед сценой концовки 0..1. */
 	float GetWinFade() const;
+	/** Вступительная сцена в каюте (автор, 16.11): идёт ли она, затемнение и помутнение кадра (0–1) для экрана. */
+	bool IsIntro() const { return bIntro; }
+	float GetIntroFade() const { return IntroFade; }
+	float GetIntroBlur() const { return IntroBlur; }
 	const FString& GetDeathCause() const { return DeathCause; }
 	uint32 GetSeed() const { return Seed; }
 	bool IsPausedByMenu() const { return bMenuPause; }
@@ -347,12 +352,59 @@ private:
 	FName RoomToneName;
 	bool bCombatMusic = false;
 	float CombatHold = 0.f;        // боевой трек держится ещё столько секунд после того, как врагов не стало
-	float StepLeft = 0.f;          // сантиметров до следующего звука шага
+	float StepLeft = 0.f;          // сантиметров до следующего звука шага (запасной счёт по пути)
+	// шаги по касанию стопы пола (UpdateAudio): где стопы были кадр назад, идёт ли стопа махом, когда был шаг
+	FVector FootPrev[2] = { FVector::ZeroVector, FVector::ZeroVector };
+	bool bFootSwing[2] = { false, false };
+	bool bFootSeen = false;
+	float FootStepAt = -10.f;      // когда кости стоп в последний раз дали шаг
+	float FootMoveAt = 0.f;        // с какого времени герой идёт без остановки
+	// вступительная сцена (конец RunDirector.cpp)
+	bool bIntro = false;
+	float IntroClock = 0.f;
+	uint32 IntroBeats = 0;         // какие события сцены уже случились
+	int32 IntroShots = 0;
+	float IntroFade = 0.f;
+	float IntroBlur = 0.f;
+	FVector IntroMeshLoc = FVector::ZeroVector;   // как меш героя стоял в капсуле до сцены
+	FRotator IntroMeshRot = FRotator::ZeroRotator;
+	UPROPERTY() TObjectPtr<class ACameraActor> IntroCam;
+	UPROPERTY() TObjectPtr<class USkeletalMeshComponent> IntroMummy;
+	float IntroDizzy = 0.f;        // 0–1: герою плохо — камера плывёт
+	float IntroHeadYaw = 0.f;      // на сколько градусов голова повёрнута сверх корпуса (ApplyFist правит кости шеи)
+	float IntroHeadRoll = 0.f;     // лёжа ничком: на сколько градусов голова повёрнута вокруг шеи, щекой к полу
+	float IntroHeadPitch = 0.f;    // взгляд вверх (+) или вниз (−), градусы — вместе с IntroHeadYaw
+	// Взгляд на предмет (LookAt): герой поворачивает к нему голову, пока говорит, а камера сначала наводится на него
+	FVector LookTarget = FVector::ZeroVector;
+	float LookUntil = -1.f;        // до какого времени голова смотрит на LookTarget
+	float LookCamUntil = -1.f;     // до какого времени камера сама наводится на него (мышь на это время не слушается)
+	float LookAlpha = 0.f;
+	bool bLookCam = false;
+	void LookAt(const FVector& Target, float HeadSeconds, float CameraSeconds);
+	void LookAtSelfBody();
+	void TickLook(float DeltaSeconds, ACharacter* Ch);
+	FTransform HeadMark;           // кость головы после правки: второй раз за кадр те же кости не правим
+	FTransform HeadRefInv;         // обратная поза покоя кости головы (в осях меша): корень ведётся за головой, ApplyFist
+	bool bHeadRef = false;
+	bool bHeadMarked = false;
+	UPROPERTY() TObjectPtr<class USkeletalMeshComponent> IntroTwin;
+	UPROPERTY() TObjectPtr<class UAudioComponent> IntroHeart;
+	TArray<TWeakObjectPtr<class ULightComponent>> IntroLights;   // свет каюты и его обычная сила: в сцене он гаснет и мигает
+	TArray<float> IntroLightBase;
+	bool bIntroRise = false;       // на меше героя играет подъём с пола (MM_GetUp), блюпринт анимации отключён
+	float IntroRiseEnd = 1000.f;   // когда подъём кончится, по часам сцены
+	bool ShouldPlayIntro() const;
+	void StartIntro();
+	void TickIntro(float DeltaSeconds);
+	void EndIntro();
+	bool bLogSteps = false;        // -RunSteps: каждый стук шага — в журнал
+	bool bStepsWalk = false;       // -RunStepsWalk: герой сам ходит и бегает туда-обратно, стуки — в журнал, потом выход
 	float DodgeSafeUntil = -100.f;
 	bool bFlashlightLit = false;
 	bool bEndMusic = false;
 	void UpdateAudio(float DeltaSeconds, class ACharacter* Ch);
 	UPROPERTY() TObjectPtr<class USpotLightComponent> Flashlight;
+	UPROPERTY() TObjectPtr<class UStaticMeshComponent> FlashGlow;   // светящийся диск на торце фонарика: видно, что он горит, и когда луч в камеру
 	// присед: C переключает, Ctrl держит; без анимаций приседа герой сжимается по высоте (UpdateCrouch)
 	bool bCrouchToggle = false;
 	bool bCrouchPose = false;
@@ -640,6 +692,8 @@ private:
 	const FRunRoomContent& CurrentContent() const { return Keys.FindChecked(Rooms[CurrentRoom].Key).Content; }
 	void SetupPlayer();
 	void SpawnRoom(int32 RoomId, const FVector& Location, int32 ArrivalDoor);
+	/** Игрок взял или оставил вещь в этой комнате: она остаётся за обратной дверью следующих комнат. */
+	void TouchRoom();
 	void SpawnRoomContents();
 	ARunItem* SpawnItemActor(int32 Item, int32 NoteIndex, const FVector& Location, int32 Uid = 0);
 	/** Записать вещь в комнату набора. Аптечка в нише получает Niche, остальные — метку по порядку. */

@@ -1,0 +1,46 @@
+[
+ {
+  "file": "distant-blast-1.wav",
+  "chosen": false,
+  "seed": 1950774336,
+  "score": -0.18,
+  "measured": "начало 0.05 с, звучит 2.88 с",
+  "seconds": 2.91,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, a huge explosion far away inside a large metal spaceship, one deep muffled boom heard through several thick bulkheads, then a low rumble that shakes the hull and dies away, sub-bass thud, dull, low-passed, groaning metal, no crackle, no debris, distant, heard from inside a small closed cabin.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "distant-blast-2.wav",
+  "chosen": true,
+  "seed": 1950774337,
+  "score": -0.16,
+  "measured": "начало 0.04 с, звучит 2.88 с",
+  "seconds": 2.91,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, a huge explosion far away inside a large metal spaceship, one deep muffled boom heard through several thick bulkheads, then a low rumble that shakes the hull and dies away, sub-bass thud, dull, low-passed, groaning metal, no crackle, no debris, distant, heard from inside a small closed cabin.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "distant-blast-3.wav",
+  "chosen": false,
+  "seed": 1950774338,
+  "score": -0.38,
+  "measured": "начало 0.00 с, звучит 2.56 с",
+  "seconds": 2.6,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, a huge explosion far away inside a large metal spaceship, one deep muffled boom heard through several thick bulkheads, then a low rumble that shakes the hull and dies away, sub-bass thud, dull, low-passed, groaning metal, no crackle, no debris, distant, heard from inside a small closed cabin.",
+  "model": "medium + same-l"
+ },
+ {
+  "file": "distant-blast-4.wav",
+  "chosen": false,
+  "seed": 1950774339,
+  "score": -0.4,
+  "measured": "начало 0.04 с, звучит 2.48 с",
+  "seconds": 2.52,
+  "kind": "shot",
+  "prompt_used": "TrackType: SFX, a huge explosion far away inside a large metal spaceship, one deep muffled boom heard through several thick bulkheads, then a low rumble that shakes the hull and dies away, sub-bass thud, dull, low-passed, groaning metal, no crackle, no debris, distant, heard from inside a small closed cabin.",
+  "model": "medium + same-l"
+ }
+]

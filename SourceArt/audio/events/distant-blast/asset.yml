@@ -1,0 +1,10 @@
+title: Distant Blast
+kind: sound
+priority: 2
+idea: "Opening scene: a far explosion somewhere in the ship, heard from the cabin."
+prompt: "a huge explosion far away inside a large metal spaceship, one deep muffled boom heard through several thick bulkheads, then a low rumble that shakes the hull and dies away, sub-bass thud, dull, low-passed, groaning metal, no crackle, no debris, distant, heard from inside a small closed cabin."
+seconds: 4
+notes: |
+  Приоритет 2.
+  15.11: звук сгенерирован локально Stable Audio 3 (tools/audio/generate_sfx.py), дублей 4, выбран distant-blast-2.wav по измерениям — на слух ассистент не проверял. Другой дубль: кнопка «В игру» у него, потом tools/ue/import_audio.py.
+take: distant-blast-2.wav

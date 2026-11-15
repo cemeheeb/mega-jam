@@ -1,6 +1,7 @@
 #include "RunCabin.h"
 
 #include "Camera/PlayerCameraManager.h"
+#include "Components/PointLightComponent.h"
 #include "Components/SceneCaptureComponent2D.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/TextRenderComponent.h"
@@ -146,9 +147,30 @@ void ARunCabin::SetupMirror(UStaticMeshComponent* Backing)
 	MirrorCapture->bAlwaysPersistRenderingState = true;
 	MirrorCapture->bUseCustomProjectionMatrix = true;
 	MirrorCapture->ShowFlags.SetMotionBlur(false);
+	// отражённый свет в кадре зеркала (автор, 16.11: «там оно темнее и контрастнее, поэтому сразу ощущение, что это
+	// не зеркало, а комната за стеклом»): без него в отражении есть только прямой свет ламп, тени чёрные
+	MirrorCapture->ShowFlags.SetGlobalIllumination(true);
+	MirrorCapture->ShowFlags.SetLumenGlobalIllumination(true);
+	MirrorCapture->ShowFlags.SetLumenReflections(true);
+	MirrorCapture->PostProcessBlendWeight = 1.f;
+	MirrorCapture->PostProcessSettings.bOverride_DynamicGlobalIlluminationMethod = true;
+	MirrorCapture->PostProcessSettings.DynamicGlobalIlluminationMethod = EDynamicGlobalIlluminationMethod::Lumen;
+	MirrorCapture->PostProcessSettings.bOverride_ReflectionMethod = true;
+	MirrorCapture->PostProcessSettings.ReflectionMethod = EReflectionMethod::Lumen;
 	MirrorCapture->HideComponent(MirrorGlass);
 	MirrorCapture->HideComponent(Backing);
 	MirrorCapture->RegisterComponent();
+	// лампа над зеркалом: тот, кто стоит перед ним, обращён лицом к стене, спиной к свету каюты, а в кадре камеры
+	// зеркала нет отражённого света — без лампы отражение выходило чёрным силуэтом (кадры вступительной сцены, 16.11)
+	UPointLightComponent* Lamp = NewObject<UPointLightComponent>(this, TEXT("MirrorLamp"));
+	Lamp->SetupAttachment(GetRootComponent());
+	Lamp->SetMobility(EComponentMobility::Movable);
+	Lamp->SetIntensity(260.f);
+	Lamp->SetAttenuationRadius(280.f);
+	Lamp->SetLightColor(FLinearColor(1.f, 0.94f, 0.86f));
+	Lamp->SetCastShadows(false);
+	Lamp->RegisterComponent();
+	Lamp->SetWorldLocation(Face + FVector(0.f, 28.f, MirrorHalf.Y + 12.f));
 	UpdateMirror();
 }
 
@@ -212,6 +234,11 @@ bool ARunCabin::IsNearKeypad(const FVector& PawnPos) const
 {
 	const FVector Local = PawnPos - GetActorLocation();
 	return Local.X < InnerFace + 10.f && FVector::Dist2D(PawnPos, KeypadLocation()) < 175.f;
+}
+
+FVector ARunCabin::MirrorCenter() const
+{
+	return MirrorGlass ? MirrorGlass->GetComponentLocation() : GetActorLocation() + FVector(37.5f, -147.6f, 150.f);
 }
 
 FVector ARunCabin::WakeLocation() const
