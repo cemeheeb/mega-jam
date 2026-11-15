@@ -1,5 +1,9 @@
 title: Circuit Board
 kind: model
+priority: 1
 idea: Green circuit board with chips and a burnt corner.
 prompt: "A rectangular circuit board about the size of a paperback book: a dark green board with fine lighter traces, several square and rectangular black chips, a row of small silver capacitors, a cream edge connector with a row of gold contacts along one long side, copper rings around three corner mounting holes, and one blackened, charred corner."
 avoid: smoke, flames
+generated: true
+notes: |
+  15.11: меш Tripo автора принят как есть. SM_CircuitBoard 16 × 12 × 2 см, привязка — центр дна; в игре /Game/Items/CircuitBoard, подхватывается по правилу имён (ARunItem::FindModel). Сборка — tools/blender/props/tripo_props.py, импорт — tools/ue/import_props.py.

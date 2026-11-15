@@ -1,5 +1,9 @@
 title: Ration Tin
 kind: model
+priority: 1
 idea: Dented food tin with a peeling label.
 prompt: "A dented rectangular food ration tin with rounded corners: a brushed aluminium body with a shallow dent in one side, a lid with a pull ring, and a half-peeled off-white paper label with an international orange stripe and no text, one corner of the label curling away."
 avoid: open lid, food
+generated: true
+notes: |
+  15.11: меш Tripo автора принят как есть: 14 × 8 × 5 см. Привязка — центр дна; в игре /Game/Items, подхватывается по правилу имён. Сборка — tools/blender/props/tripo_props.py, импорт — tools/ue/import_props.py.

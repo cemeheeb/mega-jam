@@ -1,5 +1,6 @@
 title: Cartridge Vault
 kind: model
+priority: 2
 style: interior
 idea: "Cabinet of data cartridges, three rows of four slots."
 prompt: "A data storage vault cabinet one metre sixty wide, one metre eighty tall and forty centimetres deep: an off-white painted metal cabinet with a graphite front divided into three rows of four upright slots, each slot holding a flat data cartridge with a light-grey aluminium handle and a small muted teal status window; two of the twelve slots are empty dark openings. An international orange stripe across the top and a small keypad on the right side."

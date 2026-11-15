@@ -1,5 +1,6 @@
 title: Core Pylon
 kind: model
+priority: 2
 style: interior
 idea: "Slim floor-to-ceiling pylon with a power bus arm towards the warp core."
 prompt: "A slim structural pylon three metres tall and forty centimetres square that carries power to an engine core: a square column of off-white painted metal panels with rounded edges, a graphite base and head, bands of international orange near the top and the bottom, a tall narrow maintenance hatch with a small muted teal status light on one face, and near the top a thick horizontal power bus arm about a metre long sticking out from one face, light-grey aluminium with ribbed graphite insulators."

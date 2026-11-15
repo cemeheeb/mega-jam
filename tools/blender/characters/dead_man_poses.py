@@ -205,6 +205,7 @@ def place(kind, pel=None, rest=()):
 TABLE = (0.78, 0.80)      # top and depth, m: tables in build_rooms.py (top 0.75 + 0.03, 0.8 deep)
 CONSOLE = (1.00, 0.60)    # consoles there: tops 0.95-1.01, 0.6 deep
 ARMS = LIMB_BONES['arm.L'] | LIMB_BONES['arm.R']
+LEGS = LIMB_BONES['leg.L'] | LIMB_BONES['leg.R']
 TRUNK = CORE & ~np.isin(_dom, ['DEF-thigh.L', 'DEF-thigh.R'])     # what lines up with the edge, not a leg thrown out
 
 
@@ -226,9 +227,10 @@ def place_top(top, edge=None, hips=None, legs=()):
         y = co[:, 1] + d.y
         on = (y > 0.02) & (y < D)
         d.z = H - np.percentile(co[CORE & on, 2], 0.5)
-        lie = on & ~CORE & ~ARMS & (co[:, 2] + d.z > H - 0.25)     # legs lying on the top, not hanging under it
-        if lie.any() and co[lie, 2].min() + d.z < H - SINK:
-            d.z = H - SINK - co[lie, 2].min()
+        if it == 7:                     # last: no leg lying on the top may go into it deeper than SINK
+            lie = on & LEGS & ~CORE & (co[:, 2] + d.z > H - 0.25)  # lying on the top, not hanging under it
+            if lie.any() and co[lie, 2].min() + d.z < H - SINK:
+                d.z = H - SINK - co[lie, 2].min()
         set_wmat('torso', Matrix.Translation(d) @ wmat('torso'))
         if it < 7:
             for limb in legs:
@@ -244,11 +246,12 @@ FLOOR_TOL = 0.015          # m an arm may go into the floor (or the wall) as it 
 BODY_TOL = 0.012           # m into the body before it counts as a hit
 STEP = radians(3)
 ELBOW = (radians(0), radians(150))
-WRIST = radians(70)        # the hand may fall this far either way from the pose
+WRIST = radians(70)        # the hand may fall this far from the pose, any way
 ARM_CHAIN = (              # control, bones that move with it, bones that may hit, skip points this near the joint
     ('upper_arm_fk', ('upper_arm', 'forearm', 'hand'), ('upper_arm', 'forearm'), 0.10),
-    ('forearm_fk', ('forearm', 'hand'), ('forearm',), 0.05),
-    ('hand_fk', ('hand',), ('hand',), 0.03),
+    ('forearm_fk', ('forearm', 'hand'), ('forearm', 'hand'), 0.05),
+    ('swing', ('upper_arm', 'forearm'), ('upper_arm', 'forearm'), 0.10),   # the elbow folds down about shoulder-wrist
+    ('hand_fk', ('hand',), ('hand',), 0.03),     # last: it also lifts the hand out of whatever the others pushed it in
 )
 
 _lv = np.empty(len(ob.data.loops), int)
@@ -275,9 +278,9 @@ def _hits(P, bvh, stop=None):
     n = int((P[:, 2] < -FLOOR_TOL).sum())
     if _SUP['wall']:
         n += int((P[:, 1] > FLOOR_TOL).sum())
-    if _SUP['top']:
-        H, D = _SUP['top']
-        n += int(((P[:, 1] > FLOOR_TOL) & (P[:, 1] < D) & (P[:, 2] < H - FLOOR_TOL)).sum())
+    if _SUP['top']:                     # past the far edge too: the furniture may stand against a wall
+        H = _SUP['top'][0]
+        n += int(((P[:, 1] > FLOOR_TOL) & (P[:, 2] < H - FLOOR_TOL)).sum())
     for p in P:
         if stop is not None and n > stop:
             break
@@ -289,8 +292,11 @@ def _hits(P, bvh, stop=None):
 
 
 def _fall(s, ctrl, bones, hit_bones, near, lim):
-    """Turns one joint of the arm towards gravity until it meets something. lim: allowed turn (lo, hi), rad."""
-    name = f'{ctrl}.{s}'
+    """Turns one joint of the arm towards gravity until it meets something. lim: allowed turn (lo, hi), rad.
+    ctrl 'swing': the whole arm about the line from the shoulder to the wrist, so that an arm propped on its hand
+    lets the elbow down while the hand stays where it is."""
+    swing = ctrl == 'swing'
+    name = f'upper_arm_fk.{s}' if swing else f'{ctrl}.{s}'
     upd()
     co = body_points()
     bvh = _collider(co, LIMB_BONES['arm.' + s])
@@ -303,14 +309,14 @@ def _fall(s, ctrl, bones, hit_bones, near, lim):
         return 0.0
     r = Vector(mass.mean(0) - p)
     g = Vector((0, 0, -1))
-    if ctrl == 'upper_arm_fk':                                  # a ball joint: straight towards down
+    if not swing and ctrl in ('upper_arm_fk', 'hand_fk'):       # ball joints: straight towards down
         a = r.cross(g)
         if a.length < 1e-4:
             return 0.0
         a.normalize()
         th = r.angle(g)
-    else:                                                       # a hinge about the bone's X
-        a = M.to_3x3().col[0].normalized()
+    else:                                                       # a hinge: about the bone's X, or shoulder-wrist
+        a = (wmat(f'hand_fk.{s}').translation - M.translation).normalized() if swing else M.to_3x3().col[0].normalized()
         rp, gp = r - a * r.dot(a), g - a * g.dot(a)
         if gp.length < 0.2 or rp.length < 1e-4:
             return 0.0
@@ -323,17 +329,17 @@ def _fall(s, ctrl, bones, hit_bones, near, lim):
 
     start = 0.0
     base = _hits(P, bvh)
-    if ctrl == 'hand_fk' and base > max(3, len(P) // 50):       # the hand is pushed into something: lift it out
-        best = (base, 0.0)
-        t = lo
-        while t <= hi + 1e-6:
+    if ctrl == 'hand_fk' and base > max(3, len(P) // 50):       # the hand is pushed into something: lift it out,
+        best = (base, 0.0)                                      # past the wrist's limit if need be
+        t = -radians(90)
+        while t <= radians(90) + 1e-6:
             h = _hits(turned(t), bvh, stop=best[0])
             if h < best[0] or (h == best[0] and abs(t) < abs(best[1])):
                 best = (h, t)
             t += STEP
         start, base = best[1], best[0]
     tol = base + max(3, len(P) // 50)
-    end = max(lo, min(hi, th))
+    end = max(lo, min(hi, th)) if lo < hi else start
     sign = 1.0 if end > start else -1.0
     t = start
     while abs(end - t) > 1e-6:
@@ -350,7 +356,7 @@ def _fall(s, ctrl, bones, hit_bones, near, lim):
 def drop_arms(wall=False, top=None):
     _SUP['wall'], _SUP['top'] = wall, top
     for s in ('L', 'R'):
-        wrist = 0.0
+        q0 = pb[f'hand_fk.{s}'].matrix_basis.to_quaternion()      # the wrist falls at most WRIST from the pose
         for _ in range(3):
             moved = False
             for ctrl, bones, hit_bones, near in ARM_CHAIN:
@@ -362,10 +368,9 @@ def drop_arms(wall=False, top=None):
                         continue
                     lim = (ELBOW[0] - e, ELBOW[1] - e)
                 elif ctrl == 'hand_fk':
-                    lim = (-WRIST - wrist, WRIST - wrist)
+                    bent = q0.rotation_difference(pb[f'hand_fk.{s}'].matrix_basis.to_quaternion()).angle
+                    lim = (-(WRIST - bent), WRIST - bent)         # empty when used up: then it only lifts out
                 t = _fall(s, ctrl, bones, hit_bones, near, lim)
-                if ctrl == 'hand_fk':
-                    wrist += t
                 moved |= abs(t) > radians(0.5)
             if not moved:
                 break
@@ -554,8 +559,8 @@ def table1():          # on the back across a table, pushed back from sitting on
     lay('back')                                   # the head into the table (+Y), the feet out over the edge
     turn('head', (0, 0, 1), 25)
     turn('chest', (0, 0, 1), -8)
-    arm('L', (1, -0.15, 0.25), (0, 0, 1), elbow=35, wrist=10)
-    arm('R', (-1, -0.15, 0.55), (0, 0, 1), elbow=60, wrist=20)
+    arm('L', (1, -0.15, -0.1), (0, 0, 1), elbow=35, wrist=10)
+    arm('R', (-1, -0.15, -0.05), (0, 0, 1), elbow=40, wrist=20)
     leg('L', (0.12, -0.45, -1), (0, 1, 0), knee=12, ankle=25, frame='root')
     leg('R', (-0.2, -0.6, -1), (0, 1, 0), knee=22, ankle=30, frame='root')
     place_top(TABLE, hips=-0.02)
@@ -567,7 +572,7 @@ def table2():          # on the back along a table, the near arm and leg hanging
     turn('torso', (0, 0, 1), 90, 'root')          # the head to -X, the body's right side to the edge (-Y)
     turn('head', (0, 0, 1), -35)
     arm('R', (-1, -0.2, -0.15), (0, 1, 0), elbow=20, wrist=10)
-    arm('L', (0.35, -0.5, -1), (0, 0, 1), elbow=70, wrist=15)
+    arm('L', (0.45, -0.15, -1), (0, 0, 1), elbow=25, wrist=15)
     leg('R', (-0.7, -0.1, -0.7), (0, 1, 0), knee=85, ankle=30)
     leg('L', (0.08, -0.05, -1), (0, 1, 0), knee=10, ankle=35)
     place_top(TABLE, edge=-0.03, legs=('leg.L',))

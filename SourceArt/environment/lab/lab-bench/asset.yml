@@ -1,5 +1,6 @@
 title: Lab Bench Set
 kind: model
+priority: 3
 style: interior-kit
 idea: "Laboratory bench with a microscope, a centrifuge, flasks and a stool."
 prompt: "Five separate pieces of laboratory equipment in a row: a long lab bench two metres forty by seventy centimetres and waist high, an off-white painted metal cabinet with drawers and a flat graphite work top; a compact binocular microscope with a light-grey aluminium body about forty centimetres tall; a squat round bench centrifuge with a domed graphite lid and a muted teal display; a small rack holding three conical flasks of milky frosted muted teal glass; and a round swivel stool with a graphite seat on a single aluminium post."

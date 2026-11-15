@@ -1,5 +1,6 @@
 title: Power Panel
 kind: model
+priority: 3
 style: interior
 idea: "Wall power board with sockets for power cells and fuses."
 prompt: "A wall-mounted power distribution board one and a half metres square and ten centimetres thick: an off-white painted metal panel with a graphite frame, in its upper half three round horizontal sockets each holding a thick cylindrical power cell of milky frosted muted teal glass with aluminium end caps, in its lower half a row of four upright fuse holders with clear caps and international orange levers, small muted teal indicator windows beside every socket and a large orange main breaker handle on the right."

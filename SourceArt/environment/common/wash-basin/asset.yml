@@ -1,5 +1,6 @@
 title: Wash Basin
 kind: model
+priority: 3
 style: interior
 idea: "Compact wash basin on a cabinet. Sickbay and lavatory."
 prompt: "A compact ship wash basin unit eighty-five centimetres tall, sixty wide and forty deep: an off-white painted metal cabinet with rounded corners and one door, a round recessed brushed aluminium bowl in its top, a short curved tap with a single lever, a graphite splash guard along the back and an international orange stripe along the base."

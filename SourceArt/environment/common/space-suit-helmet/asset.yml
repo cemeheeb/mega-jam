@@ -1,5 +1,6 @@
 title: Space Suit Helmet
 kind: model
+priority: 1
 style: interior
 idea: "Helmet of the spacesuit alone. Sits on the hero's head while the suit is on."
 prompt: "A single spacesuit helmet about thirty-six centimetres across: a round off-white hard shell with a wide dark smoky tinted visor covering the front, an international orange stripe running over the crown from front to back, a brushed aluminium neck ring with four latches at the bottom, a small boxy lamp housing on each side at temple height, and a short graphite rubber air hose stub at the back of the neck ring."
@@ -12,3 +13,5 @@ notes: |
   и поставить на него M_KitGlass.
   [Допущение ассистента] Полный костюм на теле героя не делаем: нужен перенос весов на скелет, до сдачи не успеть.
   Шлем — единственный признак надетого скафандра.
+  15.11: меш Tripo автора принят как есть. SM_SpaceSuitHelmet 37 см, привязка — середина; в игре /Game/Environment/Common/SpaceSuitHelmet, надет на голову героя (ARunDirector::PutOnSuit), забрало по ходу героя. Сборка — tools/blender/props/tripo_props.py, импорт — tools/ue/import_props.py.
+generated: true

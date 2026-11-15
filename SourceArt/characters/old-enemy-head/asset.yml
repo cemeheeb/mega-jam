@@ -1,0 +1,9 @@
+title: Old Enemy Head
+kind: model
+style: head
+idea: Head of the old man with long grey hair and a grey beard, blood on the face. Separate model, so the face gets all the detail.
+prompt: ""
+notes: |
+  Модель Tripo от автора (архив man_old_enemy_head.zip, 15.11): source/tripo/man_old_enemy_head.fbx, из текстур
+  только цвет (man_old_enemy_head.fbm/man_old_enemy_head_basecolor.jpg). Промт не записан.
+  source/old-enemy-head.blend — тот же импорт без правок. Собирается вместе с телом в карточке characters/old-enemy.

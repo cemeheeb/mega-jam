@@ -1,5 +1,6 @@
 title: Medical Bed
 kind: model
+priority: 2
 style: interior
 idea: "Sickbay bed with a patient monitor on a pole."
 prompt: "A spaceship sickbay bed two metres long and eighty centimetres wide: a solid off-white painted metal base half a metre tall with rounded corners, a graphite kick band and an international orange stripe, a thin muted teal mattress pad with a flat white pillow and two folded restraint straps, and at the head end a slim light-grey aluminium pole one and a half metres tall carrying a small flat patient monitor with a muted teal screen."

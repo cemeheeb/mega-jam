@@ -1,5 +1,6 @@
 title: Maintenance Robot
 kind: model
+priority: 1
 style: interior
 idea: "Mad maintenance robot on crawler tracks with a gripper and a welding torch. An enemy (DESIGN.md 5.9)."
 prompt: "A squat tracked maintenance robot about one metre thirty tall: a wide low chassis on two graphite rubber crawler tracks, a boxy off-white painted metal torso with rounded corners and bolted service hatches, one of them missing and showing dark machinery inside, a short neck with a flat sensor head carrying one large round muted teal camera lens and two small side lamps, and two jointed light-grey aluminium manipulator arms held forward and apart: the left one ends in a three-finger gripper claw, the right one in a stubby welding torch with a scorched nozzle. International orange hazard stripes on the chassis and shoulders, scratches and dents on the edges, soot around the torch."
@@ -14,3 +15,5 @@ notes: |
   Объектив бирюзовый; красным в ярости его сделает игра (отдельный материал линзы).
   [Допущение ассистента] стиль interior (полуреалистичный, палитра корабля): робот — оборудование корабля.
   Если нужен живописный, как у крыс, — поменять style на creature и переписать позу.
+  15.11: меш Tripo автора принят как есть, одним куском: SM_MaintenanceRobot 130 × 114 × 130 см, привязка — центр дна. В игре /Game/Characters/MaintenanceRobot, стоит вместо серых кубов (ARunEnemy), едет целиком и дрожит от мотора. На голову и руки не разрезан: у Tripo 194 острова сетки, резать надо руками — если понадобится поворот головы к игроку. Сборка — tools/blender/props/tripo_props.py, импорт — tools/ue/import_props.py.
+generated: true

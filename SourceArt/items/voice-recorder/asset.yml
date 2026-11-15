@@ -1,5 +1,8 @@
 title: Voice Recorder
 kind: model
+priority: 1
 idea: Pocket crew voice recorder with a small speaker grille and a record button.
 prompt: "A pocket voice recorder about the size of a deck of cards: a thick off-white painted metal body with rounded corners and scuffed edges, a round perforated speaker grille on the upper half of the face, a small blank dark screen below it, a large red record button and two smaller grey buttons in a row, a ribbed black rubber side grip, a short stubby microphone on the top edge, and a brushed aluminium belt clip on the back."
 avoid: headphones, a lit screen, sound waves
+notes: |
+  15.11: меш Tripo автора принят как есть: 7 × 4 × 12 см. Привязка — центр дна; в игре /Game/Items, подхватывается по правилу имён. Сборка — tools/blender/props/tripo_props.py, импорт — tools/ue/import_props.py.

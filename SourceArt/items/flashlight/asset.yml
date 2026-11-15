@@ -3,3 +3,7 @@ kind: model
 idea: Chunky industrial flashlight, rubber grip, scuffed yellow body.
 prompt: "A chunky handheld industrial flashlight about twenty centimetres long: a short thick cylindrical body of safety yellow painted metal with scuffed edges, a wide flared head with a brushed aluminium bezel and a ribbed frosted lens, a ribbed black rubber grip sleeve around the middle, a large black rubber push button on top, and a folding steel hanging loop on the tail cap."
 avoid: light beam, lit bulb
+later: true
+notes: |
+  Отложено 15.11: генерировать не нужно. В игре у фонарика уже есть модель — SM_Flashlight из набора Singula
+  (environment/common/safety-equipment), её ставит ARunItem. Карточка осталась от первого списка предметов 13.11.

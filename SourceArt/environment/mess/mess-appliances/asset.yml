@@ -1,5 +1,6 @@
 title: Mess Appliances
 kind: model
+priority: 3
 style: interior-kit
 idea: "Fridge, recycler bin, water tank and a wall screen of the canteen."
 prompt: "Four separate canteen appliances in a row: a tall refrigerator two metres high, ninety centimetres wide and seventy deep of light-grey brushed aluminium with one full-height door and a long vertical graphite handle; a waist-high off-white waste recycler bin half a metre square with a wide graphite slot in its front and an international orange lid edge; a water dispenser with an upright cylinder of milky frosted muted teal glass about one metre ten tall on a low off-white base with a round off-white cap and a small tap; and a wide flat wall display two metres by ninety centimetres with a graphite bezel and a muted teal screen."

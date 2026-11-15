@@ -1,0 +1,9 @@
+title: Old Enemy Body
+kind: model
+style: body
+idea: Body of the old crew member in a torn, blood-stained orange coverall, without the head. The human enemy.
+prompt: ""
+notes: |
+  Модель Tripo от автора (архив man_old_enemy.zip, 15.11): source/tripo/man_old_enemy.fbx, из текстур только цвет
+  (man_old_enemy.fbm/man_old_enemy_basecolor.jpg). Промт не записан. source/old-enemy-body.blend — тот же импорт
+  без правок. Собирается вместе с головой в карточке characters/old-enemy.

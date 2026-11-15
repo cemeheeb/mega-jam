@@ -1,5 +1,6 @@
 title: Airlock Door Leaf
 kind: model
+priority: 1
 style: interior
 idea: "Sliding door leaf of the airlock. Orange slab without a window."
 prompt: "A single flat sliding airlock door leaf: a tall rectangular slab one and a half metres wide, two and a quarter metres tall and only ten centimetres thick, of international orange painted metal. Its face is pressed into three shallow recessed panels stacked vertically, with a thick horizontal graphite rubber seal band at waist height, a narrow vertical muted teal indicator strip near one edge, rows of small flush rivets along the border and light scuffs near the bottom. Both faces look the same."
@@ -9,3 +10,5 @@ notes: |
   150 × 10 × 225 см, восемь на комнату. Створка уезжает вбок в стену (ARunRoom двигает внутреннюю).
   Окна нет намеренно: соседняя комната не должна быть видна (DESIGN.md §6).
   Привязка — как у коробки, центр объёма; обе стороны одинаковые.
+  15.11: меш Tripo автора растянут по осям до 150 × 12 × 225 см (был 0,625 : 0,126 : 1), привязка — середина, коллизия — коробка UCX. В игре /Game/Environment/Common/AirlockDoor; ARunRoom::BeginPlay ставит его на место всех створок *_DoorInner и *_DoorOuter, пересборка комнат не нужна. Сборка — tools/blender/props/tripo_props.py, импорт — tools/ue/import_props.py.
+generated: true

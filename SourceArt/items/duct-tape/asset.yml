@@ -1,5 +1,9 @@
 title: Duct Tape
 kind: model
+priority: 1
 idea: Half-used roll of silver duct tape with a torn end.
 prompt: "A half-used roll of wide duct tape: a thick ring of matte warm light-grey cloth tape wound on an off-white cardboard core, the loose end peeled back a few centimetres and torn off raggedly, a fine woven cloth texture on the tape, a slightly wrinkled outer layer and a thin international orange centre line printed along the tape."
 avoid: several rolls, tape stuck to other objects
+generated: true
+notes: |
+  15.11: меш Tripo автора принят как есть: 8 × 11 × 4 см. Привязка — центр дна; в игре /Game/Items, подхватывается по правилу имён. Сборка — tools/blender/props/tripo_props.py, импорт — tools/ue/import_props.py.

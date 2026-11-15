@@ -1,5 +1,14 @@
 title: Coolant Valve
 kind: model
-idea: Red handwheel valve on a short insulated pipe section.
-prompt: "A handwheel valve on a short pipe section: a round red painted metal handwheel with five spokes on a short stem, a chunky cast steel valve body with hexagonal bolts, and a short thick pipe wrapped in off-white insulation, with a black rubber flange and a ring of bolts at each end."
-avoid: long pipes, steam, dripping liquid
+priority: 1
+idea: "Small needle valve with a red knob and threaded fittings. Fits in a palm and in a pocket."
+prompt: "A small palm-sized needle valve about ten centimetres long, a spare part that fits in a jacket pocket: a compact hexagonal body of machined steel, a short stem with a small round red knurled knob on top, sized for a thumb and two fingers, and a short threaded fitting with a hexagonal nut at each end, one of them closed with a small off-white protective cap. A thin engraved flow arrow on the body, fine thread, light scratches on the corners of the nuts and a faint pale blue frost stain of dried coolant around one fitting."
+avoid: handwheel with spokes, flanges, rings of bolts, pipe insulation, large industrial valve, long pipes, hands, steam, dripping liquid
+notes: |
+  Промт переписан 15.11: прежний («handwheel valve on a short pipe section» — маховик со спицами, фланцы
+  с болтами, труба в изоляции) давал огромный промышленный кран (замечание автора). Предмет лежит в кармане
+  и в руке героя, поэтому теперь это маленький игольчатый вентиль: ручка-барашек вместо маховика, резьбовые
+  штуцеры вместо фланцев, мелкая резьба и насечка — по ним читается размер.
+  Длина 10–12 см. Красная ручка осталась: по ней предмет узнаётся («the coolant valve» в записках).
+  15.11: меш Tripo автора принят как есть. SM_CoolantValve 11 × 4 × 8 см, привязка — центр дна; в игре /Game/Items/CoolantValve, подхватывается по правилу имён (ARunItem::FindModel). Сборка — tools/blender/props/tripo_props.py, импорт — tools/ue/import_props.py.
+generated: true

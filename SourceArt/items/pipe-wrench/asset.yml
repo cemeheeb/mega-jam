@@ -1,8 +1,11 @@
 title: Pipe Wrench
 kind: model
+priority: 1
 idea: "Heavy red pipe wrench. The weapon."
 prompt: "A heavy adjustable pipe wrench about forty-five centimetres long: a long I-beam handle of red painted cast steel worn to bare grey metal on the edges and at the grip, a fixed lower jaw and a sliding hooked upper jaw with coarse serrated teeth, and a knurled round adjusting nut between them. Oil stains and scratches, a hanging hole at the end of the handle."
 avoid: blood, several tools, toolbox
 notes: |
   Приоритет 1. Оружие (GRunWeaponName = «Pipe Wrench»). Сейчас — оранжевый кубик на полу и в руке героя.
   Длина 45 см. Привязка — середина рукояти: в руке держится за неё, на полу лежит плашмя.
+  15.11: меш Tripo автора принят как есть: 11 × 5 × 45 см; меш поставлен рукоятью вверх (у Tripo стоял наискосок): так он висит в руке, на полу лежит плашмя (поза в таблице моделей RunItem.cpp). Привязка — центр дна; в игре /Game/Items, подхватывается по правилу имён. Сборка — tools/blender/props/tripo_props.py, импорт — tools/ue/import_props.py.
+generated: true

@@ -1,4 +1,8 @@
 title: Gyroscope
 kind: model
+priority: 1
 idea: Nested metal gimbal rings around a heavy rotor.
 prompt: "A hand-sized gyroscope: three nested brushed aluminium gimbal rings on small pivots around a heavy solid graphite rotor disc with an international orange rim, the outer ring fixed in a short off-white painted metal fork with two upright arms and a small knurled lock knob."
+generated: true
+notes: |
+  15.11: меш Tripo автора принят как есть: 14 × 11 × 13 см. Привязка — центр дна; в игре /Game/Items, подхватывается по правилу имён. Сборка — tools/blender/props/tripo_props.py, импорт — tools/ue/import_props.py.

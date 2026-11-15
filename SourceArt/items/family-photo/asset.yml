@@ -1,5 +1,9 @@
 title: Family Photo
 kind: model
+priority: 1
 idea: Small framed photo behind cracked glass.
 prompt: "A small framed photograph: a brushed aluminium frame with rounded corners and a fold-out stand at the back, holding a faded colour photograph of three simplified figures standing close together under a blue sky, under a flat glass pane with a crack running from one corner."
 avoid: recognisable faces, real people
+generated: true
+notes: |
+  15.11: меш Tripo автора принят как есть: 15 × 11 × 13 см. Привязка — центр дна; в игре /Game/Items, подхватывается по правилу имён. Сборка — tools/blender/props/tripo_props.py, импорт — tools/ue/import_props.py.

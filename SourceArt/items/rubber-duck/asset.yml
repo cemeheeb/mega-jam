@@ -1,4 +1,8 @@
 title: Rubber Duck
 kind: model
+priority: 1
 idea: Yellow rubber duck, slightly scorched.
 prompt: "A rubber bath duck toy: a classic rounded duck of matte yellow rubber with an orange beak and small black eyes, a moulded seam along the sides, and the tail slightly scorched and darkened."
+generated: true
+notes: |
+  15.11: меш Tripo автора принят как есть: 7 × 9 × 8 см. Привязка — центр дна; в игре /Game/Items, подхватывается по правилу имён. Сборка — tools/blender/props/tripo_props.py, импорт — tools/ue/import_props.py. Архив rubber-duck-2.zip — та же модель (та же сетка и текстура), взят первый.

@@ -1,5 +1,9 @@
 title: Power Cell
 kind: model
+priority: 1
 idea: Cylindrical battery with a carry handle and a glowing charge strip.
 prompt: "A cylindrical power cell about the size of a thermos: an off-white painted metal body with graphite rubber bumper rings at both ends, a folding brushed aluminium carry handle on the top cap, a narrow vertical muted teal charge indicator strip set into the side, an international orange stripe around the top, and two recessed round contacts in the bottom cap."
 avoid: sparks, lightning
+generated: true
+notes: |
+  15.11: меш Tripo автора принят как есть: 10 × 10 × 24 см. Привязка — центр дна; в игре /Game/Items, подхватывается по правилу имён. Сборка — tools/blender/props/tripo_props.py, импорт — tools/ue/import_props.py.

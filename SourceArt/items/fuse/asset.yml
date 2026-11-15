@@ -1,4 +1,8 @@
 title: Fuse
 kind: model
+priority: 1
 idea: Large ceramic cartridge fuse with brass caps and a warning label.
 prompt: "A large ceramic cartridge fuse about twenty centimetres long: a thick off-white glazed ceramic cylinder with brushed aluminium end caps, a flat blade contact sticking out of each cap, a wide international orange warning band around the middle, and a small round muted teal indicator window set into one cap."
+generated: true
+notes: |
+  15.11: меш Tripo автора принят как есть: 16 × 4 × 4 см (в промте 20 см — уменьшен под карман). Привязка — центр дна; в игре /Game/Items, подхватывается по правилу имён. Сборка — tools/blender/props/tripo_props.py, импорт — tools/ue/import_props.py.

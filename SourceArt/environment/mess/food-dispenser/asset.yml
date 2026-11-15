@@ -1,5 +1,6 @@
 title: Food Dispenser
 kind: model
+priority: 2
 style: interior
 idea: "Canteen food dispenser machine with a screen and a delivery slot."
 prompt: "A food dispenser machine of a spaceship canteen, two metres tall, one metre twenty wide and half a metre deep: an off-white painted metal cabinet with rounded corners, a muted teal touch screen at eye level, a row of six round selection buttons under it, a wide recessed delivery slot at waist height with a graphite rubber flap and a small tray shelf, a column of ventilation slots on one side and an international orange stripe along the bottom."

@@ -1,5 +1,6 @@
 title: Cargo Crates
 kind: model
+priority: 2
 style: interior-kit
 idea: "Three crates and a drum for the cargo bay, one picture, four separate meshes."
 prompt: "Four separate cargo containers in a row: a large cube shipping crate one metre twenty on a side of off-white painted metal with corner castings, recessed handles and a wide international orange band around its upper part; a medium light-grey aluminium cube crate one metre on a side with ribbed walls and latches; a small cube crate eighty centimetres on a side of the same kind; and a steel drum ninety centimetres tall with two rolled hoops and a body painted international orange."

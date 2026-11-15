@@ -1,5 +1,6 @@
 title: Fume Hood
 kind: model
+priority: 3
 style: interior
 idea: "Laboratory fume hood with a sash window."
 prompt: "A laboratory fume hood two metres wide, two metres ten tall and sixty centimetres deep: an off-white painted metal cabinet with rounded corners, a wide recessed work chamber at chest height behind a sliding sash of milky frosted glass in a graphite frame, half raised, a closed base cabinet with two doors below, a row of four small valve knobs and a muted teal airflow indicator on the front, an international orange stripe along the base and a short round exhaust duct on top."

@@ -1,5 +1,9 @@
 title: Dog Tag
 kind: model
+priority: 1
 idea: Crew member's stamped metal dog tag on a ball chain.
 prompt: "A crew member's identification dog tag: a flat rounded-rectangle tag of brushed stainless steel about five centimetres long with a rolled edge, a notch in one side and a round hole at the top, rows of small stamped raised dashes and dots instead of letters, a black rubber silencer rim around the edge, and a short loop of steel ball chain threaded through the hole and lying in a loose circle beside the tag."
 avoid: readable letters or numbers, two tags, a neck or a person
+generated: true
+notes: |
+  15.11: меш Tripo автора принят как есть: 8 × 13 × 3 см вместе с цепочкой. Привязка — центр дна; в игре /Game/Items, подхватывается по правилу имён. Сборка — tools/blender/props/tripo_props.py, импорт — tools/ue/import_props.py.

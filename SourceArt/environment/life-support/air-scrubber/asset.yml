@@ -1,5 +1,6 @@
 title: Air Scrubber
 kind: model
+priority: 2
 style: interior
 idea: "Tall air scrubber cabinet with an intake grille and a duct to the ceiling."
 prompt: "An air scrubber unit of a spaceship life-support system: a tall rectangular cabinet two metres twenty high, one metre twenty wide and eighty centimetres deep of off-white painted metal with rounded corners, a large graphite louvred intake grille filling the middle of the front, a row of four pull-out filter cartridges with international orange handles below it, a small muted teal status display above, and a fat round light-grey aluminium duct rising from the top."

@@ -1,5 +1,6 @@
 title: Medbay Kit
 kind: model
+priority: 3
 style: interior-kit
 idea: "Surgical lamp, privacy screen, instrument trolley and biohazard bin."
 prompt: "Four separate pieces of sickbay equipment in a row: a round surgical lamp head seventy-five centimetres across, a flat off-white disc with a ring of small frosted lenses, on a short jointed light-grey aluminium ceiling arm; a folding privacy screen of three off-white fabric panels in aluminium frames, one metre seventy tall; a narrow instrument trolley eighty centimetres tall with two graphite shelves on an aluminium frame; and a round-cornered biohazard waste bin sixty centimetres tall painted international orange with a graphite flap lid."

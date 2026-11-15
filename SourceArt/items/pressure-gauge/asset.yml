@@ -1,5 +1,9 @@
 title: Pressure Gauge
 kind: model
+priority: 1
 idea: Round analog gauge with cracked glass on a short pipe stub.
-prompt: "A round analog pressure gauge on a short pipe stub: a thick brushed aluminium case with a knurled bezel, an off-white dial with graphite tick marks and no numbers, a thin international orange needle and an orange danger arc at the end of the scale, a flat glass face with one hairline crack across it, and below the case a short threaded aluminium pipe stub with a hexagonal nut."
+prompt: "A small palm-sized round analog pressure gauge about eight centimetres across on a short threaded stub: a thick brushed aluminium case with a knurled bezel, an off-white dial with graphite tick marks and no numbers, a thin international orange needle and an orange danger arc at the end of the scale, a flat glass face with one hairline crack across it, and below the case a short thin threaded aluminium stub with a small hexagonal nut."
 avoid: numbers on the dial, long pipes
+generated: true
+notes: |
+  15.11: меш Tripo автора принят как есть: 8 × 11 × 3 см, положен циферблатом вверх (у Tripo стоял на штуцере). Привязка — центр дна; в игре /Game/Items, подхватывается по правилу имён. Сборка — tools/blender/props/tripo_props.py, импорт — tools/ue/import_props.py.

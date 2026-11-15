@@ -1,5 +1,6 @@
 title: Storage Tank
 kind: model
+priority: 2
 style: interior
 idea: "Vertical cylindrical tank with an orange band. Water, coolant and cooler tanks in three compartments."
 prompt: "A tall vertical cylindrical storage tank two and a half metres high and one and a half metres across: a smooth light-grey aluminium shell with welded seams and a domed top, a wide international orange band with bolts around it a little below the middle, a round pressure gauge with a white dial on the front at chest height, a short ladder of three rungs, a graphite base skirt with four bolted feet, and a thick pipe stub rising from the centre of the dome."

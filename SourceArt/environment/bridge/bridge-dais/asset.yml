@@ -1,5 +1,6 @@
 title: Bridge Dais
 kind: model
+priority: 2
 idea: Low round raised floor module under the captain's acceleration couch in the middle of the bridge.
 prompt: "A standalone round raised floor module for the command post of a spaceship bridge, like a wide flat disc about two and a half metres across and only a hand's height tall: a top of off-white painted metal floor plates divided into radial segments with fine seams and small recessed screw heads, a graphite anti-slip ring around a central round brushed aluminium mounting plate with four bolts where a chair is fixed, a short vertical rim of light-grey aluminium with a thin muted teal light strip, and an international orange safety stripe along the top edge of the rim."
 avoid: chair, seat, steps, railing, objects on top, thick cylinder, stage
