@@ -9,7 +9,12 @@
   --ok: #4fae74;
   --bad: #d9534f;
   --mono: ui-monospace, 'SF Mono', Menlo, monospace;
+  --player-h: 0px; /* высота полосы проигрывателя внизу, пока он открыт */
   color-scheme: dark;
+}
+
+body.has-player {
+  --player-h: 64px;
 }
 
 @media (prefers-color-scheme: light) {

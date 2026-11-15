@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { after, before, test } from 'node:test';
 import { createApi, imageExt, slug } from '../server/api.js';
+import { envelope, parseWav } from '../server/audio.js';
 import { derive, pascal, resolveStyle } from '../server/scan.js';
 import { fullPrompt } from '../src/lib/prompt.js';
 
@@ -31,6 +32,32 @@ test('этап модели следует из файлов', () => {
   assert.equal(derive(r).stage, 'ready');
   assert.equal(derive(r).next, null);
   assert.deepEqual(derive(r).warnings, []);
+});
+
+test('этап звука: промт, дубли, готовый WAV', () => {
+  const s0 = { ...base, kind: 'sound', takes: [], sounds: [] };
+  assert.deepEqual(derive(s0).steps.map((s) => s.key), ['idea', 'prompt', 'take', 'ready']);
+  assert.equal(derive(s0).next.label, 'нужен промт');
+  const p = { ...s0, prompt: 'A heavy airlock door slides open' };
+  assert.deepEqual(derive(p).next, { step: 'take', who: 'author', label: 'нужен звук' });
+  const t = { ...p, takes: [f('door-open-1.mp3')] };
+  assert.deepEqual(derive(t).next, { step: 'ready', who: 'author', label: 'выбрать дубль' });
+  const r = { ...t, sounds: [f('S_DoorOpen.wav')] };
+  assert.equal(derive(r).stage, 'ready');
+  assert.equal(derive(r).next, null);
+  assert.deepEqual(derive(r).warnings, []);
+});
+
+test('галочка «сгенерирован» закрывает шаг генерации без файла', () => {
+  const m = derive({ ...base, prompt: 'A fuse', generated: true });
+  assert.equal(m.stage, 'image');
+  assert.deepEqual(m.next, { step: 'tripo', who: 'done', label: 'сгенерирован' });
+  assert.deepEqual(m.warnings, []);
+  const withMesh = derive({ ...base, prompt: 'A fuse', generated: true, tripo: [f('fuse.glb')] });
+  assert.equal(withMesh.next.label, 'собрать в Blender');
+  const s = derive({ ...base, kind: 'sound', prompt: 'A door', generated: true, takes: [], sounds: [] });
+  assert.equal(s.stage, 'take');
+  assert.equal(s.next.who, 'done');
 });
 
 test('пропущенный шаг не мешает, устаревшая выгрузка видна', () => {
@@ -83,6 +110,43 @@ test('полный промт: описание и свои запреты вс�
   assert.equal(fullPrompt({}, a), 'A fuse.');
 });
 
+/** WAV 16 бит с лишним куском между fmt и data, как пишет afconvert. */
+function wav(samples, { rate = 8000, channels = 1, extra = true } = {}) {
+  const data = Buffer.alloc(samples.length * 2);
+  samples.forEach((v, i) => data.writeInt16LE(Math.round(v * 32767), i * 2));
+  const fmt = Buffer.alloc(24);
+  fmt.write('fmt ', 0, 'latin1');
+  fmt.writeUInt32LE(16, 4);
+  fmt.writeUInt16LE(1, 8);
+  fmt.writeUInt16LE(channels, 10);
+  fmt.writeUInt32LE(rate, 12);
+  fmt.writeUInt32LE(rate * channels * 2, 16);
+  fmt.writeUInt16LE(channels * 2, 20);
+  fmt.writeUInt16LE(16, 22);
+  const fllr = Buffer.concat([Buffer.from('FLLR\x05\0\0\0', 'latin1'), Buffer.alloc(6)]); // нечётный размер + выравнивание
+  const head = Buffer.concat([Buffer.from('data', 'latin1'), Buffer.alloc(4)]);
+  head.writeUInt32LE(data.length, 4);
+  const body = Buffer.concat([Buffer.from('WAVE', 'latin1'), fmt, ...(extra ? [fllr] : []), head, data]);
+  const riff = Buffer.alloc(8);
+  riff.write('RIFF', 0, 'latin1');
+  riff.writeUInt32LE(body.length, 4);
+  return Buffer.concat([riff, body]);
+}
+
+test('волна: длительность и пики из WAV', () => {
+  // полсекунды тишины, потом полсекунды на половине громкости, в стерео
+  const half = 4000;
+  const stereo = [];
+  for (let i = 0; i < 2 * half; i++) stereo.push(0, i < half ? 0 : i % 2 ? 0.5 : -0.25);
+  const pcm = parseWav(wav(stereo, { channels: 2 }));
+  assert.equal(pcm.channels, 2);
+  assert.equal(pcm.rate, 8000);
+  const w = envelope(pcm, 4);
+  assert.equal(w.duration, 1);
+  assert.deepEqual(w.peaks, [0, 0, 0.5, 0.5]);
+  assert.throws(() => parseWav(Buffer.from('hello world!')), /не WAV/);
+});
+
 // --- HTTP на временной папке ---
 
 let tmp, root, downloads, server, url;
@@ -104,6 +168,8 @@ before(async () => {
   downloads = path.join(tmp, 'Downloads');
   await fs.mkdir(root);
   await fs.mkdir(downloads);
+  process.env.STUDIO_TRASH = path.join(tmp, 'Trash');
+  await fs.mkdir(process.env.STUDIO_TRASH);
   await fs.writeFile(path.join(root, 'studio.yml'), `downloads: ${downloads}\nstyles:\n  prop:\n    model: "{prompt} STYLE"\n  interior:\n    model: "{prompt} PALETTE"\nfolders:\n  environment: interior\ndefault_style: prop\n`);
   server = http.createServer(createApi({ root }));
   await new Promise((r) => server.listen(0, '127.0.0.1', r));
@@ -187,4 +253,32 @@ test('защита: чужие запросы и пути наружу откл�
   assert.equal((await fetch(url + '/file?id=items/sealant-can&path=../../studio.yml')).status, 400);
   assert.equal((await fetch(url + '/file?id=items/sealant-can&path=asset.yml')).status, 400);
   assert.equal((await post('/asset/take', { id: 'items/sealant-can', name: '../../etc/passwd', as: 'tripo' })).status, 404);
+});
+
+test('звук: волна дубля и из Загрузок, дубль в Корзину', async () => {
+  await post('/assets', { title: 'Door Open', kind: 'sound', group: 'audio' });
+  const tone = Array.from({ length: 8000 }, (_, i) => 0.8 * Math.sin(i / 3));
+  await fs.writeFile(path.join(downloads, 'door.wav'), wav(tone));
+  let r = await fetch(url + '/peaks?download=door.wav');
+  assert.equal(r.status, 200);
+  let w = await r.json();
+  assert.equal(w.peaks.length, 160);
+  assert.ok(Math.abs(w.duration - 1) < 0.01, `длительность ${w.duration}`);
+  assert.ok(Math.max(...w.peaks) > 0.7);
+
+  assert.equal((await post('/asset/take', { id: 'audio/door-open', name: 'door.wav', as: 'take' })).status, 200);
+  r = await fetch(url + '/peaks?' + new URLSearchParams({ id: 'audio/door-open', path: 'takes/door-open-1.wav' }));
+  assert.equal(r.status, 200);
+  assert.equal((await r.json()).peaks.length, 160);
+  assert.equal((await fetch(url + '/peaks?id=audio/door-open&path=asset.yml')).status, 400);
+  assert.equal((await fetch(url + '/peaks?id=audio/door-open&path=../../studio.yml')).status, 400);
+  await fs.writeFile(path.join(root, 'audio/door-open/takes/broken.mp3'), 'not audio');
+  assert.equal((await fetch(url + '/peaks?id=audio/door-open&path=takes/broken.mp3')).status, 415);
+
+  // дубль уходит в Корзину (в тесте — своя, STUDIO_TRASH)
+  r = await post('/asset/trash', { id: 'audio/door-open', path: 'takes/broken.mp3' });
+  assert.equal(r.status, 200);
+  await assert.rejects(fs.access(path.join(root, 'audio/door-open/takes/broken.mp3')));
+  assert.deepEqual(await fs.readdir(process.env.STUDIO_TRASH), ['broken.mp3']);
+  assert.equal((await post('/asset/trash', { id: 'audio/door-open', path: 'takes/../asset.yml' })).status, 400);
 });

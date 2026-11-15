@@ -3,10 +3,19 @@
   import AssetPanel from './lib/AssetPanel.svelte';
   import Card from './lib/Card.svelte';
   import NewAsset from './lib/NewAsset.svelte';
+  import PlayerBar from './lib/PlayerBar.svelte';
+  import { mainTrack } from './lib/player.svelte.js';
   import { STAGES, refresh, studio } from './lib/studio.svelte.js';
 
   let stage = $state(null);
   let mine = $state(false);
+  let prio = $state(0);
+  // сортировка: по папкам (как лежат на диске) или по приоритету — очередь работы сверху вниз
+  let byPrio = $state(localStorage.getItem('studio.byPrio') === '1');
+  function toggleSort() {
+    byPrio = !byPrio;
+    localStorage.setItem('studio.byPrio', byPrio ? '1' : '0');
+  }
   let query = $state('');
   let creating = $state(false);
   let openId = $state(readHash());
@@ -45,11 +54,21 @@
       (a) =>
         (!stage || a.stage === stage) &&
         (!mine || isMine(a)) &&
+        (!prio || a.priority === prio) &&
         (!q || `${a.title} ${a.id} ${a.idea} ${a.prompt}`.toLowerCase().includes(q)),
     );
   });
   const groups = $derived.by(() => {
     const map = new Map();
+    if (byPrio) {
+      // сначала первый приоритет; внутри — несделанное выше отмеченного «сгенерирован» и отложенного
+      const rest = (a) => Number(a.generated) + 2 * Number(a.later);
+      for (const p of [1, 2, 3, 0]) {
+        const list = visible.filter((a) => a.priority === p).sort((x, y) => rest(x) - rest(y) || x.id.localeCompare(y.id, 'en', { numeric: true }));
+        if (list.length) map.set(p ? `Приоритет ${p}` : 'Без приоритета', list);
+      }
+      return [...map.entries()];
+    }
     for (const a of visible) {
       if (!map.has(a.group)) map.set(a.group, []);
       map.get(a.group).push(a);
@@ -58,9 +77,12 @@
   });
   const allGroups = $derived([...new Set(assets.map((a) => a.group).filter(Boolean))]);
   const current = $derived(assets.find((a) => a.id === openId) ?? null);
+  // ⏮ ⏭ у звука, запущенного с карточки, идут по звукам на экране в том же порядке
+  const soundQueue = $derived(groups.flatMap(([, l]) => l).map(mainTrack).filter(Boolean));
 
   function step(d) {
-    const list = visible.length ? visible : assets;
+    const shown = groups.flatMap(([, l]) => l);
+    const list = shown.length ? shown : assets;
     const i = list.findIndex((a) => a.id === openId);
     if (list.length) go(list[(i + d + list.length) % list.length].id);
   }
@@ -78,6 +100,14 @@
   </nav>
   <button class="toggle" class:on={mine} onclick={() => (mine = !mine)} title="Только то, что ждёт вас: сгенерировать, утвердить, сделать меш">
     Мой ход <b>{mineCount}</b>
+  </button>
+  {#each [1, 2, 3] as n (n)}
+    <button class="toggle prio{n}" class:on={prio === n} onclick={() => (prio = prio === n ? 0 : n)} title="Только приоритет {n}">
+      П{n} <b>{assets.filter((a) => a.priority === n).length}</b>
+    </button>
+  {/each}
+  <button class="toggle sort" class:on={byPrio} onclick={toggleSort} title="Сортировка: по папкам или по приоритету">
+    По приоритету
   </button>
   <input class="search" type="search" placeholder="Поиск" bind:value={query} />
   <button class="primary" onclick={() => (creating = true)}>+ Ассет</button>
@@ -102,7 +132,7 @@
       <h2>{group || 'без папки'} <span>{list.length}</span></h2>
       <div class="cards">
         {#each list as a (a.id)}
-          <Card asset={a} onopen={go} />
+          <Card asset={a} onopen={go} queue={soundQueue} />
         {/each}
       </div>
     </section>
@@ -132,6 +162,8 @@
     }}
   />
 {/if}
+
+<PlayerBar onopen={go} />
 
 {#if studio.toast}<div class="toast" class:bad={studio.toast.bad}>{studio.toast.text}</div>{/if}
 
@@ -179,6 +211,22 @@
     margin-left: auto;
     border-color: var(--line);
   }
+  /* фильтры по приоритету стоят рядом с «Мой ход», цвет — как у рамки карточек */
+  .toggle.prio1,
+  .toggle.prio2,
+  .toggle.prio3,
+  .toggle.sort {
+    margin-left: 0;
+  }
+  .toggle.prio1 {
+    box-shadow: inset 0 -3px 0 #f26a21;
+  }
+  .toggle.prio2 {
+    box-shadow: inset 0 -3px 0 #5fc6c9;
+  }
+  .toggle.prio3 {
+    box-shadow: inset 0 -3px 0 #8a8f96;
+  }
   b {
     font-weight: 700;
     margin-left: 2px;
@@ -197,7 +245,7 @@
     border-color: var(--accent);
   }
   main {
-    padding: 8px 20px 60px;
+    padding: 8px 20px calc(60px + var(--player-h));
   }
   h2 {
     font-size: 12px;
@@ -237,7 +285,7 @@
   }
   .toast {
     position: fixed;
-    bottom: 22px;
+    bottom: calc(22px + var(--player-h));
     left: 50%;
     transform: translateX(-50%);
     z-index: 40;

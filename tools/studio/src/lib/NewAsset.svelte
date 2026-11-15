@@ -30,6 +30,7 @@
     <span class="seg">
       <button type="button" class:on={kind === 'model'} onclick={() => (kind = 'model')}>модель</button>
       <button type="button" class:on={kind === 'texture'} onclick={() => (kind = 'texture')}>текстура</button>
+      <button type="button" class:on={kind === 'sound'} onclick={() => (kind = 'sound')}>звук</button>
     </span>
     <label class="grow">
       Папка

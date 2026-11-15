@@ -11,6 +11,7 @@ folders:
   items: prop
   characters: character
   ui: ui
+  audio: sound
 default_style: prop
 
 # Стили промта. {prompt} — описание из asset.yml, {avoid} — свои запреты ассета (поле avoid).
@@ -78,6 +79,14 @@ styles:
   # подача, — например масок копоти (чёрное на белом, environment/common/soot). Поле style: raw.
   raw:
     title: Без шаблона
+    model: "{prompt}"
+    texture: "{prompt}"
+
+  # Звуки (вид ассета — sound): промт уходит в ElevenLabs как есть. Sound Effects — эффекты и фоны, длительность
+  # и петля (Loop) задаются в карточке и выставляются в ElevenLabs руками; музыка (папка audio/music) — ElevenLabs Music.
+  sound:
+    title: Звуки
+    sound: "{prompt}"
     model: "{prompt}"
     texture: "{prompt}"
 

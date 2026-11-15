@@ -4,6 +4,7 @@ export const STAGES = [
   { key: 'idea', label: 'Идея' },
   { key: 'prompt', label: 'Промт' },
   { key: 'image', label: 'Картинка' },
+  { key: 'take', label: 'Дубли' },
   { key: 'tripo', label: 'Tripo' },
   { key: 'blend', label: 'Blender' },
   { key: 'ready', label: 'Готово' },

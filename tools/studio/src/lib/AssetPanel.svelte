@@ -1,7 +1,10 @@
 <script>
   import { downloadUrl, fileUrl, post, upload } from './api.js';
   import Field from './Field.svelte';
+  import PlayButton from './PlayButton.svelte';
+  import { downloadTrack, readyTrack, takeTrack } from './player.svelte.js';
   import { fullPrompt } from './prompt.js';
+  import Wave from './Wave.svelte';
   import { STAGE_LABEL, act, age, refresh, size, toast } from './studio.svelte.js';
 
   let { asset, config, downloads, onclose, onprev, onnext } = $props();
@@ -13,9 +16,15 @@
   const id = $derived(asset.id);
   const stepState = $derived(Object.fromEntries(asset.steps.map((s) => [s.key, s.state])));
   const isModel = $derived(asset.kind === 'model');
+  const isSound = $derived(asset.kind === 'sound');
   const prompt = $derived(fullPrompt(config, asset));
   const styles = $derived(Object.entries(config.styles ?? {}));
   const styleTitle = (key) => config.styles?.[key]?.title ?? key;
+  // дорожки проигрывателя: ⏮ ⏭ внизу ходят по дублям этого ассета (и по готовому WAV)
+  const takeTracks = $derived(asset.takes.map((f) => takeTrack(asset, f)));
+  const readyTracks = $derived(asset.sounds.map((f) => readyTrack(asset, f)));
+  const panelQueue = $derived([...takeTracks, ...readyTracks]);
+  const inboxTracks = $derived((downloads.sounds ?? []).map(downloadTrack));
 
   const save = (fields) => act(() => post('/asset/update', { id, fields }));
   const open = (target, path) => act(() => post('/open', { id, target, path }));
@@ -61,6 +70,19 @@
     }
   }
 
+  async function makeSound(name, force = false) {
+    try {
+      const r = await post('/asset/sound', { id, name, force });
+      toast(`Готово: ${r.name}`);
+    } catch (e) {
+      if (e.body?.needsForce) {
+        if (confirm(`${e.message}. Перезаписать дублем ${name}?`)) return makeSound(name, true);
+      } else toast(e.message, true);
+    } finally {
+      await refresh();
+    }
+  }
+
   function key(e) {
     const typing = ['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName);
     if (e.key === 'Escape') {
@@ -95,7 +117,8 @@
         <code>{asset.id}</code>
         <span class="seg">
           <button class:on={isModel} onclick={() => save({ kind: 'model' })}>модель</button>
-          <button class:on={!isModel} onclick={() => save({ kind: 'texture' })}>текстура</button>
+          <button class:on={asset.kind === 'texture'} onclick={() => save({ kind: 'texture' })}>текстура</button>
+          <button class:on={isSound} onclick={() => save({ kind: 'sound' })}>звук</button>
         </span>
         {#if styles.length}
           <label class="style" title="Общий стиль промта. «По папке» — как задано в studio.yml">
@@ -109,6 +132,18 @@
           </label>
         {/if}
         <label class="check"><input type="checkbox" checked={asset.later} onchange={(e) => save({ later: e.target.checked })} /> отложен</label>
+        <label class="check" title="Картинка или звук сделаны у вас, в карточку не занесены: шаг генерации закрыт без файла">
+          <input type="checkbox" checked={asset.generated} onchange={(e) => save({ generated: e.target.checked })} /> сгенерирован
+        </label>
+        <label class="style" title="Очередь работы: 1 — сначала, 3 — в последнюю очередь. Карточка красится по ней">
+          приоритет
+          <select value={String(asset.priority || '')} onchange={(e) => save({ priority: Number(e.target.value) || null })}>
+            <option value="">—</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+          </select>
+        </label>
       </div>
     </div>
     <div class="head-tools">
@@ -136,9 +171,20 @@
           <button class="primary" disabled={!asset.prompt.trim()} onclick={() => copy(prompt, 'Промт скопирован')}>Копировать промт</button>
         </span>
       </h3>
-      <Field value={asset.prompt} placeholder="Описание предмета по-английски. Общий стиль допишется сам" onsave={(v) => save({ prompt: v })} />
-      <div class="sub">Не рисовать — добавится к Avoid стиля, через запятую</div>
-      <Field single value={asset.avoid} placeholder="light rays, lit glowing bulbs" onsave={(v) => save({ avoid: v })} />
+      <Field value={asset.prompt} placeholder={isSound ? 'Описание звука по-английски для ElevenLabs' : 'Описание предмета по-английски. Общий стиль допишется сам'} onsave={(v) => save({ prompt: v })} />
+      {#if isSound}
+        <div class="sub sound-params">
+          В ElevenLabs выставить:
+          <label>длительность, с
+            <input type="number" min="0" max="600" step="0.5" value={asset.seconds || ''} placeholder="авто"
+              onchange={(e) => save({ seconds: Number(e.target.value) || null })} />
+          </label>
+          <label class="check"><input type="checkbox" checked={asset.loop} onchange={(e) => save({ loop: e.target.checked })} /> петля (Loop)</label>
+        </div>
+      {:else}
+        <div class="sub">Не рисовать — добавится к Avoid стиля, через запятую</div>
+        <Field single value={asset.avoid} placeholder="light rays, lit glowing bulbs" onsave={(v) => save({ avoid: v })} />
+      {/if}
       {#if asset.prompt.trim()}
         <div class="sub">
           <button class="link" onclick={() => (showFull = !showFull)}>{showFull ? 'Скрыть' : 'Показать'} полный промт со стилем «{styleTitle(asset.styleResolved)}»</button>
@@ -147,6 +193,41 @@
       {/if}
     </li>
 
+    {#if isSound}
+      <li class={stepState.take}>
+        <h3>
+          {STAGE_LABEL.take}
+          <span class="hint">перетащите сюда скачанный файл или возьмите его из Загрузок</span>
+          <span class="actions"><a class="btn" href="https://elevenlabs.io/app/sound-effects" target="_blank" rel="noreferrer">ElevenLabs ↗</a></span>
+        </h3>
+        {#each asset.takes as f, i (f.name)}
+          <div class="file track" class:approved={f.name === asset.take}>
+            <PlayButton track={takeTracks[i]} queue={panelQueue} />
+            <span class="name">{f.name}</span><span class="muted">{size(f.size)} · {age(f.mtime)}</span>
+            <div class="wave"><Wave track={takeTracks[i]} queue={panelQueue} /></div>
+            <button class:primary={f.name !== asset.take} onclick={() => makeSound(f.name)} title="Перевести в WAV для Unreal">
+              {f.name === asset.take ? '✓ В игре' : 'В игру'}
+            </button>
+            <button class="quiet" onclick={() => trash(`takes/${f.name}`)} title="В Корзину">🗑</button>
+          </div>
+        {:else}
+          <p class="muted">Дублей пока нет. Скопируйте промт, сгенерируйте звук в ElevenLabs и скачайте его.</p>
+        {/each}
+        {#if downloads.sounds?.length}
+          <div class="inbox">
+            <span class="inbox-title">Из Загрузок</span>
+            {#each downloads.sounds as f, i (f.name)}
+              <div class="file track">
+                <PlayButton track={inboxTracks[i]} queue={inboxTracks} />
+                <span class="name">{f.name}</span><span class="muted">{size(f.size)} · {age(f.mtime)}</span>
+                <div class="wave"><Wave track={inboxTracks[i]} queue={inboxTracks} /></div>
+                <button class="primary" onclick={() => take(f.name, 'take')}>Взять</button>
+              </div>
+            {/each}
+          </div>
+        {/if}
+      </li>
+    {:else}
     <li class={stepState.image}>
       <h3>
         {STAGE_LABEL.image}
@@ -191,6 +272,8 @@
         </div>
       {/if}
     </li>
+
+    {/if}
 
     {#if isModel}
       <li class={stepState.tripo}>
@@ -252,16 +335,28 @@
               {asset.textures.length ? 'Обновить из картинки' : 'Сделать текстурой'}
             </button>
           {/if}
-          {#if asset.meshes.length || asset.textures.length}
+          {#if asset.meshes.length || asset.textures.length || asset.sounds.length}
             <button onclick={() => open('folder')}>Показать в Finder</button>
           {/if}
         </span>
       </h3>
+      {#each readyTracks as t, i (t.key)}
+        <div class="file track">
+          <PlayButton track={t} queue={panelQueue} />
+          <span class="name">{asset.sounds[i].name}</span><span class="muted">{size(asset.sounds[i].size)} · {age(asset.sounds[i].mtime)}</span>
+          <div class="wave"><Wave track={t} queue={panelQueue} /></div>
+        </div>
+      {/each}
       {#each [...asset.meshes, ...asset.textures] as f (f.name)}
-        <div class="file"><span>{f.name}</span><span class="muted">{size(f.size)} · {age(f.mtime)}</span></div>
-      {:else}
+        <div class="file">
+          <span>{f.name}</span><span class="muted">{size(f.size)} · {age(f.mtime)}</span>
+        </div>
+      {/each}
+      {#if !asset.meshes.length && !asset.textures.length && !asset.sounds.length}
         <p class="muted">
-          {#if isModel}
+          {#if isSound}
+            Файла для Unreal пока нет. Нажмите «В игру» у понравившегося дубля.
+          {:else if isModel}
             Файлов для Unreal пока нет. FBX выгружает Claude.
             {#if asset.blends.length}
               <button class="link" onclick={() => copy(`Выгрузи ${id} в FBX`, 'Фраза для Claude скопирована')}>Скопировать просьбу</button>
@@ -270,8 +365,8 @@
             Текстуры пока нет. Утвердите картинку и нажмите «Сделать текстурой».
           {/if}
         </p>
-      {/each}
-      {#if asset.meshes.length || asset.textures.length}
+      {/if}
+      {#if asset.meshes.length || asset.textures.length || asset.sounds.length}
         <p class="muted">Импорт в Unreal: <code>{asset.unreal}</code></p>
       {/if}
     </li>
@@ -282,7 +377,7 @@
     <Field value={asset.notes} placeholder="Размеры, решения, что поправить" onsave={(v) => save({ notes: v })} />
   </section>
 
-  {#if dragging}<div class="dropzone">Отпустите файл: картинка или меш</div>{/if}
+  {#if dragging}<div class="dropzone">Отпустите файл: картинка, меш или звук</div>{/if}
 </aside>
 
 {#if zoom}
@@ -307,7 +402,7 @@
     border-left: 1px solid var(--line);
     z-index: 11;
     overflow-y: auto;
-    padding: 18px 22px 40px;
+    padding: 18px 22px calc(40px + var(--player-h));
   }
   .panel.dragging {
     outline: 2px dashed var(--accent);
@@ -483,7 +578,7 @@
     object-fit: cover;
     display: block;
   }
-  .take {
+  .pic .take {
     position: absolute;
     inset: auto 0 0 0;
     text-align: center;
@@ -539,6 +634,44 @@
   .notes {
     margin-top: 16px;
     padding: 0 12px;
+  }
+  /* звук: ▶, имя, размер, волна во всю оставшуюся ширину, кнопки */
+  .file.track {
+    flex-wrap: wrap;
+    padding: 5px 6px;
+    margin: 0 -6px;
+    border-radius: 6px;
+  }
+  .file.track .name {
+    font-family: var(--mono);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 200px;
+  }
+  .file.track .muted {
+    margin: 0;
+  }
+  .file.track .wave {
+    flex: 1 1 200px;
+    min-width: 160px;
+    height: 28px;
+  }
+  .file.track.approved {
+    background: color-mix(in srgb, var(--ok) 12%, transparent);
+  }
+  .file.track.approved .name {
+    font-weight: 600;
+  }
+  .sound-params {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  .sound-params input[type='number'] {
+    width: 70px;
+    margin-left: 6px;
   }
   .dropzone {
     position: sticky;

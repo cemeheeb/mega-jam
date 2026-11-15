@@ -6,7 +6,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { promisify } from 'node:util';
 import YAML from 'yaml';
-import { FIELDS, IMAGE_EXT, KINDS, MODEL_EXT, expandHome, loadAsset, loadConfig, pascal, scan } from './scan.js';
+import { peaks } from './audio.js';
+import { AUDIO_EXT, FIELDS, IMAGE_EXT, KINDS, MODEL_EXT, expandHome, loadAsset, loadConfig, pascal, scan } from './scan.js';
 
 const run = promisify(execFile);
 const MAX_UPLOAD = 300 * 1024 * 1024;
@@ -16,6 +17,11 @@ const MIME = {
   '.jpg': 'image/jpeg',
   '.jpeg': 'image/jpeg',
   '.webp': 'image/webp',
+  '.mp3': 'audio/mpeg',
+  '.wav': 'audio/wav',
+  '.ogg': 'audio/ogg',
+  '.flac': 'audio/flac',
+  '.m4a': 'audio/mp4',
 };
 
 class HttpError extends Error {
@@ -99,7 +105,7 @@ async function freeName(dir, name) {
 }
 
 async function toTrash(file) {
-  const trash = path.join(os.homedir(), '.Trash');
+  const trash = process.env.STUDIO_TRASH || path.join(os.homedir(), '.Trash'); // своя Корзина — для тестов
   await move(file, path.join(trash, await freeName(trash, path.basename(file))));
 }
 
@@ -142,6 +148,18 @@ export function createApi({ root }) {
     return path.join(images, `${name}-${Math.max(0, ...used) + 1}${ext}`);
   }
 
+  /** Имя следующего дубля звука: takes/<имя ассета>-N.<расширение>. */
+  async function nextTakeName(dir, id, ext) {
+    const name = id.split('/').at(-1);
+    const takes = path.join(dir, 'takes');
+    await fs.mkdir(takes, { recursive: true });
+    const used = (await fs.readdir(takes))
+      .map((f) => new RegExp(`^${name}-(\\d+)\\.`).exec(f))
+      .filter(Boolean)
+      .map((m) => Number(m[1]));
+    return path.join(takes, `${name}-${Math.max(0, ...used) + 1}${ext}`);
+  }
+
   async function storeModel(dir, name, place) {
     const tripo = path.join(dir, 'source', 'tripo');
     await fs.mkdir(tripo, { recursive: true });
@@ -160,7 +178,7 @@ export function createApi({ root }) {
       const dir = await assetDir(q.get('id'));
       const file = inside(dir, q.get('path') ?? '');
       const type = MIME[path.extname(file).toLowerCase()];
-      if (!type) throw new HttpError(400, 'отдаются только картинки');
+      if (!type) throw new HttpError(400, 'отдаются только картинки и звук');
       const data = await fs.readFile(file).catch(() => {
         throw new HttpError(404, 'файл не найден');
       });
@@ -183,6 +201,26 @@ export function createApi({ root }) {
       res.setHeader('content-type', imageExt(data) === '.webp' ? 'image/webp' : type);
       res.end(data);
       return null;
+    },
+
+    // Волна для проигрывателя: файл ассета (id + path) или звук из Загрузок (download).
+    'GET /peaks': async (req, res, q) => {
+      let file;
+      if (q.get('download')) {
+        const config = await loadConfig(root);
+        file = path.join(expandHome(config.downloads), baseName(q.get('download')));
+      } else {
+        file = inside(await assetDir(q.get('id')), q.get('path') ?? '');
+      }
+      if (!AUDIO_EXT.includes(path.extname(file).toLowerCase())) throw new HttpError(400, 'волна строится только для звука');
+      const st = await fs.stat(file).catch(() => {
+        throw new HttpError(404, 'файл не найден');
+      });
+      const wave = await peaks(file, st.mtimeMs).catch((e) => {
+        throw new HttpError(415, `звук не читается: ${String(e.stderr || e.message).trim().slice(0, 200)}`);
+      });
+      res.setHeader('cache-control', 'private, max-age=31536000, immutable');
+      return wave;
     },
 
     'POST /assets': async (req, res, q, body) => {
@@ -213,7 +251,7 @@ export function createApi({ root }) {
       for (const k of Object.keys(fields)) {
         if (!FIELDS.includes(k)) throw new HttpError(400, `поле ${k} не редактируется`);
       }
-      if ('kind' in fields && !KINDS.includes(fields.kind)) throw new HttpError(400, 'вид — model или texture');
+      if ('kind' in fields && !KINDS.includes(fields.kind)) throw new HttpError(400, 'вид — model, texture или sound');
       if (fields.style && !(await loadConfig(root)).styles[fields.style]) throw new HttpError(400, `стиля ${fields.style} нет в studio.yml`);
       if (fields.image) {
         const img = inside(path.join(dir, 'images'), baseName(fields.image));
@@ -247,8 +285,12 @@ export function createApi({ root }) {
       } else if (body.as === 'tripo') {
         if (!MODEL_EXT.includes(path.extname(name).toLowerCase())) throw new HttpError(400, 'это не файл модели');
         await storeModel(dir, name, (dest) => move(src, dest));
+      } else if (body.as === 'take') {
+        const ext = path.extname(name).toLowerCase();
+        if (!AUDIO_EXT.includes(ext)) throw new HttpError(400, 'это не звуковой файл');
+        await move(src, await nextTakeName(dir, body.id, ext));
       } else {
-        throw new HttpError(400, 'as: image или tripo');
+        throw new HttpError(400, 'as: image, tripo или take');
       }
       return { ok: true };
     },
@@ -265,8 +307,13 @@ export function createApi({ root }) {
         return { ok: true, as: 'image' };
       }
       const name = baseName(q.get('name'));
+      const audio = path.extname(name).toLowerCase();
+      if (AUDIO_EXT.includes(audio)) {
+        await fs.writeFile(await nextTakeName(dir, id, audio), data);
+        return { ok: true, as: 'take' };
+      }
       if (!MODEL_EXT.includes(path.extname(name).toLowerCase())) {
-        throw new HttpError(400, 'принимаются картинки (PNG, JPEG, WebP) и модели (FBX, GLB, OBJ, ZIP)');
+        throw new HttpError(400, 'принимаются картинки (PNG, JPEG, WebP), модели (FBX, GLB, OBJ, ZIP) и звук (MP3, WAV, OGG)');
       }
       await storeModel(dir, name, (dest) => fs.writeFile(dest, data));
       return { ok: true, as: 'tripo' };
@@ -276,7 +323,7 @@ export function createApi({ root }) {
     'POST /asset/trash': async (req, res, q, body) => {
       const dir = await assetDir(body.id);
       const rel = String(body.path ?? '');
-      if (!/^(images|source\/tripo)\/[^/]+$/.test(rel)) throw new HttpError(400, 'в Корзину идут только картинки и меши Tripo');
+      if (!/^(images|takes|source\/tripo)\/[^/]+$/.test(rel)) throw new HttpError(400, 'в Корзину идут только картинки, дубли звука и меши Tripo');
       const file = inside(dir, rel);
       if (!(await exists(file))) throw new HttpError(404, 'файл не найден');
       await toTrash(file);
@@ -300,6 +347,23 @@ export function createApi({ root }) {
       }
       if (path.extname(src).toLowerCase() === '.png') await fs.copyFile(src, dest);
       else await run('/usr/bin/sips', ['-s', 'format', 'png', src, '--out', dest]);
+      return { ok: true, name: destName };
+    },
+
+    // Выбранный дубль становится S_<Имя>.wav: 48 кГц, 16 бит — так его берёт Unreal (MP3 он не импортирует).
+    'POST /asset/sound': async (req, res, q, body) => {
+      const dir = await assetDir(body.id);
+      const a = await loadAsset(root, body.id);
+      const name = baseName(body.name);
+      const src = inside(path.join(dir, 'takes'), name);
+      if (!(await exists(src))) throw new HttpError(404, 'дубль не найден');
+      const destName = `S_${pascal(a.name)}.wav`;
+      const dest = path.join(dir, destName);
+      if ((await exists(dest)) && !body.force) {
+        throw new HttpError(409, `${destName} уже есть`, { needsForce: true });
+      }
+      await run('/usr/bin/afconvert', ['-f', 'WAVE', '-d', 'LEI16@48000', src, dest]);
+      await writeYaml(path.join(dir, 'asset.yml'), (doc) => doc.set('take', name));
       return { ok: true, name: destName };
     },
 

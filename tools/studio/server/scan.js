@@ -8,12 +8,16 @@ import YAML from 'yaml';
 
 export const IMAGE_EXT = ['.png', '.jpg', '.jpeg', '.webp'];
 export const MODEL_EXT = ['.fbx', '.glb', '.gltf', '.obj', '.zip', '.usdz', '.stl'];
-export const KINDS = ['model', 'texture'];
-export const FIELDS = ['title', 'kind', 'style', 'idea', 'prompt', 'avoid', 'image', 'notes', 'later'];
+export const AUDIO_EXT = ['.mp3', '.wav', '.ogg', '.flac', '.m4a'];
+export const KINDS = ['model', 'texture', 'sound'];
+export const FIELDS = ['title', 'kind', 'style', 'idea', 'prompt', 'avoid', 'image', 'notes', 'later', 'take', 'seconds', 'loop', 'priority', 'generated'];
 
+// Звук: промт уходит в генератор (ElevenLabs), скачанные дубли лежат в takes/, выбранный дубль
+// становится S_<Имя>.wav для Unreal.
 const STEPS = {
   model: ['idea', 'prompt', 'image', 'tripo', 'blend', 'ready'],
   texture: ['idea', 'prompt', 'image', 'ready'],
+  sound: ['idea', 'prompt', 'take', 'ready'],
 };
 
 const DEFAULT_CONFIG = {
@@ -42,14 +46,16 @@ export function resolveStyle(config, id, own) {
 
 /** Этап, шаги и следующий ход. Чистая функция: на вход то, что нашлось в папке. */
 export function derive(a) {
-  const kind = a.kind === 'texture' ? 'texture' : 'model';
+  const kind = KINDS.includes(a.kind) ? a.kind : 'model';
   const has = {
     idea: true,
     prompt: Boolean(a.prompt && String(a.prompt).trim()),
-    image: Boolean(a.image) && a.images.some((i) => i.name === a.image),
+    // галочка «сгенерирован»: автор сделал картинку или звук у себя и в карточку не заносил — шаг закрыт без файла
+    image: Boolean(a.generated) || (Boolean(a.image) && a.images.some((i) => i.name === a.image)),
     tripo: a.tripo.length > 0,
     blend: a.blends.length > 0,
-    ready: kind === 'model' ? a.meshes.length > 0 : a.textures.length > 0,
+    take: Boolean(a.generated) || (a.takes ?? []).length > 0,
+    ready: kind === 'model' ? a.meshes.length > 0 : kind === 'sound' ? (a.sounds ?? []).length > 0 : a.textures.length > 0,
   };
   const keys = STEPS[kind];
   let last = 0;
@@ -68,18 +74,24 @@ export function derive(a) {
       ? { step: nextKey, who: 'author', label: 'утвердить картинку' }
       : { step: nextKey, who: 'author', label: 'нужна картинка' };
   }
+  if (nextKey === 'take') next = { step: nextKey, who: 'author', label: 'нужен звук' };
   if (nextKey === 'tripo') next = { step: nextKey, who: 'author', label: 'нужен меш Tripo' };
   if (nextKey === 'blend') next = { step: nextKey, who: 'claude', label: 'собрать в Blender' };
   if (nextKey === 'ready') {
     next =
       kind === 'model'
         ? { step: nextKey, who: 'claude', label: 'выгрузить FBX' }
-        : { step: nextKey, who: 'author', label: 'сделать текстурой' };
+        : kind === 'sound'
+          ? { step: nextKey, who: 'author', label: 'выбрать дубль' }
+          : { step: nextKey, who: 'author', label: 'сделать текстурой' };
   }
+
+  // отмеченный «сгенерирован» не висит в «Мой ход», пока следующий шаг за автором: файлы у него
+  if (a.generated && next?.who === 'author') next = { step: nextKey, who: 'done', label: 'сгенерирован' };
 
   const warnings = [];
   if (a.kind && !KINDS.includes(a.kind)) warnings.push(`неизвестный вид «${a.kind}», считаю моделью`);
-  if (a.image && !has.image) warnings.push(`утверждённая картинка ${a.image} не найдена в images/`);
+  if (a.image && !a.images.some((i) => i.name === a.image)) warnings.push(`утверждённая картинка ${a.image} не найдена в images/`);
   if (kind === 'model' && a.blends.length && a.meshes.length) {
     const blend = Math.max(...a.blends.map((f) => f.mtime));
     const mesh = Math.min(...a.meshes.map((f) => f.mtime));
@@ -183,11 +195,20 @@ export async function loadAsset(root, id, config = null) {
     image: data.image ? String(data.image) : '',
     notes: data.notes ? String(data.notes) : '',
     later: Boolean(data.later),
+    // очередь работы: 1 — сначала, 3 — в последнюю очередь; 0 — не задана. Карточка красится по ней
+    priority: [1, 2, 3].includes(Number(data.priority)) ? Number(data.priority) : 0,
+    generated: Boolean(data.generated),
     images: await listFiles(path.join(dir, 'images'), hasExt(IMAGE_EXT)),
     tripo: await listFiles(path.join(dir, 'source', 'tripo'), (n) => !n.endsWith('.zip')),
     blends: await listFiles(path.join(dir, 'source'), (n) => n.toLowerCase().endsWith('.blend')),
-    meshes: await listFiles(dir, (n) => /^SM_.+\.fbx$/i.test(n)),
+    meshes: await listFiles(dir, (n) => /^S[MK]_.+\.fbx$/i.test(n)),   // SM_ — статичный меш, SK_ — со скелетом
     textures: await listFiles(dir, (n) => /^T_.+\.(png|tga|exr|jpg)$/i.test(n)),
+    // звук: дубли генератора и готовый файл для Unreal; take — какой дубль в игре
+    take: data.take ? String(data.take) : '',
+    seconds: Number(data.seconds) > 0 ? Number(data.seconds) : 0,
+    loop: Boolean(data.loop),
+    takes: await listFiles(path.join(dir, 'takes'), hasExt(AUDIO_EXT)),
+    sounds: await listFiles(dir, (n) => /^S_.+\.wav$/i.test(n)),
     preview: (await listFiles(dir, (n) => n === 'preview.png'))[0] ?? null,
   };
   const d = derive(a);
@@ -218,14 +239,15 @@ export async function listDownloads(config) {
   const dir = expandHome(config.downloads);
   const since = Date.now() - 72 * 3600 * 1000;
   try {
-    const all = await listFiles(dir, hasExt([...IMAGE_EXT, ...MODEL_EXT]));
+    const all = await listFiles(dir, hasExt([...IMAGE_EXT, ...MODEL_EXT, ...AUDIO_EXT]));
     const fresh = all.filter((f) => f.mtime >= since).sort((x, y) => y.mtime - x.mtime);
     return {
       images: fresh.filter((f) => hasExt(IMAGE_EXT)(f.name)).slice(0, 12),
       models: fresh.filter((f) => hasExt(MODEL_EXT)(f.name)).slice(0, 8),
+      sounds: fresh.filter((f) => hasExt(AUDIO_EXT)(f.name)).slice(0, 12),
     };
   } catch (e) {
-    return { images: [], models: [], error: `Загрузки недоступны: ${e.message}` };
+    return { images: [], models: [], sounds: [], error: `Загрузки недоступны: ${e.message}` };
   }
 }
 
