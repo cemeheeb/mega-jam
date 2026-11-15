@@ -1,0 +1,24 @@
+{
+ "vo-captain-found-1.wav": {
+  "text": "The captain. By the warp core. His card is still on him.",
+  "seed": 1,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 5.08,
+  "score": 0.19,
+  "seconds": 4.2,
+  "gap": 0.33
+ },
+ "vo-captain-found-2.wav": {
+  "text": "The captain. By the warp core. His card is still on him.",
+  "seed": 2,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 5.08,
+  "score": 0.247,
+  "seconds": 3.97,
+  "gap": 0.44
+ }
+}

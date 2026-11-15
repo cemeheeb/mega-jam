@@ -1,0 +1,24 @@
+{
+ "vo-thought-new-1.wav": {
+  "text": "Somewhere new again. Something new in my pocket... a new room behind the door.",
+  "seed": 1,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 6.84,
+  "score": 0.288,
+  "seconds": 5.13,
+  "gap": 0.33
+ },
+ "vo-thought-new-2.wav": {
+  "text": "Somewhere new again. Something new in my pocket... a new room behind the door.",
+  "seed": 2,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 6.84,
+  "score": 0.299,
+  "seconds": 5.07,
+  "gap": 0.32
+ }
+}

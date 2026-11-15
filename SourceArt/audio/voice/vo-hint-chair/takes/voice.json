@@ -1,0 +1,24 @@
+{
+ "vo-hint-chair-1.wav": {
+  "text": "I never looked inside the ring of consoles. At the foot of the captain's chair?",
+  "seed": 1,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 6.92,
+  "score": 0.272,
+  "seconds": 5.27,
+  "gap": 0.39
+ },
+ "vo-hint-chair-2.wav": {
+  "text": "I never looked inside the ring of consoles. At the foot of the captain's chair?",
+  "seed": 2,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 6.92,
+  "score": 0.28,
+  "seconds": 5.23,
+  "gap": 0.42
+ }
+}

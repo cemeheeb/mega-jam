@@ -1,0 +1,12 @@
+title: "Hero: Thought New Room"
+kind: sound
+priority: 1
+idea: "Somewhere new again. Something new in my pocket - a new room behind the door."
+prompt: "Somewhere new again. Something new in my pocket... a new room behind the door."
+notes: |
+  Мысль героя вслух (реплика: звучит вместе с субтитром): новая комната после петли.
+  idea — строка ровно как в игре, по ней игра находит звук; prompt — что произносит голос (без клавиш).
+  Голос: Chatterbox, образец Greenman (~/Projects/chatterbox/CLAUDE.md), exaggeration 0,25, cfg 0,25.
+  Делает tools/audio/generate_voice.py: дубли в takes/, лучший по измерениям — S_<Имя>.wav; на слух
+  ассистент не проверял. Другой дубль — кнопка «В игру» в Студии, потом tools/ue/import_audio.py.
+take: vo-thought-new-1.wav

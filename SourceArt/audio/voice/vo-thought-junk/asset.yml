@@ -1,0 +1,12 @@
+title: "Hero: Thought Junk"
+kind: sound
+priority: 1
+idea: "The same room, even though my pocket changed. So that thing does not count for the doors. Junk."
+prompt: "The same room, even though my pocket changed. So that thing does not count for the doors. Junk."
+notes: |
+  Мысль героя вслух (реплика: звучит вместе с субтитром): та же комната, хотя карман сменился.
+  idea — строка ровно как в игре, по ней игра находит звук; prompt — что произносит голос (без клавиш).
+  Голос: Chatterbox, образец Greenman (~/Projects/chatterbox/CLAUDE.md), exaggeration 0,25, cfg 0,25.
+  Делает tools/audio/generate_voice.py: дубли в takes/, лучший по измерениям — S_<Имя>.wav; на слух
+  ассистент не проверял. Другой дубль — кнопка «В игру» в Студии, потом tools/ue/import_audio.py.
+take: vo-thought-junk-1.wav

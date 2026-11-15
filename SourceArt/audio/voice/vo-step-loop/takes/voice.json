@@ -1,0 +1,24 @@
+{
+ "vo-step-loop-1.wav": {
+  "text": "Every door brings me back to this bridge. I am walking in a loop. Something here must be keeping me in. I should search the bridge.",
+  "seed": 1,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 11.08,
+  "score": 0.182,
+  "seconds": 9.24,
+  "gap": 0.52
+ },
+ "vo-step-loop-2.wav": {
+  "text": "Every door brings me back to this bridge. I am walking in a loop. Something here must be keeping me in. I should search the bridge.",
+  "seed": 2,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 11.08,
+  "score": 0.212,
+  "seconds": 8.96,
+  "gap": 0.39
+ }
+}

@@ -1,0 +1,24 @@
+{
+ "vo-hint-corner-1.wav": {
+  "text": "I never looked behind the ring of consoles. A far corner, maybe?",
+  "seed": 1,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 5.72,
+  "score": 0.177,
+  "seconds": 4.79,
+  "gap": 0.27
+ },
+ "vo-hint-corner-2.wav": {
+  "text": "I never looked behind the ring of consoles. A far corner, maybe?",
+  "seed": 2,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 5.72,
+  "score": 0.292,
+  "seconds": 4.27,
+  "gap": 0.33
+ }
+}

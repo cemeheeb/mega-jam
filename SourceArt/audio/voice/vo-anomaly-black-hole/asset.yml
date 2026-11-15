@@ -1,0 +1,12 @@
+title: "Hero: Anomaly Black Hole"
+kind: sound
+priority: 1
+idea: "A tiny black hole. This room is wrong. I can just walk back out the way I came."
+prompt: "A tiny black hole. This room is wrong. I can just walk back out the way I came."
+notes: |
+  Мысль героя вслух (реплика: звучит вместе с субтитром): вошёл в комнату с чёрной дырой.
+  idea — строка ровно как в игре, по ней игра находит звук; prompt — что произносит голос (без клавиш).
+  Голос: Chatterbox, образец Greenman (~/Projects/chatterbox/CLAUDE.md), exaggeration 0,25, cfg 0,25.
+  Делает tools/audio/generate_voice.py: дубли в takes/, лучший по измерениям — S_<Имя>.wav; на слух
+  ассистент не проверял. Другой дубль — кнопка «В игру» в Студии, потом tools/ue/import_audio.py.
+take: vo-anomaly-black-hole-2.wav

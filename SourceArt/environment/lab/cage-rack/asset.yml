@@ -8,3 +8,4 @@ avoid: animals, rats, blood, straw on the floor
 notes: |
   Приоритет 2. Лаборатория: Cages_Rack 50 × 240 × 190 см, клетки 68 × 68 см в два ряда, одна распахнута.
   Отсюда сбежали крысы (противник characters/mutant-rat). Привязка — центр дна, лицо меша в +Y, как у наборов Singula.
+generated: true

@@ -1,0 +1,24 @@
+{
+ "vo-ship-saved-1.wav": {
+  "text": "The card clicks into the slot. The engines roar. The ship is saved.",
+  "seed": 1,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 5.96,
+  "score": 0.15,
+  "seconds": 5.13,
+  "gap": 0.47
+ },
+ "vo-ship-saved-2.wav": {
+  "text": "The card clicks into the slot. The engines roar. The ship is saved.",
+  "seed": 2,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 5.96,
+  "score": 0.089,
+  "seconds": 5.45,
+  "gap": 0.49
+ }
+}

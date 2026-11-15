@@ -1,0 +1,24 @@
+{
+ "vo-step-drop-extra-1.wav": {
+  "text": "Only the notebook and the card. Everything else goes.",
+  "seed": 1,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 4.84,
+  "score": 0.132,
+  "seconds": 4.24,
+  "gap": 0.35
+ },
+ "vo-step-drop-extra-2.wav": {
+  "text": "Only the notebook and the card. Everything else goes.",
+  "seed": 2,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 4.84,
+  "score": 0.226,
+  "seconds": 3.86,
+  "gap": 0.43
+ }
+}

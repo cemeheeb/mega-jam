@@ -1,0 +1,24 @@
+{
+ "vo-step-read-notebook-1.wav": {
+  "text": "Let me read my notebook.",
+  "seed": 1,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 2.52,
+  "score": 0.163,
+  "seconds": 2.14,
+  "gap": 0.32
+ },
+ "vo-step-read-notebook-2.wav": {
+  "text": "Let me read my notebook.",
+  "seed": 2,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 2.52,
+  "score": 0.348,
+  "seconds": 1.78,
+  "gap": 0.25
+ }
+}

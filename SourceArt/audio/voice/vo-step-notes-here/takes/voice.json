@@ -1,0 +1,24 @@
+{
+ "vo-step-notes-here-1.wav": {
+  "text": "There are notes here. Maybe they say what to carry next.",
+  "seed": 1,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 5.08,
+  "score": 0.252,
+  "seconds": 3.95,
+  "gap": 0.17
+ },
+ "vo-step-notes-here-2.wav": {
+  "text": "There are notes here. Maybe they say what to carry next.",
+  "seed": 2,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 5.08,
+  "score": 0.257,
+  "seconds": 3.93,
+  "gap": 0.32
+ }
+}

@@ -1,0 +1,12 @@
+title: "Hero: Cabin Locked"
+kind: sound
+priority: 2
+idea: "Locked. There is a keypad left of the door [E].\nNo code? Leave it empty and press [Enter]: a new ship."
+prompt: "Locked. There is a keypad left of the door."
+notes: |
+  Мысль героя вслух (строка шага: звучит один раз за забег, когда шаг сменился): шаг в каюте, дверь заперта.
+  idea — строка ровно как в игре, по ней игра находит звук; prompt — что произносит голос (без клавиш).
+  Голос: Chatterbox, образец Greenman (~/Projects/chatterbox/CLAUDE.md), exaggeration 0,25, cfg 0,25.
+  Делает tools/audio/generate_voice.py: дубли в takes/, лучший по измерениям — S_<Имя>.wav; на слух
+  ассистент не проверял. Другой дубль — кнопка «В игру» в Студии, потом tools/ue/import_audio.py.
+take: vo-step-cabin-locked-2.wav

@@ -5,6 +5,10 @@ style: interior
 idea: "Cabinet of data cartridges, three rows of four slots."
 prompt: "A data storage vault cabinet one metre sixty wide, one metre eighty tall and forty centimetres deep: an off-white painted metal cabinet with a graphite front divided into three rows of four upright slots, each slot holding a flat data cartridge with a light-grey aluminium handle and a small muted teal status window; two of the twelve slots are empty dark openings. An international orange stripe across the top and a small keypad on the right side."
 avoid: loose cartridges on the floor, monitors
+image: cartridge-vault-1.png
 notes: |
   Приоритет 2. Вычислительный центр: Vault 160 × 40 × 180 см, двенадцать гнёзд Vault_Slot 30 × 40 см в три ряда.
   Картриджи — как предмет items/data-cartridge. Привязка — центр дна, лицо меша в +Y, как у наборов Singula.
+  Blender: tools/blender/kit/vault_build.py, примитивы по мешу Tripo (×1,801), ReferenceTripo скрыт в Source.
+  По мешу 159 × 65 × 180 см, а не 40 в глубину: серую коробку Vault в build_rooms.py надо сделать глубиной 65.
+  Пустые гнёзда: средний ряд справа и нижний третий. Швы панелей, решётки и вентиляция пойдут в карту высот.

@@ -1,0 +1,12 @@
+title: "Hero: Leave Bridge"
+kind: sound
+priority: 2
+idea: "I need to get off the bridge. Any door will do."
+prompt: "I need to get off the bridge. Any door will do."
+notes: |
+  Мысль героя вслух (строка шага: звучит один раз за забег, когда шаг сменился): шаг на рубке до первой петли.
+  idea — строка ровно как в игре, по ней игра находит звук; prompt — что произносит голос (без клавиш).
+  Голос: Chatterbox, образец Greenman (~/Projects/chatterbox/CLAUDE.md), exaggeration 0,25, cfg 0,25.
+  Делает tools/audio/generate_voice.py: дубли в takes/, лучший по измерениям — S_<Имя>.wav; на слух
+  ассистент не проверял. Другой дубль — кнопка «В игру» в Студии, потом tools/ue/import_audio.py.
+take: vo-step-leave-bridge-2.wav

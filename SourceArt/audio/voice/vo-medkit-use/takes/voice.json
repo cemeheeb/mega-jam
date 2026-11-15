@@ -1,0 +1,24 @@
+{
+ "vo-medkit-use-1.wav": {
+  "text": "I patch myself up. Better.",
+  "seed": 1,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 2.68,
+  "score": 0.007,
+  "seconds": 2.66,
+  "gap": 0.65
+ },
+ "vo-medkit-use-2.wav": {
+  "text": "I patch myself up. Better.",
+  "seed": 2,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 2.68,
+  "score": 0.082,
+  "seconds": 2.91,
+  "gap": 0.6
+ }
+}

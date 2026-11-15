@@ -1,0 +1,24 @@
+{
+ "vo-step-leave-bridge-1.wav": {
+  "text": "I need to get off the bridge. Any door will do.",
+  "seed": 1,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 4.36,
+  "score": 0.246,
+  "seconds": 3.41,
+  "gap": 0.34
+ },
+ "vo-step-leave-bridge-2.wav": {
+  "text": "I need to get off the bridge. Any door will do.",
+  "seed": 2,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 4.36,
+  "score": 0.14,
+  "seconds": 3.79,
+  "gap": 0.41
+ }
+}

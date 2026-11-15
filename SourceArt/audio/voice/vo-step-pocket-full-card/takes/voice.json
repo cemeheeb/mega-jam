@@ -1,0 +1,24 @@
+{
+ "vo-step-pocket-full-card-1.wav": {
+  "text": "My pocket is full. Drop what I no longer need, then take the captain's card.",
+  "seed": 1,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 6.68,
+  "score": 0.119,
+  "seconds": 5.93,
+  "gap": 0.24
+ },
+ "vo-step-pocket-full-card-2.wav": {
+  "text": "My pocket is full. Drop what I no longer need, then take the captain's card.",
+  "seed": 2,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 6.68,
+  "score": 0.124,
+  "seconds": 5.9,
+  "gap": 0.36
+ }
+}

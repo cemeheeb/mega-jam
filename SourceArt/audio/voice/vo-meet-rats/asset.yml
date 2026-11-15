@@ -1,0 +1,12 @@
+title: "Hero: Meet Rats"
+kind: sound
+priority: 1
+idea: "Rats! Huge damn rats. Keep moving!"
+prompt: "Rats! Huge damn rats. Keep moving!"
+notes: |
+  Мысль героя вслух (реплика: звучит вместе с субтитром): в комнате крысы.
+  idea — строка ровно как в игре, по ней игра находит звук; prompt — что произносит голос (без клавиш).
+  Голос: Chatterbox, образец Greenman (~/Projects/chatterbox/CLAUDE.md), exaggeration 0.8, cfg 0.5 (встреча с врагом: живее и быстрее).
+  Делает tools/audio/generate_voice.py: дубли в takes/, лучший по измерениям — S_<Имя>.wav; на слух
+  ассистент не проверял. Другой дубль — кнопка «В игру» в Студии, потом tools/ue/import_audio.py.
+take: vo-meet-rats-1.wav

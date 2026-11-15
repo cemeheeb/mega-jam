@@ -1,0 +1,35 @@
+{
+ "vo-meet-twin-1.wav": {
+  "text": "Damn! That's me. Get a door between us!",
+  "seed": 1,
+  "exaggeration": 0.8,
+  "cfg": 0.5,
+  "sample": "librivox_greenman.mp3",
+  "expected": 3.0,
+  "score": 0.135,
+  "seconds": 2.62,
+  "gap": 0.25
+ },
+ "vo-meet-twin-2.wav": {
+  "text": "Damn! That's me. Get a door between us!",
+  "seed": 2,
+  "exaggeration": 0.8,
+  "cfg": 0.5,
+  "sample": "librivox_greenman.mp3",
+  "expected": 3.0,
+  "score": 0.007,
+  "seconds": 2.98,
+  "gap": 0.36
+ },
+ "vo-meet-twin-3.wav": {
+  "text": "Damn! That's me. Get a door between us!",
+  "seed": 3,
+  "exaggeration": 0.8,
+  "cfg": 0.5,
+  "sample": "librivox_greenman.mp3",
+  "expected": 3.0,
+  "score": 0.08,
+  "seconds": 2.77,
+  "gap": 0.37
+ }
+}

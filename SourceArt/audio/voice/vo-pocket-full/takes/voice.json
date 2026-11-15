@@ -1,0 +1,24 @@
+{
+ "vo-pocket-full-1.wav": {
+  "text": "My pocket is full.",
+  "seed": 1,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 2.04,
+  "score": 0.237,
+  "seconds": 1.61,
+  "gap": 0.25
+ },
+ "vo-pocket-full-2.wav": {
+  "text": "My pocket is full.",
+  "seed": 2,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 2.04,
+  "score": 0.288,
+  "seconds": 1.53,
+  "gap": 0.15
+ }
+}

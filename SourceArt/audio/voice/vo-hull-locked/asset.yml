@@ -1,0 +1,12 @@
+title: "Hero: Hull Locked"
+kind: sound
+priority: 1
+idea: "The airlock reads my pocket and stays shut: HULL BREACH beyond. I need a suit."
+prompt: "The airlock reads my pocket and stays shut. Hull breach beyond. I need a suit."
+notes: |
+  Мысль героя вслух (реплика: звучит вместе с субтитром): шлюз в пробоину не открылся без скафандра.
+  idea — строка ровно как в игре, по ней игра находит звук; prompt — что произносит голос (без клавиш).
+  Голос: Chatterbox, образец Greenman (~/Projects/chatterbox/CLAUDE.md), exaggeration 0,25, cfg 0,25.
+  Делает tools/audio/generate_voice.py: дубли в takes/, лучший по измерениям — S_<Имя>.wav; на слух
+  ассистент не проверял. Другой дубль — кнопка «В игру» в Студии, потом tools/ue/import_audio.py.
+take: vo-hull-locked-2.wav

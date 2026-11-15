@@ -1,0 +1,24 @@
+{
+ "vo-kill-rat-1.wav": {
+  "text": "One rat less.",
+  "seed": 1,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 1.64,
+  "score": 0.0,
+  "seconds": 1.64,
+  "gap": 0.13
+ },
+ "vo-kill-rat-2.wav": {
+  "text": "One rat less.",
+  "seed": 2,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 1.64,
+  "score": 0.104,
+  "seconds": 1.82,
+  "gap": 0.11
+ }
+}

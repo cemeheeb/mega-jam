@@ -1,0 +1,12 @@
+title: "Hero: Hands Empty"
+kind: sound
+priority: 1
+idea: "My hands are empty. Mouse wheel or [1]-[4] takes an item in hand."
+prompt: "My hands are empty."
+notes: |
+  Мысль героя вслух (реплика: звучит вместе с субтитром): пустые руки: применить или ударить нечем.
+  idea — строка ровно как в игре, по ней игра находит звук; prompt — что произносит голос (без клавиш).
+  Голос: Chatterbox, образец Greenman (~/Projects/chatterbox/CLAUDE.md), exaggeration 0,25, cfg 0,25.
+  Делает tools/audio/generate_voice.py: дубли в takes/, лучший по измерениям — S_<Имя>.wav; на слух
+  ассистент не проверял. Другой дубль — кнопка «В игру» в Студии, потом tools/ue/import_audio.py.
+take: vo-hands-empty-1.wav

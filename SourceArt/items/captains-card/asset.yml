@@ -1,0 +1,23 @@
+title: Captain's Card
+kind: model
+priority: 1
+idea: The captain's command keycard that starts the engines; lies by the captain's body in the engine room.
+prompt: "A ship captain's command keycard lying flat: a thick rigid card about ten centimetres long and six wide, half a centimetre thick, with rounded corners, an off-white matte composite body with a graphite edge band all around, a broad international orange stripe across one end, an embossed abstract rank emblem of three chevrons under a star on the face, a square brushed gold contact chip, a muted teal glowing strip along one long edge, and a small brushed aluminium ring through a hole in one corner."
+avoid: readable letters or numbers, a photo or a face, a lanyard, a hand, a card reader
+image: captains-card-1.webp
+notes: |
+  15.11: сюжетный предмет, сейчас в игре кубик. Лежит у тела капитана в машинном отделении (RunStory::CaptainCard),
+  им в рубке запускают двигатели. В игре — по правилу имён: «Captain's Card» -> /Game/Items/CaptainsCard/SM_CaptainsCard.
+  Карта настоящего размера (8,5 × 5,4 см) с третьего лица не видна, поэтому крупнее и толще: 10 × 6 × 0,5 см.
+  Светящаяся полоса — эмиссив в Unreal.
+  15.11, вечер: картинка автора — images/captains-card-1.webp (сгенерирована у автора). Меша Tripo нет: автор попросил
+  сгенерировать ассет в Blender, генераторов у Blender MCP не было, поэтому модель собрана из примитивов по картинке
+  скриптом tools/blender/props/captains_card.py (фоном), он же рисует текстуры. Шаг Tripo пропущен.
+  Модель 10 × 6 × 0,5 см, фаска 0,8 мм, лицом вверх; длинная сторона по X, оранжевый конец (до x −21 мм) в −X;
+  белая пластина в графитовой кромке 1,2 мм; золотой чип 13 × 10 мм; звезда и три шеврона выдавлены на 0,25 мм
+  (рельеф — в карте нормалей, не в сетке); бирюзовая полоса 34 мм на длинном торце −Y (свечение — T_*_Emissive);
+  люверс и стальное кольцо Ø 15 мм в углу +X +Y, кольцо проходит в отверстие наискось и завалено вбок, под углом
+  карты уходит на 2,5 мм ниже дна (в игре скрыто под картой). Привязка — середина дна корпуса.
+  Текстуры 1024: ровные цвета зон палитры, износ — fine-scratches и weathering Singula (без шума), сильнее на
+  оранжевом конце и у края. 1238 граней, 2640 треугольников, без коллизии.
+  В игре — по правилу имён: /Game/Items/CaptainsCard/SM_CaptainsCard, импорт tools/ue/import_props.py captains-card.

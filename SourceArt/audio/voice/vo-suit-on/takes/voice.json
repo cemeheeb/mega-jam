@@ -1,0 +1,24 @@
+{
+ "vo-suit-on-1.wav": {
+  "text": "I pull on the space suit. The helmet seals with a hiss.",
+  "seed": 1,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 5.0,
+  "score": 0.177,
+  "seconds": 4.19,
+  "gap": 0.4
+ },
+ "vo-suit-on-2.wav": {
+  "text": "I pull on the space suit. The helmet seals with a hiss.",
+  "seed": 2,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 5.0,
+  "score": 0.288,
+  "seconds": 3.75,
+  "gap": 0.14
+ }
+}

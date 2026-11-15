@@ -1,0 +1,12 @@
+title: "Hero: Suit No Air"
+kind: sound
+priority: 1
+idea: "Not here. There is no air to breathe."
+prompt: "Not here. There is no air to breathe."
+notes: |
+  Мысль героя вслух (реплика: звучит вместе с субтитром): попытка снять скафандр в пробоине.
+  idea — строка ровно как в игре, по ней игра находит звук; prompt — что произносит голос (без клавиш).
+  Голос: Chatterbox, образец Greenman (~/Projects/chatterbox/CLAUDE.md), exaggeration 0,25, cfg 0,25.
+  Делает tools/audio/generate_voice.py: дубли в takes/, лучший по измерениям — S_<Имя>.wav; на слух
+  ассистент не проверял. Другой дубль — кнопка «В игру» в Студии, потом tools/ue/import_audio.py.
+take: vo-suit-no-air-2.wav

@@ -1,0 +1,24 @@
+{
+ "vo-guide-item-1.wav": {
+  "text": "This does not belong on the bridge. What happens if I take it through a door?",
+  "seed": 1,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 6.76,
+  "score": 0.243,
+  "seconds": 5.3,
+  "gap": 0.41
+ },
+ "vo-guide-item-2.wav": {
+  "text": "This does not belong on the bridge. What happens if I take it through a door?",
+  "seed": 2,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 6.76,
+  "score": 0.326,
+  "seconds": 4.88,
+  "gap": 0.37
+ }
+}

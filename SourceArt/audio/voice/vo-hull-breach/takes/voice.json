@@ -1,0 +1,24 @@
+{
+ "vo-hull-breach-1.wav": {
+  "text": "Hull breach. No air in here, only the hiss of my suit.",
+  "seed": 1,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 4.92,
+  "score": 0.13,
+  "seconds": 4.32,
+  "gap": 0.3
+ },
+ "vo-hull-breach-2.wav": {
+  "text": "Hull breach. No air in here, only the hiss of my suit.",
+  "seed": 2,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 4.92,
+  "score": 0.094,
+  "seconds": 4.48,
+  "gap": 0.29
+ }
+}

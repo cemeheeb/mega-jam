@@ -1,0 +1,24 @@
+{
+ "vo-card-bridge-1.wav": {
+  "text": "The bridge. Now the card goes into the captain's chair.",
+  "seed": 1,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 5.0,
+  "score": 0.285,
+  "seconds": 3.76,
+  "gap": 0.34
+ },
+ "vo-card-bridge-2.wav": {
+  "text": "The bridge. Now the card goes into the captain's chair.",
+  "seed": 2,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 5.0,
+  "score": 0.269,
+  "seconds": 3.82,
+  "gap": 0.36
+ }
+}

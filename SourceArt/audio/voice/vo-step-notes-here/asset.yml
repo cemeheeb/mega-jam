@@ -1,0 +1,12 @@
+title: "Hero: Notes Here"
+kind: sound
+priority: 2
+idea: "There are notes here [E]. Maybe they say what to carry next."
+prompt: "There are notes here. Maybe they say what to carry next."
+notes: |
+  Мысль героя вслух (строка шага: звучит один раз за забег, когда шаг сменился): шаг: в комнате непрочитанные записки.
+  idea — строка ровно как в игре, по ней игра находит звук; prompt — что произносит голос (без клавиш).
+  Голос: Chatterbox, образец Greenman (~/Projects/chatterbox/CLAUDE.md), exaggeration 0,25, cfg 0,25.
+  Делает tools/audio/generate_voice.py: дубли в takes/, лучший по измерениям — S_<Имя>.wav; на слух
+  ассистент не проверял. Другой дубль — кнопка «В игру» в Студии, потом tools/ue/import_audio.py.
+take: vo-step-notes-here-1.wav

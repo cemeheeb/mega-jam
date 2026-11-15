@@ -1,0 +1,24 @@
+{
+ "vo-anomaly-black-hole-1.wav": {
+  "text": "A tiny black hole. This room is wrong. I can just walk back out the way I came.",
+  "seed": 1,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 6.92,
+  "score": 0.073,
+  "seconds": 6.43,
+  "gap": 0.51
+ },
+ "vo-anomaly-black-hole-2.wav": {
+  "text": "A tiny black hole. This room is wrong. I can just walk back out the way I came.",
+  "seed": 2,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 6.92,
+  "score": 0.01,
+  "seconds": 6.99,
+  "gap": 0.61
+ }
+}

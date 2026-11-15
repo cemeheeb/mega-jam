@@ -1,0 +1,35 @@
+{
+ "vo-no-weapon-1.wav": {
+  "text": "Hell, nothing to fight with!",
+  "seed": 1,
+  "exaggeration": 0.8,
+  "cfg": 0.5,
+  "sample": "librivox_greenman.mp3",
+  "expected": 2.27,
+  "score": 0.324,
+  "seconds": 1.64,
+  "gap": 0.16
+ },
+ "vo-no-weapon-2.wav": {
+  "text": "Hell, nothing to fight with!",
+  "seed": 2,
+  "exaggeration": 0.8,
+  "cfg": 0.5,
+  "sample": "librivox_greenman.mp3",
+  "expected": 2.27,
+  "score": 0.115,
+  "seconds": 2.02,
+  "gap": 0.22
+ },
+ "vo-no-weapon-3.wav": {
+  "text": "Hell, nothing to fight with!",
+  "seed": 3,
+  "exaggeration": 0.8,
+  "cfg": 0.5,
+  "sample": "librivox_greenman.mp3",
+  "expected": 2.27,
+  "score": 0.187,
+  "seconds": 1.88,
+  "gap": 0.12
+ }
+}

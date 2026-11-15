@@ -1,0 +1,12 @@
+title: "Hero: Notebook Here"
+kind: sound
+priority: 2
+idea: "My notebook is here. I should take it [E]."
+prompt: "My notebook is here. I should take it."
+notes: |
+  Мысль героя вслух (строка шага: звучит один раз за забег, когда шаг сменился): шаг: блокнот в комнате.
+  idea — строка ровно как в игре, по ней игра находит звук; prompt — что произносит голос (без клавиш).
+  Голос: Chatterbox, образец Greenman (~/Projects/chatterbox/CLAUDE.md), exaggeration 0,25, cfg 0,25.
+  Делает tools/audio/generate_voice.py: дубли в takes/, лучший по измерениям — S_<Имя>.wav; на слух
+  ассистент не проверял. Другой дубль — кнопка «В игру» в Студии, потом tools/ue/import_audio.py.
+take: vo-step-notebook-here-2.wav

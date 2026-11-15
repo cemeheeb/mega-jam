@@ -1,0 +1,12 @@
+title: "Hero: Twin Follows"
+kind: sound
+priority: 1
+idea: "Damn it, it followed me!"
+prompt: "Damn it, it followed me!"
+notes: |
+  Мысль героя вслух (реплика: звучит вместе с субтитром): двойник успел за героем в дверь.
+  idea — строка ровно как в игре, по ней игра находит звук; prompt — что произносит голос (без клавиш).
+  Голос: Chatterbox, образец Greenman (~/Projects/chatterbox/CLAUDE.md), exaggeration 0.8, cfg 0.5 (встреча с врагом: живее и быстрее).
+  Делает tools/audio/generate_voice.py: дубли в takes/, лучший по измерениям — S_<Имя>.wav; на слух
+  ассистент не проверял. Другой дубль — кнопка «В игру» в Студии, потом tools/ue/import_audio.py.
+take: vo-twin-follows-2.wav

@@ -1,0 +1,24 @@
+{
+ "vo-first-room-1.wav": {
+  "text": "A different room, finally! It was the thing in my pocket. The doors... they read what I carry.",
+  "seed": 1,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 8.12,
+  "score": 0.166,
+  "seconds": 6.88,
+  "gap": 0.47
+ },
+ "vo-first-room-2.wav": {
+  "text": "A different room, finally! It was the thing in my pocket. The doors... they read what I carry.",
+  "seed": 2,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 8.12,
+  "score": 0.247,
+  "seconds": 6.34,
+  "gap": 0.45
+ }
+}

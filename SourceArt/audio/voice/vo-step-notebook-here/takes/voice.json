@@ -1,0 +1,24 @@
+{
+ "vo-step-notebook-here-1.wav": {
+  "text": "My notebook is here. I should take it.",
+  "seed": 1,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 3.64,
+  "score": 0.245,
+  "seconds": 2.85,
+  "gap": 0.33
+ },
+ "vo-step-notebook-here-2.wav": {
+  "text": "My notebook is here. I should take it.",
+  "seed": 2,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 3.64,
+  "score": 0.031,
+  "seconds": 3.53,
+  "gap": 0.17
+ }
+}

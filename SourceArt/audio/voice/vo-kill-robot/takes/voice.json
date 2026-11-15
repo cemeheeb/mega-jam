@@ -1,0 +1,24 @@
+{
+ "vo-kill-robot-1.wav": {
+  "text": "The robot sparks and goes still.",
+  "seed": 1,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 3.16,
+  "score": 0.072,
+  "seconds": 2.94,
+  "gap": 0.25
+ },
+ "vo-kill-robot-2.wav": {
+  "text": "The robot sparks and goes still.",
+  "seed": 2,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 3.16,
+  "score": 0.296,
+  "seconds": 2.35,
+  "gap": 0.25
+ }
+}

@@ -1,0 +1,24 @@
+{
+ "vo-step-cabin-locked-1.wav": {
+  "text": "Locked. There is a keypad left of the door.",
+  "seed": 1,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 4.04,
+  "score": 0.233,
+  "seconds": 3.2,
+  "gap": 0.47
+ },
+ "vo-step-cabin-locked-2.wav": {
+  "text": "Locked. There is a keypad left of the door.",
+  "seed": 2,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 4.04,
+  "score": 0.152,
+  "seconds": 3.47,
+  "gap": 0.25
+ }
+}

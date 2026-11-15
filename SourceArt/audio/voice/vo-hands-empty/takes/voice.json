@@ -1,0 +1,24 @@
+{
+ "vo-hands-empty-1.wav": {
+  "text": "My hands are empty.",
+  "seed": 1,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 2.12,
+  "score": 0.198,
+  "seconds": 1.74,
+  "gap": 0.32
+ },
+ "vo-hands-empty-2.wav": {
+  "text": "My hands are empty.",
+  "seed": 2,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 2.12,
+  "score": 0.288,
+  "seconds": 1.59,
+  "gap": 0.09
+ }
+}

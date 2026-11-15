@@ -8,3 +8,4 @@ avoid: visible creature, monster, human body, bubbles, cracks, broken glass
 notes: |
   Приоритет 2. Лаборатория: Specimen_Base r75 h30, Specimen_Tube r60 h190, Specimen_Cap r75 h24 и пульт Specimen_Panel
   30 × 44 × 100 см. Свечение стекла — в Unreal. Привязка — центр дна капсулы, пульт справа.
+generated: true

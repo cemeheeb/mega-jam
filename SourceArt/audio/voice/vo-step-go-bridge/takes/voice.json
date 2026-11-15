@@ -1,0 +1,24 @@
+{
+ "vo-step-go-bridge-1.wav": {
+  "text": "Nothing that matters in my pocket now. Any door should take me to the bridge.",
+  "seed": 1,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 6.76,
+  "score": 0.164,
+  "seconds": 5.74,
+  "gap": 0.51
+ },
+ "vo-step-go-bridge-2.wav": {
+  "text": "Nothing that matters in my pocket now. Any door should take me to the bridge.",
+  "seed": 2,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 6.76,
+  "score": 0.249,
+  "seconds": 5.27,
+  "gap": 0.53
+ }
+}

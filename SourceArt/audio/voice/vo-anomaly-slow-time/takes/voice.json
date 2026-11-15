@@ -1,0 +1,24 @@
+{
+ "vo-anomaly-slow-time-1.wav": {
+  "text": "Slow time. This room is wrong. I can just walk back out the way I came.",
+  "seed": 1,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 6.28,
+  "score": 0.041,
+  "seconds": 6.03,
+  "gap": 0.32
+ },
+ "vo-anomaly-slow-time-2.wav": {
+  "text": "Slow time. This room is wrong. I can just walk back out the way I came.",
+  "seed": 2,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 6.28,
+  "score": 0.066,
+  "seconds": 5.88,
+  "gap": 0.56
+ }
+}

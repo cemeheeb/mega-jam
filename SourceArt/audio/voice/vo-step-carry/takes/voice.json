@@ -1,0 +1,24 @@
+{
+ "vo-step-carry-1.wav": {
+  "text": "Carry what the notes name, drop the junk, try a door. What I carry decides where it leads.",
+  "seed": 1,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 7.8,
+  "score": 0.108,
+  "seconds": 7.0,
+  "gap": 0.4
+ },
+ "vo-step-carry-2.wav": {
+  "text": "Carry what the notes name, drop the junk, try a door. What I carry decides where it leads.",
+  "seed": 2,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 7.8,
+  "score": 0.07,
+  "seconds": 7.27,
+  "gap": 0.55
+ }
+}

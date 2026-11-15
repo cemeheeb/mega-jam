@@ -1,0 +1,12 @@
+title: "Hero: Corpse Is Me"
+kind: sound
+priority: 1
+idea: "Someone is lying by the bridge door. Same suit, same face... That is me."
+prompt: "Someone is lying by the bridge door. Same suit, same face... That is me."
+notes: |
+  Мысль героя вслух (реплика: звучит вместе с субтитром): первый взгляд на рубку и свой труп.
+  idea — строка ровно как в игре, по ней игра находит звук; prompt — что произносит голос (без клавиш).
+  Голос: Chatterbox, образец Greenman (~/Projects/chatterbox/CLAUDE.md), exaggeration 0,25, cfg 0,25.
+  Делает tools/audio/generate_voice.py: дубли в takes/, лучший по измерениям — S_<Имя>.wav; на слух
+  ассистент не проверял. Другой дубль — кнопка «В игру» в Студии, потом tools/ue/import_audio.py.
+take: vo-corpse-self-2.wav

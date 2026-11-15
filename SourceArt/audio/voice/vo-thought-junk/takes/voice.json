@@ -1,0 +1,24 @@
+{
+ "vo-thought-junk-1.wav": {
+  "text": "The same room, even though my pocket changed. So that thing does not count for the doors. Junk.",
+  "seed": 1,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 8.2,
+  "score": 0.154,
+  "seconds": 7.03,
+  "gap": 0.36
+ },
+ "vo-thought-junk-2.wav": {
+  "text": "The same room, even though my pocket changed. So that thing does not count for the doors. Junk.",
+  "seed": 2,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 8.2,
+  "score": 0.164,
+  "seconds": 6.96,
+  "gap": 0.49
+ }
+}

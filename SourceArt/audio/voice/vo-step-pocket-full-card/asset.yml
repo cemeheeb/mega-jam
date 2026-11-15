@@ -1,0 +1,12 @@
+title: "Hero: Pocket Full For Card"
+kind: sound
+priority: 2
+idea: "My pocket is full. Drop what I no longer need [G], then take the captain's card [E]."
+prompt: "My pocket is full. Drop what I no longer need, then take the captain's card."
+notes: |
+  Мысль героя вслух (строка шага: звучит один раз за забег, когда шаг сменился): шаг в машинном отделении с полным карманом.
+  idea — строка ровно как в игре, по ней игра находит звук; prompt — что произносит голос (без клавиш).
+  Голос: Chatterbox, образец Greenman (~/Projects/chatterbox/CLAUDE.md), exaggeration 0,25, cfg 0,25.
+  Делает tools/audio/generate_voice.py: дубли в takes/, лучший по измерениям — S_<Имя>.wav; на слух
+  ассистент не проверял. Другой дубль — кнопка «В игру» в Студии, потом tools/ue/import_audio.py.
+take: vo-step-pocket-full-card-1.wav

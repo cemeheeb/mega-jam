@@ -15,3 +15,5 @@ notes: |
   разные картинки и зеркальные копии). Маску из картинки делает
   ../soot/source/make_soot_from_images.py (вид wall: белый берётся по самым светлым пикселям, а не по низу картинки —
   низ здесь тоже в копоти). В Unreal — MI_Soot_Wall<N> рядом с остальными масками копоти (tools/ue/import_soot.py).
+generated: true
+image: soot-wall-1.png

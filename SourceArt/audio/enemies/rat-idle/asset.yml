@@ -4,7 +4,6 @@ priority: 3
 idea: "A giant mutated rat nearby."
 prompt: "A large rat-like creature close by: low guttural chittering, wet sniffing and a quiet hiss. Menacing, dry, one shot."
 seconds: 2
-later: true
 notes: |
   Приоритет 3. Крыса-мутант рядом, время от времени (characters/mutant-rat).
   ElevenLabs Sound Effects: длительность 2 с, Prompt influence повыше — чтобы звук был ровно таким, как описан.

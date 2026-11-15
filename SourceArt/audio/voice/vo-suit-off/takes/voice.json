@@ -1,0 +1,24 @@
+{
+ "vo-suit-off-1.wav": {
+  "text": "I step out of the space suit and leave it standing.",
+  "seed": 1,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 4.68,
+  "score": 0.409,
+  "seconds": 3.11,
+  "gap": 0.12
+ },
+ "vo-suit-off-2.wav": {
+  "text": "I step out of the space suit and leave it standing.",
+  "seed": 2,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 4.68,
+  "score": 0.322,
+  "seconds": 3.39,
+  "gap": 0.25
+ }
+}

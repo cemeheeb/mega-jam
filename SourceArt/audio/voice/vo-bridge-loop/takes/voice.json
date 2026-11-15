@@ -1,0 +1,24 @@
+{
+ "vo-bridge-loop-1.wav": {
+  "text": "The bridge again? The same body by the door... I walked in a circle.",
+  "seed": 1,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 6.04,
+  "score": 0.257,
+  "seconds": 4.67,
+  "gap": 0.32
+ },
+ "vo-bridge-loop-2.wav": {
+  "text": "The bridge again? The same body by the door... I walked in a circle.",
+  "seed": 2,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 6.04,
+  "score": 0.24,
+  "seconds": 4.75,
+  "gap": 0.29
+ }
+}

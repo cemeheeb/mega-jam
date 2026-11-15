@@ -1,0 +1,12 @@
+title: "Hero: Anomaly Slow Time"
+kind: sound
+priority: 1
+idea: "Slow time. This room is wrong. I can just walk back out the way I came."
+prompt: "Slow time. This room is wrong. I can just walk back out the way I came."
+notes: |
+  Мысль героя вслух (реплика: звучит вместе с субтитром): вошёл в комнату с медленным временем.
+  idea — строка ровно как в игре, по ней игра находит звук; prompt — что произносит голос (без клавиш).
+  Голос: Chatterbox, образец Greenman (~/Projects/chatterbox/CLAUDE.md), exaggeration 0,25, cfg 0,25.
+  Делает tools/audio/generate_voice.py: дубли в takes/, лучший по измерениям — S_<Имя>.wav; на слух
+  ассистент не проверял. Другой дубль — кнопка «В игру» в Студии, потом tools/ue/import_audio.py.
+take: vo-anomaly-slow-time-1.wav

@@ -1,0 +1,24 @@
+{
+ "vo-medkit-keep-1.wav": {
+  "text": "I am not hurt. Better keep the medkit.",
+  "seed": 1,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 3.64,
+  "score": 0.025,
+  "seconds": 3.55,
+  "gap": 0.11
+ },
+ "vo-medkit-keep-2.wav": {
+  "text": "I am not hurt. Better keep the medkit.",
+  "seed": 2,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 3.64,
+  "score": 0.095,
+  "seconds": 3.31,
+  "gap": 0.28
+ }
+}

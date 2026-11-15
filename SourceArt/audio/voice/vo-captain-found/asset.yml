@@ -1,0 +1,12 @@
+title: "Hero: Captain Found"
+kind: sound
+priority: 1
+idea: "The captain. By the warp core. His card is still on him."
+prompt: "The captain. By the warp core. His card is still on him."
+notes: |
+  Мысль героя вслух (реплика: звучит вместе с субтитром): вошёл в машинное отделение.
+  idea — строка ровно как в игре, по ней игра находит звук; prompt — что произносит голос (без клавиш).
+  Голос: Chatterbox, образец Greenman (~/Projects/chatterbox/CLAUDE.md), exaggeration 0,25, cfg 0,25.
+  Делает tools/audio/generate_voice.py: дубли в takes/, лучший по измерениям — S_<Имя>.wav; на слух
+  ассистент не проверял. Другой дубль — кнопка «В игру» в Студии, потом tools/ue/import_audio.py.
+take: vo-captain-found-1.wav

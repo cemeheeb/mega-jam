@@ -1,0 +1,24 @@
+{
+ "vo-kill-twin-1.wav": {
+  "text": "The other me goes down and does not get up.",
+  "seed": 1,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 4.04,
+  "score": 0.035,
+  "seconds": 3.9,
+  "gap": 0.21
+ },
+ "vo-kill-twin-2.wav": {
+  "text": "The other me goes down and does not get up.",
+  "seed": 2,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 4.04,
+  "score": 0.093,
+  "seconds": 3.68,
+  "gap": 0.21
+ }
+}

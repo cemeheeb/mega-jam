@@ -1,0 +1,24 @@
+{
+ "vo-cabin-wake-1.wav": {
+  "text": "My cabin? I don't remember falling asleep. And the door is locked with a code.",
+  "seed": 1,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 6.84,
+  "score": 0.191,
+  "seconds": 5.65,
+  "gap": 0.42
+ },
+ "vo-cabin-wake-2.wav": {
+  "text": "My cabin? I don't remember falling asleep. And the door is locked with a code.",
+  "seed": 2,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 6.84,
+  "score": 0.259,
+  "seconds": 5.28,
+  "gap": 0.41
+ }
+}

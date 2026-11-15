@@ -1,0 +1,24 @@
+{
+ "vo-corpse-self-1.wav": {
+  "text": "Someone is lying by the bridge door. Same suit, same face... That is me.",
+  "seed": 1,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 6.36,
+  "score": 0.092,
+  "seconds": 5.8,
+  "gap": 0.34
+ },
+ "vo-corpse-self-2.wav": {
+  "text": "Someone is lying by the bridge door. Same suit, same face... That is me.",
+  "seed": 2,
+  "exaggeration": 0.25,
+  "cfg": 0.25,
+  "sample": "librivox_greenman.mp3",
+  "expected": 6.36,
+  "score": 0.075,
+  "seconds": 5.9,
+  "gap": 0.46
+ }
+}

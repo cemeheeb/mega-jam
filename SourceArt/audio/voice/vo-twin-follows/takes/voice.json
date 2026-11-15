@@ -1,0 +1,35 @@
+{
+ "vo-twin-follows-1.wav": {
+  "text": "Damn it, it followed me!",
+  "seed": 1,
+  "exaggeration": 0.8,
+  "cfg": 0.5,
+  "sample": "librivox_greenman.mp3",
+  "expected": 2.0,
+  "score": 0.446,
+  "seconds": 1.28,
+  "gap": 0.09
+ },
+ "vo-twin-follows-2.wav": {
+  "text": "Damn it, it followed me!",
+  "seed": 2,
+  "exaggeration": 0.8,
+  "cfg": 0.5,
+  "sample": "librivox_greenman.mp3",
+  "expected": 2.0,
+  "score": 0.117,
+  "seconds": 1.78,
+  "gap": 0.2
+ },
+ "vo-twin-follows-3.wav": {
+  "text": "Damn it, it followed me!",
+  "seed": 3,
+  "exaggeration": 0.8,
+  "cfg": 0.5,
+  "sample": "librivox_greenman.mp3",
+  "expected": 2.0,
+  "score": 0.151,
+  "seconds": 1.72,
+  "gap": 0.18
+ }
+}

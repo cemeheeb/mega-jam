@@ -1,0 +1,35 @@
+{
+ "vo-meet-robot-1.wav": {
+  "text": "Oh hell, a robot! It stays here. I don't have to.",
+  "seed": 1,
+  "exaggeration": 0.8,
+  "cfg": 0.5,
+  "sample": "librivox_greenman.mp3",
+  "expected": 3.67,
+  "score": 0.077,
+  "seconds": 3.96,
+  "gap": 0.26
+ },
+ "vo-meet-robot-2.wav": {
+  "text": "Oh hell, a robot! It stays here. I don't have to.",
+  "seed": 2,
+  "exaggeration": 0.8,
+  "cfg": 0.5,
+  "sample": "librivox_greenman.mp3",
+  "expected": 3.67,
+  "score": 0.117,
+  "seconds": 4.12,
+  "gap": 0.34
+ },
+ "vo-meet-robot-3.wav": {
+  "text": "Oh hell, a robot! It stays here. I don't have to.",
+  "seed": 3,
+  "exaggeration": 0.8,
+  "cfg": 0.5,
+  "sample": "librivox_greenman.mp3",
+  "expected": 3.67,
+  "score": 0.064,
+  "seconds": 3.44,
+  "gap": 0.23
+ }
+}
