@@ -4,6 +4,7 @@
 #include "Engine/Engine.h"
 #include "Engine/Font.h"
 #include "Fonts/CompositeFont.h"
+#include "Misc/App.h"
 #include "Misc/Paths.h"
 #include "Engine/Texture2D.h"
 #include "EngineUtils.h"
@@ -80,6 +81,31 @@ static TArray<FString> WrapText(AHUD* Hud, const FString& Text, UFont* Font, flo
 		Out.Add(Line);
 	}
 	return Out;
+}
+
+// Цвет названия вещи: блокнот, оружие и аптечка выделены, остальное белое — какие вещи значимы, не подсказываем.
+static FLinearColor ItemInk(int32 Item)
+{
+	return Item == RunGen::Notebook ? FLinearColor(0.45f, 0.9f, 0.95f)
+		: Item == RunGen::Weapon ? FLinearColor(1.f, 0.6f, 0.3f)
+		: Item == RunGen::Medkit ? FLinearColor(0.55f, 1.f, 0.55f) : FLinearColor::White;
+}
+
+void ARunHUD::DrawShade(float A)
+{
+	// поверх уже затемнённой и размытой пост-обработкой комнаты; середина, где блокнот, светлее краёв
+	const float SX = Canvas->SizeX, SY = Canvas->SizeY;
+	DrawRect(FLinearColor(0.004f, 0.01f, 0.018f, 0.5f * A), 0.f, 0.f, SX, SY);
+	const int32 Bands = 12;
+	const FLinearColor Band(0.f, 0.f, 0.f, 0.05f * A);
+	for (int32 I = 1; I <= Bands; ++I)
+	{
+		const float BX = SX * 0.2f * I / Bands, BY = SY * 0.2f * I / Bands;
+		DrawRect(Band, 0.f, 0.f, BX, SY);
+		DrawRect(Band, SX - BX, 0.f, BX, SY);
+		DrawRect(Band, 0.f, 0.f, SX, BY);
+		DrawRect(Band, 0.f, SY - BY, SX, BY);
+	}
 }
 
 // Цвета закладок: по кругу, у записки в блокноте полоска того же цвета.
@@ -235,14 +261,15 @@ FString ARunHUD::DrawNotebook(ARunDirector& D, float S, float X0, float Y0, floa
 		Spread * 2 + 1, FMath::Min(Spread * 2 + 2, Pages.Num()), Pages.Num()) : FString();
 }
 
-// Меню на Tab (решение автора 15.11): блокнот с закладками записок, справа — список записок, скафандр, карман.
-// Игра под ним идёт: время не останавливается.
+// Меню на Tab (решение автора 15.11): блокнот с закладками записок, справа — где ты и здоровье, карман, записки,
+// скафандр. Время под ним стоит (решение автора 15.11, вечер); фон затемнён и размыт (ARunDirector::SetMenuBlend).
 void ARunHUD::DrawMenu(ARunDirector& D, float S)
 {
 	UFont* Font = Hud();
 	const float SX = Canvas->SizeX, SY = Canvas->SizeY;
 	const FLinearColor Teal(0.37f, 0.78f, 0.79f), Dim(1.f, 1.f, 1.f, 0.55f);
-	DrawRect(FLinearColor(0.f, 0.f, 0.f, 0.35f), 0.f, 0.f, SX, SY);
+	const FLinearColor PanelBg(0.012f, 0.03f, 0.045f, 0.93f);
+	DrawShade(MenuBlend);
 
 	const float M = 18.f * S, PanelW = FMath::Min(300.f * S, SX * 0.26f);
 	float H = SY * 0.72f, W = H * 4.f / 3.f;
@@ -259,7 +286,7 @@ void ARunHUD::DrawMenu(ARunDirector& D, float S)
 	}
 	else
 	{
-		DrawRect(FLinearColor(0.f, 0.f, 0.f, 0.6f), X0, Y0, W, H);
+		DrawRect(PanelBg, X0, Y0, W, H);
 		const TCHAR* Lines[] = { TEXT("The notebook is not with you."), TEXT("The notes you read are kept in it.") };
 		for (int32 I = 0; I < 2; ++I)
 		{
@@ -269,9 +296,10 @@ void ARunHUD::DrawMenu(ARunDirector& D, float S)
 		}
 	}
 
-	// боковая панель
+	// боковая панель: почти непрозрачная, с бирюзовой кромкой сверху
 	const float PX = X0 + W + M, In = 14.f * S, TextW = PanelW - 2.f * In, RowH = 24.f * S;
-	DrawRect(FLinearColor(0.f, 0.f, 0.f, 0.7f), PX, Y0, PanelW, H);
+	DrawRect(PanelBg, PX, Y0, PanelW, H);
+	DrawRect(FLinearColor(0.37f, 0.78f, 0.79f, 0.85f), PX, Y0, PanelW, 2.f * S);
 	float Y = Y0 + In;
 	const auto Header = [&](const TCHAR* Text)
 	{
@@ -289,8 +317,62 @@ void ARunHUD::DrawMenu(ARunDirector& D, float S)
 		}
 	};
 
-	// внизу панели — скафандр и карман; записки занимают всё, что выше
-	const float FootH = 9.6f * RowH;
+	// где ты и здоровье: нижняя полоса экрана под меню не рисуется, всё нужное — здесь
+	{
+		const float Hp = D.GetHealth(), MaxHp = ARunDirector::MaxHealth;
+		DrawText(FitText(this, D.GetRoomName().ToUpper(), Font, 1.05f * S, TextW - 60.f * S), FLinearColor::White, PX + In, Y, Font, 1.05f * S);
+		const FString HpText = FString::Printf(TEXT("HP %d"), FMath::CeilToInt32(Hp));
+		float HW = 0.f, HH = 0.f;
+		GetTextSize(HpText, HW, HH, Font, 0.95f * S);
+		const bool bLow = Hp <= 25.f;
+		DrawText(HpText, bLow ? FLinearColor(1.f, 0.4f, 0.3f) : Dim, PX + In + TextW - HW, Y + 1.f * S, Font, 0.95f * S);
+		Y += RowH;
+		DrawRect(FLinearColor(1.f, 1.f, 1.f, 0.1f), PX + In, Y, TextW, 5.f * S);
+		DrawRect(bLow ? FLinearColor(0.9f, 0.25f, 0.18f) : FLinearColor(0.37f, 0.78f, 0.79f, 0.9f), PX + In, Y, TextW * FMath::Clamp(Hp / MaxHp, 0.f, 1.f), 5.f * S);
+		Y += 18.f * S;
+	}
+
+	// карман: все четыре слота с вещами; вещь в руке подсвечена
+	Header(TEXT("POCKET"));
+	{
+		const TArray<int32>& Pocket = D.GetPocket();
+		const int32 Held = D.GetHeldSlot();
+		for (int32 I = 0; I < RunGen::PocketSlots; ++I)
+		{
+			const bool bHeld = I == Held && Pocket.IsValidIndex(I);
+			if (bHeld)
+			{
+				DrawRect(FLinearColor(0.37f, 0.78f, 0.79f, 0.22f), PX + In * 0.4f, Y - 2.f * S, PanelW - In * 0.8f, RowH - 2.f * S);
+				DrawRect(Teal, PX + In * 0.4f, Y - 2.f * S, 2.f * S, RowH - 2.f * S);
+			}
+			DrawText(FString::FromInt(I + 1), Dim, PX + In, Y, Font, 0.9f * S);
+			if (Pocket.IsValidIndex(I))
+			{
+				float TagW = 0.f, TagH = 0.f;
+				if (bHeld)
+				{
+					GetTextSize(TEXT("IN HAND"), TagW, TagH, Font, 0.75f * S);
+					DrawText(TEXT("IN HAND"), Teal, PX + In + TextW - TagW, Y + 2.f * S, Font, 0.75f * S);
+				}
+				DrawText(FitText(this, RunGen::ItemName(Pocket[I]), Font, 0.95f * S, TextW - 22.f * S - TagW - 8.f * S), ItemInk(Pocket[I]),
+					PX + In + 18.f * S, Y, Font, 0.95f * S);
+				if (Pocket[I] == RunGen::Notebook && D.HasUnreadJournal())
+				{
+					DrawRect(Teal, PX + In + TextW - (bHeld ? TagW + 14.f * S : 8.f * S), Y + 6.f * S, 7.f * S, 7.f * S);
+				}
+			}
+			else
+			{
+				DrawText(TEXT("empty"), FLinearColor(1.f, 1.f, 1.f, 0.25f), PX + In + 18.f * S, Y, Font, 0.9f * S);
+			}
+			Y += RowH;
+		}
+		Row(TEXT("[1]-[4] look closer      [G] drop"), Teal);
+		Y += RowH * 0.4f;
+	}
+
+	// внизу панели — скафандр; записки занимают всё, что между карманом и им
+	const float FootH = 4.2f * RowH;
 	const float NotesBottom = Y0 + H - FootH;
 	Header(TEXT("NOTES"));
 	const TArray<FString>& Marks = D.GetBookmarks();
@@ -333,15 +415,11 @@ void ARunHUD::DrawMenu(ARunDirector& D, float S)
 		Row(D.WasSuitWorn() ? TEXT("Left where you took it off.") : TEXT("You have no suit."), Dim);
 		Row(TEXT("[E] next to it - put it on"), Teal);
 	}
-	Y += RowH * 0.5f;
-	Header(TEXT("POCKET"));
-	Row(TEXT("[1]-[4] look closer at an item"), Teal);
-	Row(TEXT("[G] drop what is in your hand"), Teal);
 
-	const FString Help = PagesHelp + TEXT("[Tab] close");
+	const FString Help = PagesHelp + TEXT("[Tab] close      Time is stopped");
 	float HW = 0.f, HH = 0.f;
 	GetTextSize(Help, HW, HH, Font, 1.0f * S);
-	DrawRect(FLinearColor(0.f, 0.f, 0.f, 0.6f), (SX - HW) * 0.5f - 12.f * S, Y0 + H + 12.f * S, HW + 24.f * S, HH + 10.f * S);
+	DrawRect(PanelBg, (SX - HW) * 0.5f - 12.f * S, Y0 + H + 12.f * S, HW + 24.f * S, HH + 10.f * S);
 	Centered(Help, Y0 + H + 17.f * S, Teal, 1.0f * S);
 }
 
@@ -368,6 +446,19 @@ void ARunHUD::DrawHUD()
 	UFont* Font = Hud();
 	const float SX = Canvas->SizeX, SY = Canvas->SizeY;
 	const float S = FMath::Max(1.f, SY / 720.f);   // масштаб под высоту экрана
+
+	// меню на Tab: фон темнеет и расплывается за 0,18 с. Часы реальные: на паузе время мира стоит
+	MenuBlend = FMath::FInterpConstantTo(MenuBlend, D.IsReading() ? 1.f : 0.f, FApp::GetDeltaTime(), 1.f / 0.18f);
+	Director->SetMenuBlend(MenuBlend);
+	if (D.IsReading())
+	{
+		DrawMenu(*Director, S);   // карман, здоровье и где ты — в самом меню; остальное под ним не нужно
+		return;
+	}
+	if (MenuBlend > 0.f)
+	{
+		DrawShade(MenuBlend);   // меню закрыли: затемнение уходит плавно, экран игры уже поверх
+	}
 
 	// карман: четыре слота снизу по центру
 	const float SlotW = 170.f * S, SlotH = 44.f * S, Gap = 10.f * S;
@@ -402,6 +493,42 @@ void ARunHUD::DrawHUD()
 			DrawText(RunGen::ItemName(Pocket[I]), Ink,
 				X + 24.f * S, Y0 + 13.f * S, Font, 1.1f * S);
 		}
+	}
+
+	// под карманом — как сменить вещь в руке и что с ней делать (автор, 15.11: «надо показать игроку как это делать»)
+	if (Pocket.Num() > 0 && D.GetPhase() == ERunPhase::Playing && !D.IsReading() && !D.IsInspecting())
+	{
+		TArray<FString> Keys;
+		if (Pocket.Num() > 1)
+		{
+			Keys.Add(TEXT("[WHEEL] or [1]-[4] switch"));
+		}
+		else if (Held < 0)
+		{
+			Keys.Add(TEXT("[1] take in hand"));
+		}
+		if (Held >= 0)
+		{
+			if (Pocket[Held] == RunGen::Medkit)
+			{
+				Keys.Add(TEXT("[LMB] use"));
+			}
+			else if (D.HasWeapon())
+			{
+				Keys.Add(TEXT("[LMB] hit"));
+			}
+			Keys.Add(TEXT("[RMB] look closer"));
+			Keys.Add(TEXT("[G] drop"));
+		}
+		else if (D.HasWeapon())
+		{
+			Keys.Add(TEXT("[LMB] hit"));
+		}
+		if (D.HasFlashlight())
+		{
+			Keys.Add(TEXT("[V] light"));
+		}
+		Centered(FString::Join(Keys, TEXT("     ")), Y0 + SlotH + 7.f * S, FLinearColor(1.f, 1.f, 1.f, 0.5f), 0.8f * S);
 	}
 
 	// шлюз считывает карман: пока створки закрыты, слоты вспыхивают по очереди — все, без разбора
@@ -487,13 +614,6 @@ void ARunHUD::DrawHUD()
 	{
 		DrawRect(FLinearColor(0.2f, 0.85f, 0.4f, 0.22f * Heal), 0.f, 0.f, SX, SY);
 	}
-	// удар: короткий белый росчерк поперёк экрана
-	const float Swing = D.GetSwingFlash();
-	if (Swing > 0.f)
-	{
-		const float CX = SX * 0.5f, CY = SY * 0.55f, R = 150.f * S, Sweep = (1.f - Swing) * 2.f - 1.f;
-		DrawLine(CX + Sweep * R - 60.f * S, CY - 50.f * S, CX + Sweep * R + 60.f * S, CY + 50.f * S, FLinearColor(1.f, 1.f, 1.f, Swing), 5.f * S);
-	}
 	// преследователь ещё за дверью: предупреждение и метка двери, через которую он войдёт
 	if (D.GetFollowers() > 0)
 	{
@@ -564,11 +684,7 @@ void ARunHUD::DrawHUD()
 		}
 	}
 
-	if (D.IsReading())
-	{
-		DrawMenu(*Director, S);
-	}
-	else if (D.IsInspecting())
+	if (D.IsInspecting())
 	{
 		// вещь крупно перед камерой (её рисует ведущий забега), здесь — название и клавиши
 		const int32 Item = Pocket[Held];

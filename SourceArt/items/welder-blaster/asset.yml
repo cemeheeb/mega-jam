@@ -1,0 +1,11 @@
+title: Welder Blaster
+kind: model
+priority: 1
+idea: "A portable welding unit the engineer rebuilt into a weapon."
+prompt: "A handheld improvised energy pistol built from a portable industrial welding unit, about thirty centimetres long: a chunky pistol-grip welding torch body of yellow and grey painted steel, a short thick ceramic nozzle with a scorched copper tip in place of the welding tip, a small battery pack clamped under the body with hose clamps, bundled cables wrapped in electrical tape running from the pack to the nozzle, a trigger made from the original torch lever, a hand-cut heat shield of perforated sheet metal riveted over the top. Worn paint, weld spatter, scratches, a strip of tape on the grip. Clearly a tool converted by hand, not a factory weapon."
+avoid: sleek sci-fi laser gun, glowing effects, hands, several objects, stand
+notes: |
+  Приоритет 1. Бластер (автор, 15.11: «бластер у нас это портативный сварочный аппарат, по лору его переделал в оружие сам инженер»).
+  Второе оружие героя: в правой руке вместо разводного ключа, пистолетным хватом. Длина около 30 см, привязка — рукоять.
+  В игре его пока нет: нет предмета, выстрела и звуков. В коде место оставлено: ARunDirector::IsWeapon (что считается оружием)
+  и ARunDirector::GripInHand (как лежит в кисти). Что он делает в бою — решение автора, в DESIGN.md не записано.

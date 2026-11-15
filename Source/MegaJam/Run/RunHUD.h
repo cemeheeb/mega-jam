@@ -29,6 +29,11 @@ private:
 	/** Здоровье с задержкой: светлый хвост полосы показывает, сколько отняло последнее попадание. */
 	float LagHealth = 100.f;
 
+	/** Насколько открыто меню на Tab (0–1): фон темнеет и расплывается плавно, по реальному времени — мир на паузе. */
+	float MenuBlend = 0.f;
+	/** Затемнение под меню: ровный слой, к краям плотнее. */
+	void DrawShade(float Alpha);
+
 	UPROPERTY()
 	TObjectPtr<UTexture2D> PageTexture;
 	bool bPageLoaded = false;

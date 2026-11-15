@@ -71,8 +71,6 @@ namespace RunEnemyTune
 	constexpr float RatLeapDamage = 18.f;
 	// удар игрока
 	constexpr float AttackReach = 150.f;
-	/** Докуда ключ достаёт до стены или мебели, когда по противнику не попал (от середины героя). */
-	constexpr float AttackWorldReach = 115.f;
 	constexpr float AttackCooldown = 0.55f;
 	constexpr float AttackStun = 0.7f;
 }

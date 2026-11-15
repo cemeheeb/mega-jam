@@ -159,6 +159,9 @@ public:
 	const FString& GetDeathCause() const { return DeathCause; }
 	uint32 GetSeed() const { return Seed; }
 	bool IsPausedByMenu() const { return bMenuPause; }
+	/** Фон под меню на Tab (0 — нет, 1 — полностью): темнее, бесцветнее, размыт. Экран плавно ведёт число сам,
+	 *  по реальному времени: на паузе время мира стоит. */
+	void SetMenuBlend(float Alpha);
 	/** Где дверь, через которую войдёт преследователь. false — никто следом не идёт. */
 	bool GetFollowerDoor(FVector& Out) const;
 	FString GetDebugLine() const;
@@ -169,8 +172,7 @@ public:
 	/** Сколько преследователей сейчас идёт следом и ещё не вошло. */
 	int32 GetFollowers() const;
 	bool HasWeapon() const { return Pocket.Contains(RunGen::Weapon); }
-	/** 1 в момент удара, 0 через 0,2 с: для росчерка на экране. */
-	float GetSwingFlash() const;
+	bool HasFlashlight() const { return FlashlightItem() != TNumericLimits<int32>::Min(); }
 	const FString& GetThreatHint() const { return ThreatHint; }
 	float GetThreatMeter() const { return ThreatMeter; }
 	/** 1 сразу после попадания, 0 через полсекунды: для красной вспышки. */
@@ -290,6 +292,7 @@ private:
 	void OnBookmarkNext() { StepBookmark(1); }
 	UPROPERTY() TObjectPtr<UStaticMeshComponent> Helmet;
 	UPROPERTY() TObjectPtr<class UPostProcessComponent> Post;
+	float MenuBlend = 0.f;
 	// --- звук (RunAudio): музыка спокойная и боевая, фон комнаты, сердце при малом здоровье, шаги ---
 	UPROPERTY() TObjectPtr<class UAudioComponent> MusicCalm;
 	UPROPERTY() TObjectPtr<class UAudioComponent> MusicCombat;
@@ -336,20 +339,123 @@ private:
 	UPROPERTY()
 	TObjectPtr<ARunThreat> ThreatActor;
 
-	/** Вещь в руке героя: держится за кисть (кость hand_r), висит под ней. */
+	/** Точка у левой кисти героя (кость hand_l): отсюда светит фонарик. */
 	UPROPERTY()
 	TObjectPtr<USceneComponent> HandPivot;
-	UPROPERTY()
-	TObjectPtr<UStaticMeshComponent> HandMesh;
-	/** Ключ в кулаке на время замаха: сидит в сокете HandGrip_R скелета и поворачивается вместе с кистью. */
+	/**
+	 * Что герой держит на виду (автор, 15.11): в правой руке оружие — ключ, позже бластер (переделанный сварочный
+	 * аппарат); в левой — фонарик, он светит сам по себе, пока лежит в кармане ([V] — выключатель). Меши держатся
+	 * за кости кистей hand_r и hand_l (GripInHand), пальцы обжимают рукоять (ApplyFist). Остальные вещи кармана
+	 * в руках не рисуются: активная вещь (рамка IN HAND) — та, которую рассматривают, бросают и применяют.
+	 */
 	UPROPERTY()
 	TObjectPtr<UStaticMeshComponent> GripMesh;
+	UPROPERTY()
+	TObjectPtr<UStaticMeshComponent> GripMeshLeft;
+	int32 ShownGripItem = TNumericLimits<int32>::Min();
+	int32 ShownLeftItem = TNumericLimits<int32>::Min();
+	/** Оружие в правой руке: активная вещь, если она оружие, иначе последнее выбранное оружие из кармана. */
+	int32 RightItem = TNumericLimits<int32>::Min();
+	/** Оружие — то, что герой держит в правой руке и чем бьёт. Бластер добавить сюда и в GripInHand. */
+	static bool IsWeapon(int32 Item);
+	/** Фонарик из кармана или «ничего». */
+	int32 FlashlightItem() const;
+	bool bLightOn = true;
+	void OnToggleLight();
+	/**
+	 * Как инструмент лежит в кисти, в осях кости кисти. Проба по кадрам: -RunGrip=GripZ,Tilt,Depth,Reach,Roll,Side
+	 * (для ключа; с -RunGripFlash — для фонарика).
+	 */
+	bool GripInHand(int32 Item, bool bLeft, const class USkeletalMeshComponent* Mesh, FTransform& Out) const;
+	bool bGripOverride = false;
+	bool bGripOverrideFlash = false;
+	float GripOverride[6] = { 0.f, 0.f, 0.f, 0.f, 0.f, 0.f };
+	/**
+	 * Кулак: пальцы кисти догибаются до хвата поверх любой анимации. Вызывается мешем героя, когда кости кадра
+	 * посчитаны; правит их в осях компонента. Fist — вес 0..1 для правой и левой кисти, FistBones — пять пальцев
+	 * по четыре кости (родитель и три фаланги). Углы хвата: FistCurl — основание, середина, кончик четырёх пальцев.
+	 * FistThumb — большой палец: полтолщины (см) и предел поворота фаланги (градусы), он кладётся на рукоять.
+	 * Проба: -RunFist=a,b,c,d,e.
+	 */
+	void ApplyFist();
+	/**
+	 * Руки с инструментом (автор, 15.11: «он должен выставить ключ перед собой чтобы быть готовым к удару»): плечо,
+	 * предплечье и кисть ставятся в стойку поверх анимации, в осях героя. Правая с оружием — локоть согнут, кулак
+	 * перед грудью, ключ губками вверх; на время удара и рывка стойка отпускает руку анимации. Левая с включённым
+	 * фонариком — предплечье вперёд-вниз, фонарик смотрит туда же, куда камера (в пределах поворота кисти).
+	 * Guard — вес стойки 0..1 для правой и левой руки; ArmTree — кости плеча, предплечья и кисти с потомками.
+	 */
+	void PoseArm(TArray<FTransform>& CS, class USkeletalMeshComponent* Mesh, int32 S, float Weight, const FVector& Upper, const FVector& Fore, const FVector& Thumb);
+	/**
+	 * Удар ключом (автор, 15.11: «надо чтобы он бил как будто палкой, т.е тем местом что ты называешь губками»).
+	 * Клипы удара шаблона — удары кулаком, поэтому замах считается здесь: правая рука идёт по ключевым позам
+	 * (стойка — замах — середина — удар — проводка — стойка), корпус докручивается и наклоняется. Три удара серии:
+	 * наискось сверху, сбоку, тяжёлый сверху вниз. SwingStart, SwingLen, SwingKind задаёт StartSwing.
+	 */
+	void SwingPose(float Along, int32 Kind, FVector& Upper, FVector& Fore, FVector& Tool, float& Twist, float& Lean) const;
+	void TurnTorso(TArray<FTransform>& CS, class USkeletalMeshComponent* Mesh, float Weight, float Twist, float Lean, const FVector& F, const FVector& R, const FVector& U);
+	float SwingStart = -100.f;
+	float SwingLen = 0.7f;
+	int32 SwingKind = 0;
+	/**
+	 * Отскок (автор, 15.11: «когда он бьет в стену, хочется чтобы был отскок ключа, а не ... рука проходит сквозь
+	 * стену»). Пока идёт сам удар, ключ от кулака до губок проверяется на препятствие (TickSwingContact). Упёрся
+	 * в стену, створку или мебель, а противника под ударом нет — замах обрывается: ключ отлетает назад по своей же
+	 * дуге и рука возвращается в стойку. BounceAt — когда упёрся, BouncePhase — на какой доле замаха.
+	 */
+	void TickSwingContact();
+	bool EnemyInReach() const;
+	float BounceAt = -100.f;
+	float BouncePhase = 0.f;
+	TArray<int32> TorsoTree[2];
+	TArray<int32> HeadTree;
+	TArray<int32> TwistBones[2];
+	float Guard[2] = { 0.f, 0.f };
+	TArray<int32> ArmTree[2][3];
+	/** Кисть в своих осях: куда смотрят пальцы, линия костяшек (к мизинцу) и куда смотрит инструмент в кулаке. */
+	FVector HandFingers[2] = { FVector::ForwardVector, FVector::ForwardVector };
+	FVector HandKnuckles[2] = { FVector::RightVector, FVector::RightVector };
+	FVector ToolAxis[2] = { FVector::ZeroVector, FVector::ZeroVector };
+	bool bHandFrame[2] = { false, false };
+	FRotator LightAim = FRotator::ZeroRotator;
+	FTransform ArmMark;           // что записали кисти в прошлый раз: не ставить стойку второй раз на те же кости
+	bool bArmMarked = false;
+	TWeakObjectPtr<class USkeletalMeshComponent> FistMesh;
+	/**
+	 * Кулак под рукоять: место 15 костей пальцев в осях кисти (от позы покоя меша, согнутых до хвата), середина
+	 * и ось «трубы» пальцев. Раскрытие (Curl — множитель углов FistCurl) подобрано так, чтобы дуга пальцев
+	 * охватывала рукоять заданного радиуса; все четыре пальца гнутся вокруг линии костяшек.
+	 */
+	struct FRunFist
+	{
+		TArray<int32> Bones;
+		TArray<FTransform> InHand;
+		FVector Center = FVector::ZeroVector;
+		FVector Along = FVector::ZeroVector;
+		float Curl = 1.f;
+		float Radius = 0.f;
+		int32 Hand = INDEX_NONE;
+		bool bValid = false;
+	};
+	bool BuildFist(const class USkeletalMeshComponent* Mesh, bool bLeft, float HandleRadius, FRunFist& Out) const;
+	FRunFist FistPose[2];
+	float Fist[2] = { 0.f, 0.f };
+	float FistCurl[3] = { 62.f, 80.f, 48.f };
+	float FistThumb[2] = { 0.9f, 45.f };
+	bool bTipLight = false;
+	bool bTipWheel = false;
+	/** Проверка хвата без рук (-RunGripTest): инструмент в руку, крупные кадры кисти и замаха в Saved/Screenshots/Grip. */
+	int32 GripTestStep = -1;
+	float GripTestAt = 0.f;
+	float GripTestWalkAt = 0.f;
+	UPROPERTY()
+	TObjectPtr<class ACameraActor> GripTestCam;
+	void TickGripTest();
 	/** Вещь на осмотре: перед камерой, крутится вокруг своей середины. */
 	UPROPERTY()
 	TObjectPtr<USceneComponent> InspectPivot;
 	UPROPERTY()
 	TObjectPtr<UStaticMeshComponent> InspectMesh;
-	int32 ShownHandItem = TNumericLimits<int32>::Min();
 	int32 ShownInspectItem = TNumericLimits<int32>::Min();
 
 	TArray<FRunEnemyState> Enemies;
@@ -379,9 +485,8 @@ private:
 	void UpdateDoorSigns();
 
 	float NextAttackAt = 0.f;
-	float SwingAt = -100.f;
 	// --- бой (запрос автора 15.11): удар ключом с анимацией, серия из трёх ударов, рывок-уклонение ---
-	int32 ComboStep = 0;             // какой удар серии следующий (анимации MM_Attack_01–03 манекена шаблона)
+	int32 ComboStep = 0;             // какой удар серии следующий (три разных замаха, SwingPose)
 	float AttackHitTime = -1.f;      // когда удар этого замаха достанет противника; < 0 — замаха нет
 	float AttackBusyUntil = -100.f;  // до этого момента идёт замах: новый удар встаёт в очередь
 	float ComboResetAt = 0.f;

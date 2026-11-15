@@ -235,36 +235,53 @@ void ARunDirector::SetupPlayer()
 	if (Hero)
 	{
 		HandPivot = NewObject<USceneComponent>(this, TEXT("HandPivot"));
-		HandPivot->SetupAttachment(Hero->GetMesh(), TEXT("hand_r"));
+		HandPivot->SetupAttachment(Hero->GetMesh(), TEXT("hand_l"));
 		HandPivot->SetUsingAbsoluteRotation(true);
 		HandPivot->RegisterComponent();
-		HandMesh = NewObject<UStaticMeshComponent>(this, TEXT("HandMesh"));
-		HandMesh->SetupAttachment(HandPivot);
-		HandMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		HandMesh->SetCastShadow(false);
-		HandMesh->SetReceivesDecals(false);
-		HandMesh->SetVisibility(false);
-		HandMesh->RegisterComponent();
-		// ключ в кулаке на время замаха (сокет HandGrip_R манекена). Меш ключа стоит рукоятью вверх, начало — у губок:
-		// кулак держит рукоять в 37 см от губок. Поворот и сдвиг подобраны по кадрам; -RunGrip=Pitch,Yaw,Roll,Z — проба
-		GripMesh = NewObject<UStaticMeshComponent>(this, TEXT("GripMesh"));
-		GripMesh->SetupAttachment(Hero->GetMesh(), TEXT("HandGrip_R"));
-		GripMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		GripMesh->SetReceivesDecals(false);
-		GripMesh->SetVisibility(false);
-		GripMesh->RegisterComponent();
+		// инструменты в руках: оружие — у правой кисти, фонарик — у левой; как лежит каждый — GripInHand
+		auto MakeGrip = [this, Hero](const TCHAR* Name, const TCHAR* Bone)
 		{
-			FRotator GripRot(0.f, 0.f, 0.f);
-			float GripZ = -37.f;
-			FString Grip;
+			UStaticMeshComponent* Grip = NewObject<UStaticMeshComponent>(this, Name);
+			Grip->SetupAttachment(Hero->GetMesh(), Bone);
+			Grip->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			Grip->SetReceivesDecals(false);
+			Grip->SetVisibility(false);
+			Grip->RegisterComponent();
+			return Grip;
+		};
+		GripMesh = MakeGrip(TEXT("GripMesh"), TEXT("hand_r"));
+		GripMeshLeft = MakeGrip(TEXT("GripMeshLeft"), TEXT("hand_l"));
+		{
+			FString Text;
 			TArray<FString> V;
-			if (FParse::Value(FCommandLine::Get(), TEXT("RunGrip="), Grip) && Grip.ParseIntoArray(V, TEXT(",")) == 4)
+			if (FParse::Value(FCommandLine::Get(), TEXT("RunGrip="), Text, false) && Text.ParseIntoArray(V, TEXT(",")) == 6)
 			{
-				GripRot = FRotator(FCString::Atof(*V[0]), FCString::Atof(*V[1]), FCString::Atof(*V[2]));
-				GripZ = FCString::Atof(*V[3]);
+				bGripOverride = true;
+				bGripOverrideFlash = FParse::Param(FCommandLine::Get(), TEXT("RunGripFlash"));
+				for (int32 I = 0; I < 6; ++I)
+				{
+					GripOverride[I] = FCString::Atof(*V[I]);
+				}
 			}
-			GripMesh->SetRelativeRotation(GripRot);
-			GripMesh->SetRelativeLocation(GripRot.RotateVector(FVector(0.f, 0.f, GripZ)));
+			V.Reset();
+			if (FParse::Value(FCommandLine::Get(), TEXT("RunFist="), Text, false) && Text.ParseIntoArray(V, TEXT(",")) == 5)
+			{
+				for (int32 I = 0; I < 3; ++I)
+				{
+					FistCurl[I] = FCString::Atof(*V[I]);
+				}
+				FistThumb[0] = FCString::Atof(*V[3]);
+				FistThumb[1] = FCString::Atof(*V[4]);
+			}
+		}
+		// кулак: пальцы догибаются после того, как анимация посчитала кости кадра
+		FistMesh = Hero->GetMesh();
+		Hero->GetMesh()->RegisterOnBoneTransformsFinalizedDelegate(
+			FOnBoneTransformsFinalizedMultiCast::FDelegate::CreateUObject(this, &ARunDirector::ApplyFist));
+		if (FParse::Param(FCommandLine::Get(), TEXT("RunGripTest")))
+		{
+			GripTestStep = 0;
+			GripTestAt = GetWorld()->GetTimeSeconds() + 2.5f;
 		}
 		// фонарик (вещь из каталога): в руке светит туда, куда смотрит камера (решение автора 15.11)
 		Flashlight = NewObject<USpotLightComponent>(this, TEXT("Flashlight"));
@@ -314,24 +331,26 @@ void ARunDirector::SetupPlayer()
 		InputComponent->BindKey(EKeys::Q, IE_Pressed, this, &ARunDirector::OnQuitKey).bExecuteWhenPaused = true;
 		// карман: 1–4 и колесо — взять вещь в руку, G — выбросить её, правая кнопка — рассмотреть,
 		// левая — применить (аптечка) или ударить ключом (решение автора 14.11: инвентарь с вещью в руке)
-		InputComponent->BindKey(EKeys::One, IE_Pressed, this, &ARunDirector::OnSelect1);
-		InputComponent->BindKey(EKeys::Two, IE_Pressed, this, &ARunDirector::OnSelect2);
-		InputComponent->BindKey(EKeys::Three, IE_Pressed, this, &ARunDirector::OnSelect3);
-		InputComponent->BindKey(EKeys::Four, IE_Pressed, this, &ARunDirector::OnSelect4);
-		InputComponent->BindKey(EKeys::MouseScrollUp, IE_Pressed, this, &ARunDirector::OnWheelUp);
-		InputComponent->BindKey(EKeys::MouseScrollDown, IE_Pressed, this, &ARunDirector::OnWheelDown);
-		InputComponent->BindKey(EKeys::G, IE_Pressed, this, &ARunDirector::OnDropHeld);
-		InputComponent->BindKey(EKeys::RightMouseButton, IE_Pressed, this, &ARunDirector::OnInspect);
-		InputComponent->BindKey(EKeys::Left, IE_Pressed, this, &ARunDirector::OnPagePrev);
-		InputComponent->BindKey(EKeys::Right, IE_Pressed, this, &ARunDirector::OnPageNext);
-		InputComponent->BindKey(EKeys::Up, IE_Pressed, this, &ARunDirector::OnBookmarkPrev);
-		InputComponent->BindKey(EKeys::Down, IE_Pressed, this, &ARunDirector::OnBookmarkNext);
-		InputComponent->BindKey(EKeys::Tab, IE_Pressed, this, &ARunDirector::OnToggleJournal);
+		// клавиши меню работают и на паузе: меню на Tab останавливает время. На паузе Esc их глушат сами обработчики (bMenuPause)
+		InputComponent->BindKey(EKeys::One, IE_Pressed, this, &ARunDirector::OnSelect1).bExecuteWhenPaused = true;
+		InputComponent->BindKey(EKeys::Two, IE_Pressed, this, &ARunDirector::OnSelect2).bExecuteWhenPaused = true;
+		InputComponent->BindKey(EKeys::Three, IE_Pressed, this, &ARunDirector::OnSelect3).bExecuteWhenPaused = true;
+		InputComponent->BindKey(EKeys::Four, IE_Pressed, this, &ARunDirector::OnSelect4).bExecuteWhenPaused = true;
+		InputComponent->BindKey(EKeys::V, IE_Pressed, this, &ARunDirector::OnToggleLight);
+		InputComponent->BindKey(EKeys::MouseScrollUp, IE_Pressed, this, &ARunDirector::OnWheelUp).bExecuteWhenPaused = true;
+		InputComponent->BindKey(EKeys::MouseScrollDown, IE_Pressed, this, &ARunDirector::OnWheelDown).bExecuteWhenPaused = true;
+		InputComponent->BindKey(EKeys::G, IE_Pressed, this, &ARunDirector::OnDropHeld).bExecuteWhenPaused = true;
+		InputComponent->BindKey(EKeys::RightMouseButton, IE_Pressed, this, &ARunDirector::OnInspect).bExecuteWhenPaused = true;
+		InputComponent->BindKey(EKeys::Left, IE_Pressed, this, &ARunDirector::OnPagePrev).bExecuteWhenPaused = true;
+		InputComponent->BindKey(EKeys::Right, IE_Pressed, this, &ARunDirector::OnPageNext).bExecuteWhenPaused = true;
+		InputComponent->BindKey(EKeys::Up, IE_Pressed, this, &ARunDirector::OnBookmarkPrev).bExecuteWhenPaused = true;
+		InputComponent->BindKey(EKeys::Down, IE_Pressed, this, &ARunDirector::OnBookmarkNext).bExecuteWhenPaused = true;
+		InputComponent->BindKey(EKeys::Tab, IE_Pressed, this, &ARunDirector::OnToggleJournal).bExecuteWhenPaused = true;
 		InputComponent->BindKey(EKeys::C, IE_Pressed, this, &ARunDirector::OnCrouchKey);
 		// рывок-уклонение; прыжок шаблона на Space выключен (SetupPlayer): в отсеках он не нужен
 		InputComponent->BindKey(EKeys::SpaceBar, IE_Pressed, this, &ARunDirector::OnDodge);
 		InputComponent->BindKey(EKeys::LeftAlt, IE_Pressed, this, &ARunDirector::OnDodge);
-		InputComponent->BindKey(EKeys::T, IE_Pressed, this, &ARunDirector::TakeOffSuit);
+		InputComponent->BindKey(EKeys::T, IE_Pressed, this, &ARunDirector::TakeOffSuit).bExecuteWhenPaused = true;
 		// не F1–F12: в редакторе это клавиши режимов вида (F1 — каркас, F2 — без света, F3 — со светом)
 		InputComponent->BindKey(EKeys::H, IE_Pressed, this, &ARunDirector::OnToggleDebug);
 	}
@@ -428,6 +447,895 @@ bool ARunDirector::IsFlashlight(int32 Item)
 	return Item >= 0 && ItemName(Item) == TEXT("Flashlight");
 }
 
+bool ARunDirector::IsWeapon(int32 Item)
+{
+	return Item == Weapon;
+}
+
+int32 ARunDirector::FlashlightItem() const
+{
+	const int32 Slot = Pocket.IndexOfByPredicate([](int32 Item) { return IsFlashlight(Item); });
+	return Slot != INDEX_NONE ? Pocket[Slot] : TNumericLimits<int32>::Min();
+}
+
+void ARunDirector::OnToggleLight()
+{
+	if (Phase == ERunPhase::Playing && HasFlashlight() && !IsReading())
+	{
+		bLightOn = !bLightOn;
+	}
+}
+
+bool ARunDirector::GripInHand(int32 Item, bool bLeft, const USkeletalMeshComponent* Mesh, FTransform& Out) const
+{
+	const USkeletalMesh* Asset = Mesh ? Mesh->GetSkeletalMeshAsset() : nullptr;
+	if (!Asset)
+	{
+		return false;
+	}
+	// Место рукояти — в осях кости кисти, по позе покоя меша: суставы оснований пальцев дают линию костяшек (ось хвата),
+	// направление пальцев и сторону ладони. Пальцы потом обжимают рукоять сами (ApplyFist).
+	const FReferenceSkeleton& Ref = Asset->GetRefSkeleton();
+	const TCHAR* Side = bLeft ? TEXT("l") : TEXT("r");
+	const int32 Hand = Ref.FindBoneIndex(*FString::Printf(TEXT("hand_%s"), Side));
+	auto At = [&Ref, Hand, Side](const TCHAR* Bone, FVector& OutAt)
+	{
+		int32 I = Ref.FindBoneIndex(*FString::Printf(TEXT("%s_%s"), Bone, Side));
+		if (I == INDEX_NONE || Hand == INDEX_NONE)
+		{
+			return false;
+		}
+		FTransform T = FTransform::Identity;
+		for (; I != INDEX_NONE && I != Hand; I = Ref.GetParentIndex(I))
+		{
+			T = T * Ref.GetRefBonePose()[I];
+		}
+		OutAt = T.GetLocation();
+		return I == Hand;
+	};
+	FVector I1, M1, M2, R1, P1, Th;
+	if (!At(TEXT("index_01"), I1) || !At(TEXT("middle_01"), M1) || !At(TEXT("middle_02"), M2) || !At(TEXT("ring_01"), R1)
+		|| !At(TEXT("pinky_01"), P1) || !At(TEXT("thumb_02"), Th))
+	{
+		return false;
+	}
+	const FVector Knuckles = (P1 - I1).GetSafeNormal();                 // ось хвата: от указательного к мизинцу
+	const FVector Fingers = (M2 - M1).GetSafeNormal();                  // куда смотрят пальцы
+	FVector Palm = FVector::CrossProduct(Knuckles, Fingers).GetSafeNormal();
+	if (FVector::DotProduct(Palm, Th - M1) < 0.f)
+	{
+		Palm = -Palm;                                                   // ладонь — с той стороны, где большой палец
+	}
+	// Что у инструмента где: GripZ — место хвата по длине меша (см от начала), Tilt — наклон оси от трубы пальцев
+	// к пальцам, Depth и Reach — сдвиг от середины трубы к ладони и вдоль пальцев, Roll — поворот вокруг своей оси,
+	// Side — куда смотрит рабочий конец: 1 — со стороны мизинца, −1 — большого пальца.
+	// Ключ (меш рукоятью вверх, губки в начале): прямой хват, как молоток, губки со стороны большого пальца — вверх,
+	// когда рука в стойке (автор, 15.11: обратный хват «технически возможен, но абсурден»). Фонарик (линза в конце
+	// меша): тоже со стороны большого пальца, с наклоном к пальцам — при опущенном вперёд предплечье смотрит вперёд.
+	// Бластер (переделанный сварочный аппарат, автор 15.11) — сюда же, когда появится в игре: пистолетный хват.
+	// Ось и середина хвата — «труба», которую образуют согнутые пальцы (FistPose этой руки: его строит BuildFist
+	// под толщину рукояти перед тем, как сюда прийти). Пальцы разной длины, поэтому труба наклонена к линии костяшек.
+	const FRunFist& Pose = FistPose[bLeft ? 1 : 0];
+	if (!Pose.bValid)
+	{
+		return false;
+	}
+	const FVector Along = Pose.Along;                                    // ось трубы: от мизинца к указательному
+	const bool bFlash = IsFlashlight(Item);
+	// ключ: рукоять свободна от 21 до 39 см от губок, дальше отверстие для подвеса (39,5–43 см) — кулак шириной
+	// 9 см стоит ниже него, иначе мизинец попадает в отверстие; середина сечения рукояти там смещена от оси меша
+	float GripZ = bFlash ? 6.f : 33.5f, Tilt = bFlash ? 38.f : 0.f, Depth = 0.f, Reach = 0.f, Roll = 0.f;
+	const FVector2D Core = bFlash ? FVector2D::ZeroVector : FVector2D(0.3f, 0.2f);
+	float Head = -1.f;
+	if (bGripOverride && bFlash == bGripOverrideFlash)
+	{
+		GripZ = GripOverride[0];
+		Tilt = GripOverride[1];
+		Depth = GripOverride[2];
+		Reach = GripOverride[3];
+		Roll = GripOverride[4];
+		Head = GripOverride[5] < 0.f ? -1.f : 1.f;
+	}
+	const FVector Center = Pose.Center + Palm * Depth + Fingers * Reach;
+	// куда смотрит рабочий конец: вдоль трубы пальцев (к большому пальцу при Head = −1), с наклоном к пальцам
+	const FVector Base = Along * -Head;
+	const FVector Work = Base.RotateAngleAxis(Tilt, FVector::CrossProduct(Base, Fingers).GetSafeNormal());
+	const FVector Z = bFlash ? Work : -Work;                            // ось меша: от начала к концу
+	FVector Y = (Palm - Z * FVector::DotProduct(Palm, Z)).GetSafeNormal();   // плоская сторона ключа — к ладони
+	Y = Y.RotateAngleAxis(Roll, Z);
+	const FVector X = FVector::CrossProduct(Y, Z);
+	const FQuat Rot = FMatrix(X, Y, Z, FVector::ZeroVector).ToQuat();
+	Out = FTransform(Rot, Center - Rot.RotateVector(FVector(Core.X, Core.Y, GripZ)));
+	return true;
+}
+
+void ARunDirector::PoseArm(TArray<FTransform>& CS, USkeletalMeshComponent* Mesh, int32 S, float Weight, const FVector& Upper, const FVector& Fore, const FVector& Thumb)
+{
+	const TCHAR* Side = S == 0 ? TEXT("r") : TEXT("l");
+	const USkeletalMesh* Asset = Mesh->GetSkeletalMeshAsset();
+	if (!Asset)
+	{
+		return;
+	}
+	const FReferenceSkeleton& Ref = Asset->GetRefSkeleton();
+	const int32 Root[3] = { Ref.FindBoneIndex(*FString::Printf(TEXT("upperarm_%s"), Side)), Ref.FindBoneIndex(*FString::Printf(TEXT("lowerarm_%s"), Side)),
+		Ref.FindBoneIndex(*FString::Printf(TEXT("hand_%s"), Side)) };
+	if (Root[0] == INDEX_NONE || Root[1] == INDEX_NONE || Root[2] == INDEX_NONE || !CS.IsValidIndex(Root[2]))
+	{
+		return;
+	}
+	if (ArmTree[S][0].Num() == 0)
+	{
+		// кости плеча, предплечья и кисти вместе с потомками (скручивающие кости, пальцы): поворачиваются целиком
+		for (int32 B = 0; B < Ref.GetNum(); ++B)
+		{
+			for (int32 P = B; P != INDEX_NONE; P = Ref.GetParentIndex(P))
+			{
+				for (int32 K = 0; K < 3; ++K)
+				{
+					if (P == Root[K])
+					{
+						ArmTree[S][K].Add(B);
+					}
+				}
+			}
+		}
+	}
+	if (!bHandFrame[S])
+	{
+		// оси кисти в её собственных осях: X — вдоль пальцев, Y — вдоль костяшек к мизинцу (по позе покоя, как в GripInHand)
+		auto At = [&Ref, &Root](const FString& Bone)
+		{
+			FTransform T = FTransform::Identity;
+			for (int32 I = Ref.FindBoneIndex(*Bone); I != INDEX_NONE && I != Root[2]; I = Ref.GetParentIndex(I))
+			{
+				T = T * Ref.GetRefBonePose()[I];
+			}
+			return T.GetLocation();
+		};
+		HandKnuckles[S] = (At(FString::Printf(TEXT("pinky_01_%s"), Side)) - At(FString::Printf(TEXT("index_01_%s"), Side))).GetSafeNormal();
+		HandFingers[S] = (At(FString::Printf(TEXT("middle_02_%s"), Side)) - At(FString::Printf(TEXT("middle_01_%s"), Side))).GetSafeNormal();
+		bHandFrame[S] = true;
+		// скручивающие кости предплечья: докручиваются за кистью, чтобы запястье не перекручивалось одним швом
+		for (int32 B = 0; B < Ref.GetNum(); ++B)
+		{
+			if (Ref.GetParentIndex(B) == Root[1] && Ref.GetBoneName(B).ToString().Contains(TEXT("twist")))
+			{
+				TwistBones[S].Add(B);
+			}
+		}
+	}
+	auto Turn = [&CS](const TArray<int32>& Tree, const FVector& Pivot, const FQuat& Q)
+	{
+		for (const int32 B : Tree)
+		{
+			if (CS.IsValidIndex(B))
+			{
+				CS[B].SetLocation(Pivot + Q.RotateVector(CS[B].GetLocation() - Pivot));
+				CS[B].SetRotation(Q * CS[B].GetRotation());
+			}
+		}
+	};
+	// плечо: от плечевого сустава к локтю — по Upper; предплечье: от локтя к запястью — по Fore
+	const FVector Shoulder = CS[Root[0]].GetLocation();
+	Turn(ArmTree[S][0], Shoulder, FQuat::Slerp(FQuat::Identity, FQuat::FindBetweenNormals((CS[Root[1]].GetLocation() - Shoulder).GetSafeNormal(), Upper), Weight));
+	const FVector Elbow = CS[Root[1]].GetLocation();
+	Turn(ArmTree[S][1], Elbow, FQuat::Slerp(FQuat::Identity, FQuat::FindBetweenNormals((CS[Root[2]].GetLocation() - Elbow).GetSafeNormal(), Fore), Weight));
+	// кисть: инструмент в кулаке смотрит точно по Thumb, пальцы — по предплечью, насколько позволяет инструмент
+	// (разница — излом запястья). Ось инструмента в осях кисти — та, по которой он лежит в кулаке (GripInHand);
+	// без инструмента — линия костяшек к большому пальцу.
+	const FVector Yh = ToolAxis[S].IsNearlyZero() ? HandKnuckles[S] : -ToolAxis[S];
+	const FVector Xh = (HandFingers[S] - Yh * FVector::DotProduct(HandFingers[S], Yh)).GetSafeNormal();
+	const FQuat HandFrame = FMatrix(Xh, Yh, FVector::CrossProduct(Xh, Yh), FVector::ZeroVector).ToQuat();
+	const FVector Y = -Thumb.GetSafeNormal();
+	const FVector X = (Fore - Y * FVector::DotProduct(Fore, Y)).GetSafeNormal();
+	const FQuat Want = FMatrix(X, Y, FVector::CrossProduct(X, Y), FVector::ZeroVector).ToQuat() * HandFrame.Inverse();
+	const FTransform Old = CS[Root[2]];
+	const FTransform New(FQuat::Slerp(Old.GetRotation(), Want, Weight), Old.GetLocation(), Old.GetScale3D());
+	for (const int32 B : ArmTree[S][2])
+	{
+		if (CS.IsValidIndex(B))
+		{
+			CS[B] = CS[B].GetRelativeTransform(Old) * New;
+		}
+	}
+	// насколько кисть провернулась вокруг предплечья относительно прежнего — на столько же, по доле длины, скручивающие кости
+	FQuat Swing, Twist;
+	(New.GetRotation() * Old.GetRotation().Inverse()).ToSwingTwist(Fore, Swing, Twist);
+	const float Length = FMath::Max((Old.GetLocation() - Elbow).Size(), 1.f);
+	for (const int32 B : TwistBones[S])
+	{
+		if (CS.IsValidIndex(B))
+		{
+			const float Share = FMath::Clamp(FVector::DotProduct(CS[B].GetLocation() - Elbow, Fore) / Length, 0.f, 1.f);
+			CS[B].SetRotation(FQuat::Slerp(FQuat::Identity, Twist, Share) * CS[B].GetRotation());
+		}
+	}
+}
+
+void ARunDirector::SwingPose(float Along, int32 Kind, FVector& Upper, FVector& Fore, FVector& Tool, float& Twist, float& Lean) const
+{
+	// Поза — в осях героя: X вперёд, Y вправо, Z вверх. Upper — от плеча к локтю, Fore — от локтя к кисти, Tool — куда
+	// смотрят губки ключа; Twist — поворот корпуса вправо, Lean — наклон вперёд, градусы.
+	struct FKey { float At; FVector Upper, Fore, Tool; float Twist, Lean; };
+	static const FKey GuardKey = { 0.f, FVector(0.2f, 0.22f, -0.95f), FVector(0.88f, -0.25f, 0.42f), FVector(-0.2f, 0.f, 0.98f), 0.f, 0.f };
+	// Удар быстрый (замечание автора 15.11: «как будто медленный»): замах — четверть времени, губки доходят до цели
+	// к 0,46; корпус заметно уходит назад на замахе и проворачивается за ударом (Twist до 50 градусов).
+	static const FKey Poses[3][4] = {
+		{   // наискось сверху: из-за правого плеча вперёд и влево-вниз
+			{ 0.26f, FVector(-0.25f, 0.75f, 0.35f), FVector(-0.35f, 0.15f, 0.9f), FVector(-0.95f, 0.2f, 0.1f), 40.f, -6.f },
+			{ 0.37f, FVector(0.45f, 0.45f, 0.1f), FVector(0.7f, 0.1f, 0.6f), FVector(-0.1f, 0.2f, 0.97f), 12.f, 2.f },
+			{ 0.46f, FVector(0.8f, -0.1f, -0.45f), FVector(0.75f, -0.35f, -0.5f), FVector(0.85f, -0.3f, 0.35f), -34.f, 14.f },
+			{ 0.62f, FVector(0.45f, -0.5f, -0.7f), FVector(0.2f, -0.85f, -0.3f), FVector(0.6f, -0.25f, -0.75f), -46.f, 16.f },
+		},
+		{   // сбоку: справа налево на уровне груди
+			{ 0.26f, FVector(-0.15f, 0.85f, -0.35f), FVector(-0.2f, 0.9f, 0.3f), FVector(-0.8f, -0.1f, 0.5f), 48.f, 0.f },
+			{ 0.37f, FVector(0.3f, 0.8f, -0.5f), FVector(0.75f, 0.3f, -0.2f), FVector(0.15f, 0.95f, 0.2f), 18.f, 2.f },
+			{ 0.46f, FVector(0.5f, 0.5f, -0.7f), FVector(0.6f, 0.7f, -0.15f), FVector(0.97f, -0.15f, 0.05f), -28.f, 6.f },
+			{ 0.62f, FVector(0.6f, -0.2f, -0.75f), FVector(0.75f, -0.3f, -0.2f), FVector(0.3f, -0.9f, 0.1f), -50.f, 8.f },
+		},
+		{   // тяжёлый сверху вниз: из-за головы прямо перед собой
+			{ 0.30f, FVector(0.1f, 0.35f, 0.9f), FVector(-0.3f, 0.05f, 0.9f), FVector(-0.9f, 0.f, 0.1f), 14.f, -12.f },
+			{ 0.40f, FVector(0.5f, 0.25f, 0.6f), FVector(0.75f, 0.05f, 0.55f), FVector(0.05f, 0.f, 1.f), 4.f, 0.f },
+			{ 0.48f, FVector(0.85f, 0.05f, -0.35f), FVector(0.8f, -0.1f, -0.55f), FVector(0.9f, -0.05f, 0.3f), -10.f, 24.f },
+			{ 0.64f, FVector(0.6f, 0.f, -0.8f), FVector(0.5f, -0.1f, -0.85f), FVector(0.95f, -0.05f, -0.15f), -12.f, 30.f },
+		},
+	};
+	const FKey* A = &GuardKey;
+	const FKey* B = &GuardKey;
+	float T = 0.f;
+	if (Along >= 0.f && Along < 1.f)
+	{
+		const FKey* Row = Poses[FMath::Clamp(Kind, 0, 2)];
+		float From = 0.f, To = 1.f;
+		for (int32 K = 0; K <= 4; ++K)
+		{
+			const FKey* Next = K < 4 ? &Row[K] : &GuardKey;
+			const float NextAt = K < 4 ? Row[K].At : 1.f;
+			if (Along <= NextAt)
+			{
+				B = Next;
+				To = NextAt;
+				break;
+			}
+			A = Next;
+			From = NextAt;
+		}
+		T = FMath::Clamp((Along - From) / FMath::Max(To - From, 0.001f), 0.f, 1.f);
+		// из стойки в замах и из проводки в стойку — плавно; сам удар разгоняется от замаха
+		if (A == &GuardKey || B == &GuardKey)
+		{
+			T = T * T * (3.f - 2.f * T);
+		}
+		else if (A == &Row[0])
+		{
+			T = T * T;
+		}
+	}
+	auto Mix = [T](const FVector& From, const FVector& To)
+	{
+		const FVector N0 = From.GetSafeNormal(), N1 = To.GetSafeNormal();
+		return FQuat::Slerp(FQuat::Identity, FQuat::FindBetweenNormals(N0, N1), T).RotateVector(N0);
+	};
+	Upper = Mix(A->Upper, B->Upper);
+	Fore = Mix(A->Fore, B->Fore);
+	Tool = Mix(A->Tool, B->Tool);
+	Twist = FMath::Lerp(A->Twist, B->Twist, T);
+	Lean = FMath::Lerp(A->Lean, B->Lean, T);
+}
+
+void ARunDirector::TurnTorso(TArray<FTransform>& CS, USkeletalMeshComponent* Mesh, float Weight, float Twist, float Lean, const FVector& F, const FVector& R, const FVector& U)
+{
+	if (FMath::Abs(Twist) < 0.2f && FMath::Abs(Lean) < 0.2f)
+	{
+		return;
+	}
+	const USkeletalMesh* Asset = Mesh->GetSkeletalMeshAsset();
+	if (!Asset)
+	{
+		return;
+	}
+	const FReferenceSkeleton& Ref = Asset->GetRefSkeleton();
+	// поворот делится пополам между низом и верхом спины: корпус закручивается, а не ломается в одном месте
+	const int32 Root[2] = { Ref.FindBoneIndex(TEXT("spine_02")), Ref.FindBoneIndex(TEXT("spine_04")) };
+	if (Root[0] == INDEX_NONE || Root[1] == INDEX_NONE)
+	{
+		return;
+	}
+	if (TorsoTree[0].Num() == 0)
+	{
+		for (int32 B = 0; B < Ref.GetNum(); ++B)
+		{
+			for (int32 P = B; P != INDEX_NONE; P = Ref.GetParentIndex(P))
+			{
+				for (int32 K = 0; K < 2; ++K)
+				{
+					if (P == Root[K])
+					{
+						TorsoTree[K].Add(B);
+					}
+				}
+			}
+		}
+	}
+	if (HeadTree.Num() == 0)
+	{
+		const int32 Neck = Ref.FindBoneIndex(TEXT("neck_01"));
+		for (int32 B = 0; B < Ref.GetNum(); ++B)
+		{
+			for (int32 P = B; P != INDEX_NONE; P = Ref.GetParentIndex(P))
+			{
+				if (P == Neck)
+				{
+					HeadTree.Add(B);
+				}
+			}
+		}
+	}
+	const float Yaw = FMath::DegreesToRadians(Twist * 0.5f * Weight), Pitch = FMath::DegreesToRadians(Lean * 0.5f * Weight);
+	const FQuat Q = FQuat::FindBetweenNormals(F, (F * FMath::Cos(Yaw) + R * FMath::Sin(Yaw)).GetSafeNormal())
+		* FQuat::FindBetweenNormals(U, (U * FMath::Cos(Pitch) + F * FMath::Sin(Pitch)).GetSafeNormal());
+	for (int32 K = 0; K < 2; ++K)
+	{
+		if (!CS.IsValidIndex(Root[K]))
+		{
+			continue;
+		}
+		const FVector Pivot = CS[Root[K]].GetLocation();
+		for (const int32 B : TorsoTree[K])
+		{
+			if (CS.IsValidIndex(B))
+			{
+				CS[B].SetLocation(Pivot + Q.RotateVector(CS[B].GetLocation() - Pivot));
+				CS[B].SetRotation(Q * CS[B].GetRotation());
+			}
+		}
+	}
+	// голова смотрит туда же, куда герой: возвращается на две трети поворота корпуса
+	if (HeadTree.Num() > 0 && CS.IsValidIndex(HeadTree[0]))
+	{
+		const float Back = -2.f * Yaw * 0.65f;
+		const FQuat Qh = FQuat::FindBetweenNormals(F, (F * FMath::Cos(Back) + R * FMath::Sin(Back)).GetSafeNormal());
+		const FVector Pivot = CS[HeadTree[0]].GetLocation();
+		for (const int32 B : HeadTree)
+		{
+			if (CS.IsValidIndex(B))
+			{
+				CS[B].SetLocation(Pivot + Qh.RotateVector(CS[B].GetLocation() - Pivot));
+				CS[B].SetRotation(Qh * CS[B].GetRotation());
+			}
+		}
+	}
+}
+
+bool ARunDirector::BuildFist(const USkeletalMeshComponent* Mesh, bool bLeft, float HandleRadius, FRunFist& Out) const
+{
+	Out = FRunFist();
+	const USkeletalMesh* Asset = Mesh ? Mesh->GetSkeletalMeshAsset() : nullptr;
+	if (!Asset)
+	{
+		return false;
+	}
+	// Кулак задаётся целиком, в осях кости кисти, от позы покоя меша: от анимации не зависит, поэтому пальцы
+	// не расходятся веером на рывке и рукоять всегда лежит в них одинаково (замечание автора 15.11).
+	const FReferenceSkeleton& Ref = Asset->GetRefSkeleton();
+	const TCHAR* Side = bLeft ? TEXT("l") : TEXT("r");
+	const int32 Hand = Ref.FindBoneIndex(*FString::Printf(TEXT("hand_%s"), Side));
+	static const TCHAR* Names[5] = { TEXT("thumb"), TEXT("index"), TEXT("middle"), TEXT("ring"), TEXT("pinky") };
+	FTransform Rest[5][3];
+	int32 Bone[5][3];
+	FVector Base[5];      // откуда растёт первая фаланга: пясть (у большого пальца — сама кисть)
+	auto InHand = [&Ref, Hand](int32 I, FTransform& T)
+	{
+		T = FTransform::Identity;
+		for (; I != INDEX_NONE && I != Hand; I = Ref.GetParentIndex(I))
+		{
+			T = T * Ref.GetRefBonePose()[I];
+		}
+		return I == Hand;
+	};
+	for (int32 F = 0; F < 5; ++F)
+	{
+		for (int32 J = 0; J < 3; ++J)
+		{
+			Bone[F][J] = Ref.FindBoneIndex(*FString::Printf(TEXT("%s_0%d_%s"), Names[F], J + 1, Side));
+			if (Hand == INDEX_NONE || Bone[F][J] == INDEX_NONE || !InHand(Bone[F][J], Rest[F][J]))
+			{
+				return false;
+			}
+		}
+		FTransform Parent;
+		Base[F] = InHand(Ref.GetParentIndex(Bone[F][0]), Parent) ? Parent.GetLocation() : FVector::ZeroVector;
+	}
+	const FVector Knuckles = (Rest[4][0].GetLocation() - Rest[1][0].GetLocation()).GetSafeNormal();
+	const FVector Fingers = (Rest[2][1].GetLocation() - Rest[2][0].GetLocation()).GetSafeNormal();
+	FVector Palm = FVector::CrossProduct(Knuckles, Fingers).GetSafeNormal();
+	if (FVector::DotProduct(Palm, Rest[0][1].GetLocation() - Rest[2][0].GetLocation()) < 0.f)
+	{
+		Palm = -Palm;     // ладонь — с той стороны, где большой палец
+	}
+	// Ось сгиба четырёх пальцев — линия костяшек, поставленная поперёк первой фаланги пальца. Раньше ось бралась
+	// у каждого пальца своя, по излому его фаланг: у почти прямого пальца это шум, оси соседей расходились на 40°,
+	// и в кулаке пальцы скрещивались и сминались (замечание автора 15.11, проверено на модели в Blender).
+	FVector Axis[5];
+	for (int32 F = 1; F < 5; ++F)
+	{
+		const FVector D1 = (Rest[F][1].GetLocation() - Rest[F][0].GetLocation()).GetSafeNormal();
+		FVector A = (Knuckles - D1 * FVector::DotProduct(Knuckles, D1)).GetSafeNormal();
+		if (FVector::DotProduct(FVector::CrossProduct(A, D1), Palm) < 0.f)
+		{
+			A = -A;       // так, чтобы палец шёл к ладони
+		}
+		Axis[F] = A;
+	}
+	Axis[0] = FVector::ZeroVector;     // большой палец кладётся отдельно, после остальных (см. ниже)
+
+	FTransform Bent[5][3];
+	FVector Nail[5];
+	// Согнуть четыре пальца: углы хвата FistCurl, умноженные на K. Возвращает средний радиус дуги пальцев
+	// и её середину с осью (середины дуг указательного и мизинца).
+	auto Curl = [&](float K, FVector& Center, FVector& Along)
+	{
+		float Sum = 0.f;
+		int32 Count = 0;
+		FVector Mid[5];
+		for (int32 F = 0; F < 5; ++F)
+		{
+			const FVector P1 = Rest[F][0].GetLocation(), P2 = Rest[F][1].GetLocation(), P3 = Rest[F][2].GetLocation();
+			const FVector D0 = (P1 - Base[F]).GetSafeNormal(), D1 = (P2 - P1).GetSafeNormal(), D2 = (P3 - P2).GetSafeNormal();
+			const FVector& A = Axis[F];
+			auto Angle = [&A](const FVector& From, const FVector& To)
+			{
+				return FMath::RadiansToDegrees(FMath::Atan2(FVector::DotProduct(FVector::CrossProduct(From, To), A), FVector::DotProduct(From, To)));
+			};
+			const float Middle = Angle(D1, D2);
+			const float Have[3] = { F > 0 ? Angle(D0, D1) : 0.f, F > 0 ? Middle : 0.f, F > 0 ? 0.6f * Middle : 0.f };
+			const float Want[3] = { F > 0 ? FistCurl[0] * K : 0.f, F > 0 ? FistCurl[1] * K : 0.f, F > 0 ? FistCurl[2] * K : 0.f };
+			for (int32 J = 0; J < 3; ++J)
+			{
+				Bent[F][J] = Rest[F][J];
+			}
+			Nail[F] = P3 + D2 * (P3 - P2).Size() * 0.9f;      // кости кончика нет: продолжение последней фаланги
+			for (int32 J = 0; J < 3; ++J)
+			{
+				const FQuat Turn(A, FMath::DegreesToRadians(FMath::Max(0.f, Want[J] - Have[J])));
+				const FVector Pivot = Bent[F][J].GetLocation();
+				for (int32 M = J; M < 3; ++M)
+				{
+					Bent[F][M].SetLocation(Pivot + Turn.RotateVector(Bent[F][M].GetLocation() - Pivot));
+					Bent[F][M].SetRotation(Turn * Bent[F][M].GetRotation());
+				}
+				Nail[F] = Pivot + Turn.RotateVector(Nail[F] - Pivot);
+			}
+			if (F == 0)
+			{
+				continue;
+			}
+			// дуга пальца: окружности через тройки его суставов и кончик
+			const FVector Pt[4] = { Bent[F][0].GetLocation(), Bent[F][1].GetLocation(), Bent[F][2].GetLocation(), Nail[F] };
+			FVector C = FVector::ZeroVector;
+			float R = 0.f;
+			int32 N = 0;
+			for (int32 T = 0; T < 2; ++T)
+			{
+				const FVector AB = Pt[T + 1] - Pt[T], AC = Pt[T + 2] - Pt[T];
+				const FVector Nrm = FVector::CrossProduct(AB, AC);
+				if (Nrm.SizeSquared() < 0.01f)
+				{
+					continue;
+				}
+				const FVector O = Pt[T] + (FVector::CrossProduct(Nrm, AB) * AC.SizeSquared() + FVector::CrossProduct(AC, Nrm) * AB.SizeSquared()) / (2.f * Nrm.SizeSquared());
+				C += O;
+				R += (O - Pt[T]).Size();
+				++N;
+			}
+			Mid[F] = N > 0 ? C / N : (Pt[0] + Pt[1] + Pt[2] + Pt[3]) / 4.f;
+			Sum += N > 0 ? R / N : 10.f;
+			++Count;
+		}
+		Center = (Mid[1] + Mid[2] + Mid[3] + Mid[4]) / 4.f;
+		Along = (Mid[1] - Mid[4]).GetSafeNormal();
+		return Count > 0 ? Sum / Count : 10.f;
+	};
+	// раскрытие кулака — под рукоять: дуга пальцев по суставам шире рукояти на полтолщины пальца
+	constexpr float FingerHalf = 0.8f;
+	float Lo = 0.4f, Hi = 1.3f;
+	for (int32 I = 0; I < 14; ++I)
+	{
+		const float K = 0.5f * (Lo + Hi);
+		(Curl(K, Out.Center, Out.Along) > HandleRadius + FingerHalf ? Lo : Hi) = K;      // дуга велика — сжать сильнее
+	}
+	Out.Curl = 0.5f * (Lo + Hi);
+	Out.Radius = Curl(Out.Curl, Out.Center, Out.Along);
+	// Большой палец ложится на рукоять сверху, вдоль неё: каждая фаланга поворачивается к оси рукояти или от неё,
+	// пока её дальний конец не окажется на поверхности (радиус рукояти плюс полтолщины пальца, FistThumb[0]).
+	{
+		const FVector Center = Out.Center, Along = Out.Along;
+		auto Away = [&Center, &Along](const FVector& P)
+		{
+			const FVector D = P - Center;
+			return D - Along * FVector::DotProduct(D, Along);
+		};
+		const float Surface = HandleRadius + FistThumb[0];
+		const int32 Limit = FMath::RoundToInt(FistThumb[1]);
+		for (int32 J = 0; J < 3; ++J)
+		{
+			const FVector Pivot = Bent[0][J].GetLocation();
+			const FVector End = J < 2 ? Bent[0][J + 1].GetLocation() : Nail[0];
+			const FVector A = FVector::CrossProduct(End - Pivot, Away(End).GetSafeNormal()).GetSafeNormal();
+			if (A.IsNearlyZero())
+			{
+				continue;
+			}
+			int32 Best = 0;
+			float BestScore = TNumericLimits<float>::Max();
+			for (int32 Step = -Limit; Step <= Limit; ++Step)
+			{
+				const FVector Moved = Pivot + FQuat(A, FMath::DegreesToRadians(float(Step))).RotateVector(End - Pivot);
+				const float Score = FMath::Abs(Away(Moved).Size() - Surface) + 0.004f * FMath::Abs(Step);
+				if (Score < BestScore)
+				{
+					BestScore = Score;
+					Best = Step;
+				}
+			}
+			const FQuat Turn(A, FMath::DegreesToRadians(float(Best)));
+			for (int32 M = J; M < 3; ++M)
+			{
+				Bent[0][M].SetLocation(Pivot + Turn.RotateVector(Bent[0][M].GetLocation() - Pivot));
+				Bent[0][M].SetRotation(Turn * Bent[0][M].GetRotation());
+			}
+			Nail[0] = Pivot + Turn.RotateVector(Nail[0] - Pivot);
+		}
+	}
+	Out.Hand = Hand;
+	for (int32 F = 0; F < 5; ++F)
+	{
+		for (int32 J = 0; J < 3; ++J)
+		{
+			Out.Bones.Add(Bone[F][J]);
+			Out.InHand.Add(Bent[F][J]);
+		}
+	}
+	Out.bValid = true;
+	return true;
+}
+
+void ARunDirector::ApplyFist()
+{
+	USkeletalMeshComponent* Mesh = FistMesh.Get();
+	if (!Mesh)
+	{
+		return;
+	}
+	// кости кадра уже отданы на чтение; правим их на месте — до того, как меш отправит кадр на отрисовку
+	TArray<FTransform>& CS = const_cast<TArray<FTransform>&>(Mesh->GetComponentSpaceTransforms());
+	// стойки рук — до кулаков: кулак считается уже от поставленной кисти. Направления заданы в осях героя.
+	if (const AActor* Hero = Mesh->GetOwner())
+	{
+		const FTransform& ToWorld = Mesh->GetComponentTransform();
+		const FVector F = ToWorld.InverseTransformVectorNoScale(Hero->GetActorForwardVector());
+		const FVector R = ToWorld.InverseTransformVectorNoScale(Hero->GetActorRightVector());
+		const FVector U = ToWorld.InverseTransformVectorNoScale(FVector::UpVector);
+		const int32 Probe = Mesh->GetBoneIndex(TEXT("hand_r"));
+		// те же кости второй раз не правим (см. ниже про кулак): стойка уже стоит
+		if (!(bArmMarked && CS.IsValidIndex(Probe) && CS[Probe].Equals(ArmMark, 0.f)))
+		{
+			if (Guard[0] > 0.01f)
+			{
+				// правая: стойка (локоть у бока, кулак перед грудью, ключ вверх) или замах — по времени с начала удара
+				FVector Upper, Fore, Tool;
+				float Twist = 0.f, Lean = 0.f;
+				const float NowS = Hero->GetWorld() ? Hero->GetWorld()->GetTimeSeconds() : 0.f;
+				float Along = (NowS - SwingStart) / FMath::Max(SwingLen, 0.1f);
+				float Settle = 0.f;
+				if (BounceAt > SwingStart)
+				{
+					// ключ упёрся: за 0,09 с отлетает назад по своей дуге, потом рука плавно встаёт в стойку
+					const float T = NowS - BounceAt;
+					const float Back = FMath::Clamp(T / 0.09f, 0.f, 1.f);
+					Along = BouncePhase - 0.15f * (1.f - (1.f - Back) * (1.f - Back));
+					Settle = FMath::SmoothStep(0.f, 1.f, (T - 0.09f) / 0.26f);
+				}
+				SwingPose(Along, SwingKind, Upper, Fore, Tool, Twist, Lean);
+				if (Settle > 0.f)
+				{
+					FVector GUpper, GFore, GTool;
+					float GTwist = 0.f, GLean = 0.f;
+					SwingPose(2.f, SwingKind, GUpper, GFore, GTool, GTwist, GLean);
+					auto Mix = [Settle](const FVector& From, const FVector& To)
+					{
+						return FQuat::Slerp(FQuat::Identity, FQuat::FindBetweenNormals(From.GetSafeNormal(), To.GetSafeNormal()), Settle).RotateVector(From.GetSafeNormal());
+					};
+					Upper = Mix(Upper, GUpper);
+					Fore = Mix(Fore, GFore);
+					Tool = Mix(Tool, GTool);
+					Twist = FMath::Lerp(Twist, GTwist, Settle);
+					Lean = FMath::Lerp(Lean, GLean, Settle);
+				}
+				TurnTorso(CS, Mesh, Guard[0], Twist, Lean, F, R, U);
+				auto Dir = [&F, &R, &U](const FVector& V)
+				{
+					return (F * V.X + R * V.Y + U * V.Z).GetSafeNormal();
+				};
+				PoseArm(CS, Mesh, 0, Guard[0], Dir(Upper), Dir(Fore), Dir(Tool));
+			}
+			if (Guard[1] > 0.01f)
+			{
+				// левая: предплечье вперёд-вниз, фонарик в кулаке смотрит вперёд; за взглядом камеры идёт, пока хватает кисти
+				const FVector Aim = ToWorld.InverseTransformVectorNoScale(LightAim.Vector());
+				const float Yaw = FMath::Clamp(FMath::RadiansToDegrees(FMath::Atan2(FVector::DotProduct(Aim, R), FVector::DotProduct(Aim, F))), -55.f, 55.f);
+				const float Pitch = FMath::Clamp(FMath::RadiansToDegrees(FMath::Asin(FMath::Clamp(FVector::DotProduct(Aim, U), -1.f, 1.f))), -35.f, 35.f);
+				const FVector Ahead = F.RotateAngleAxis(Yaw, U);
+				const FVector Side = FVector::CrossProduct(U, Ahead);
+				const FVector Fore = (Ahead * 0.76f - U * 0.6f - Side * 0.12f).GetSafeNormal().RotateAngleAxis(-Pitch, Side);
+				// сам фонарик смотрит туда же, куда луч: вперёд по взгляду (в пределах поворота кисти)
+				PoseArm(CS, Mesh, 1, Guard[1], (-U * 0.97f + Ahead * 0.16f - R * 0.14f).GetSafeNormal(), Fore,
+					Ahead.RotateAngleAxis(-Pitch, Side));
+			}
+			if (CS.IsValidIndex(Probe))
+			{
+				ArmMark = CS[Probe];
+				bArmMarked = Guard[0] > 0.01f || Guard[1] > 0.01f;
+			}
+		}
+	}
+	// кулаки: кости пальцев встают на свои места в осях кисти (FistPose), с весом Fist
+	for (int32 S = 0; S < 2; ++S)
+	{
+		const FRunFist& Pose = FistPose[S];
+		if (Fist[S] < 0.01f || !Pose.bValid || !CS.IsValidIndex(Pose.Hand))
+		{
+			continue;
+		}
+		const FTransform HandNow = CS[Pose.Hand];
+		for (int32 I = 0; I < Pose.Bones.Num(); ++I)
+		{
+			if (CS.IsValidIndex(Pose.Bones[I]))
+			{
+				FTransform Mixed;
+				Mixed.Blend(CS[Pose.Bones[I]], Pose.InHand[I] * HandNow, Fist[S]);
+				CS[Pose.Bones[I]] = Mixed;
+			}
+		}
+	}
+}
+
+// Проверка рук без игрока: ключ в правой, фонарик в левой; крупные кадры обеих кистей, обычный вид и замах.
+void ARunDirector::TickGripTest()
+{
+	const float Now = GetWorld()->GetTimeSeconds();
+	APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
+	ACharacter* Ch = Cast<ACharacter>(UGameplayStatics::GetPlayerPawn(this, 0));
+	if (!PC || !Ch || Now < GripTestAt)
+	{
+		return;
+	}
+	auto Shot = [this](const TCHAR* Name)
+	{
+		const FString Path = FPaths::ProjectSavedDir() / FString::Printf(TEXT("Screenshots/Grip/%s.png"), Name);
+		FScreenshotRequest::RequestScreenshot(Path, false, false);
+		UE_LOG(LogRun, Display, TEXT("Run: grip shot %s"), *Path);
+	};
+	auto Close = [&](const TCHAR* Bone, float Right, float Fwd, float Up)
+	{
+		const FVector Hand = Ch->GetMesh()->GetSocketLocation(Bone);
+		const FVector At = Hand + Ch->GetActorRightVector() * Right + Ch->GetActorForwardVector() * Fwd + FVector(0.f, 0.f, Up);
+		if (!GripTestCam)
+		{
+			GripTestCam = GetWorld()->SpawnActor<ACameraActor>();
+			GripTestCam->GetCameraComponent()->SetFieldOfView(45.f);
+			GripTestCam->GetCameraComponent()->bConstrainAspectRatio = false;
+		}
+		GripTestCam->SetActorLocationAndRotation(At, (Hand - FVector(0.f, 0.f, 8.f) - At).Rotation());
+		PC->SetViewTarget(GripTestCam);
+	};
+	auto Held = [this]()
+	{
+		return GetHeldSlot() >= 0 ? ItemName(Pocket[HeldSlot]) : FString(TEXT("nothing"));
+	};
+	float Wait = 0.45f;
+	if (GripTestStep >= 300 && GripTestStep < 320)
+	{
+		// в движении: герой идёт (300–309) или стоит после рывка (310–319), камера держится спереди-справа от правой кисти
+		if (GripTestStep < 310)
+		{
+			Ch->AddMovementInput(Ch->GetActorForwardVector(), 1.f);
+		}
+		const FVector Hand = Ch->GetMesh()->GetSocketLocation(TEXT("hand_r"));
+		const FVector Eye = Hand + Ch->GetActorRightVector() * 45.f + Ch->GetActorForwardVector() * 95.f + FVector(0.f, 0.f, 30.f);
+		GripTestCam->SetActorLocationAndRotation(Eye, (Hand - Eye).Rotation());
+		if (Now < GripTestWalkAt)
+		{
+			return;
+		}
+		static const TCHAR* Names[] = { TEXT("walk_1"), TEXT("walk_2"), TEXT("walk_3"), TEXT("walk_4") };
+		if (GripTestStep < 304)
+		{
+			Shot(Names[GripTestStep - 300]);
+			UE_LOG(LogRun, Display, TEXT("Run: grip walking: fist %.2f %.2f guard %.2f %.2f speed %.0f"), Fist[0], Fist[1], Guard[0], Guard[1], Ch->GetVelocity().Size());
+			GripTestWalkAt = Now + 0.35f;
+			++GripTestStep;
+			return;
+		}
+		if (GripTestStep == 304)
+		{
+			OnDodge();
+			GripTestStep = 310;
+			GripTestWalkAt = Now + 0.18f;
+			return;
+		}
+		if (GripTestStep == 310 || GripTestStep == 311 || GripTestStep == 312)
+		{
+			Shot(GripTestStep == 310 ? TEXT("dodge_1") : GripTestStep == 311 ? TEXT("dodge_2") : TEXT("dodge_3"));
+			UE_LOG(LogRun, Display, TEXT("Run: grip after dodge: fist %.2f %.2f guard %.2f %.2f"), Fist[0], Fist[1], Guard[0], Guard[1]);
+			GripTestWalkAt = Now + (GripTestStep == 310 ? 0.3f : 0.6f);
+			++GripTestStep;
+			return;
+		}
+		GripTestStep = 9;
+		GripTestAt = Now + 0.5f;
+		return;
+	}
+	switch (GripTestStep++)
+	{
+	case 0:
+		// герой уходит от поста капитана на свободное место: камеры у кистей не упираются в мебель
+		Ch->SetActorLocation(RoomActor->GetActorLocation() + FVector(-330.f, 0.f, Ch->GetActorLocation().Z - RoomActor->GetActorLocation().Z), false, nullptr, ETeleportType::TeleportPhysics);
+		for (const int32 Item : { static_cast<int32>(Weapon), 0 })   // 0 — фонарик, первая вещь каталога
+		{
+			if (!Pocket.Contains(Item) && !FParse::Param(FCommandLine::Get(), TEXT("RunGripEmpty")))   // -RunGripEmpty: пустые руки
+			{
+				Pocket.Add(Item);
+			}
+		}
+		HeldSlot = Pocket.IndexOfByKey(Weapon);
+		Wait = 1.3f;     // руки встают в стойку
+		break;
+	case 1: Close(TEXT("hand_r"), 70.f, 25.f, 12.f); break;
+	case 2: Shot(TEXT("right_side")); break;
+	case 3: Close(TEXT("hand_r"), 25.f, 65.f, 20.f); break;
+	case 4: Shot(TEXT("right_front")); break;
+	case 5: Close(TEXT("hand_l"), -70.f, 25.f, 12.f); break;
+	case 6: Shot(TEXT("left_side")); break;
+	case 7: Close(TEXT("hand_l"), -25.f, 65.f, 20.f); break;
+	case 8:
+		Shot(TEXT("left_front"));
+		PC->SetViewTarget(GripTestCam);
+		GripTestStep = 300;
+		GripTestWalkAt = Now + 0.5f;
+		GripTestAt = Now;
+		return;
+	case 9: PC->SetViewTarget(Ch); break;
+	case 10:
+	{
+		Shot(TEXT("back"));
+		Wait = 0.3f;
+		break;
+	}
+	case 11:
+	{
+		// подмышка правой руки в стойке — сзади-справа: здесь вылезали вершины тела с весами костей предплечья
+		const FVector Pit = Ch->GetMesh()->GetSocketLocation(TEXT("upperarm_r")) - FVector(0.f, 0.f, 18.f);
+		const FVector At = Pit - Ch->GetActorRightVector() * 60.f - Ch->GetActorForwardVector() * 100.f + FVector(0.f, 0.f, 15.f);
+		GripTestCam->SetActorLocationAndRotation(At, (Pit - At).Rotation());
+		PC->SetViewTarget(GripTestCam);
+		GripTestAt = Now + 0.4f;
+		GripTestStep = 100;      // снимки и дальше по порядку
+		return;
+	}
+	case 100: Shot(TEXT("armpit")); GripTestAt = Now + 0.4f; GripTestStep = 102; return;
+	case 102:
+	{
+		const FVector Pit = Ch->GetMesh()->GetSocketLocation(TEXT("upperarm_r")) - FVector(0.f, 0.f, 18.f);
+		const FVector At = Pit + Ch->GetActorRightVector() * 45.f - Ch->GetActorForwardVector() * 90.f + FVector(0.f, 0.f, 25.f);
+		GripTestCam->SetActorLocationAndRotation(At, (Pit - At).Rotation());
+		GripTestAt = Now + 0.4f;
+		GripTestStep = 103;
+		return;
+	}
+	case 103: Shot(TEXT("armpit2")); GripTestAt = Now + 0.4f; GripTestStep = 101; return;
+	case 101:
+	{
+		// три удара серии — вид сбоку-спереди: видно дугу ключа
+		const FVector Chest = Ch->GetActorLocation() + FVector(0.f, 0.f, 35.f);
+		const FVector At = Chest + Ch->GetActorRightVector() * 190.f + Ch->GetActorForwardVector() * 150.f + FVector(0.f, 0.f, 25.f);
+		GripTestCam->GetCameraComponent()->SetFieldOfView(60.f);
+		GripTestCam->SetActorLocationAndRotation(At, (Chest - At).Rotation());
+		PC->SetViewTarget(GripTestCam);
+		GripTestAt = Now + 0.45f;
+		GripTestStep = 12;
+		return;
+	}
+	// удар длится полсекунды: кадры — замах, середина, удар, проводка
+	case 12: OnAttack(); Wait = 0.05f; break;
+	case 13: Shot(TEXT("k0_1")); Wait = 0.04f; break;
+	case 14: Shot(TEXT("k0_2")); Wait = 0.04f; break;
+	case 15: Shot(TEXT("k0_3")); Wait = 0.06f; break;
+	case 16: Shot(TEXT("k0_4")); Wait = 0.4f; break;
+	case 17: OnAttack(); Wait = 0.05f; break;
+	case 18: Shot(TEXT("k1_1")); Wait = 0.04f; break;
+	case 19: Shot(TEXT("k1_2")); Wait = 0.04f; break;
+	case 20: Shot(TEXT("k1_3")); Wait = 0.06f; break;
+	case 21: Shot(TEXT("k1_4")); Wait = 0.4f; break;
+	case 22: OnAttack(); Wait = 0.08f; break;
+	case 23: Shot(TEXT("k2_1")); Wait = 0.05f; break;
+	case 24: Shot(TEXT("k2_2")); Wait = 0.04f; break;
+	case 25: Shot(TEXT("k2_3")); Wait = 0.07f; break;
+	case 26: Shot(TEXT("k2_4")); Wait = 0.5f; break;
+	case 27: PC->SetViewTarget(Ch); Wait = 1.6f; break;
+	case 28: OnAttack(); Wait = 0.05f; break;
+	case 29: Shot(TEXT("swing_1")); Wait = 0.04f; break;
+	case 30: Shot(TEXT("swing_2")); Wait = 0.04f; break;
+	case 31: Shot(TEXT("swing_3")); Wait = 0.06f; break;
+	case 32: Shot(TEXT("swing_4")); GripTestAt = Now + 1.6f; GripTestStep = 200; return;
+	case 200:
+	{
+		// удар в стену: герой встаёт лицом к стене (не к створке шлюза: та уезжает), в 55 см от неё; вид сбоку
+		FHitResult Wall;
+		bool bWall = false;
+		FCollisionQueryParams Q(FName(TEXT("RunGripWall")), false, Ch);
+		const float Yaw0 = Ch->GetActorRotation().Yaw;
+		for (const float Turn : { 90.f, -90.f, 180.f, 0.f })
+		{
+			const FVector Dir = FRotator(0.f, Yaw0 + Turn, 0.f).Vector();
+			const FVector From = Ch->GetActorLocation() + FVector(0.f, 0.f, 30.f);
+			if (GetWorld()->LineTraceSingleByChannel(Wall, From, From + Dir * 900.f, ECC_WorldStatic, Q)
+				&& !GetNameSafe(Wall.GetComponent()).Contains(TEXT("Door")))
+			{
+				bWall = true;
+				Ch->SetActorRotation(FRotator(0.f, Yaw0 + Turn, 0.f));
+				PC->SetControlRotation(FRotator(-10.f, Yaw0 + Turn, 0.f));
+				Ch->SetActorLocation(Ch->GetActorLocation() + Dir * (Wall.Distance - 55.f), false, nullptr, ETeleportType::TeleportPhysics);
+				break;
+			}
+		}
+		UE_LOG(LogRun, Display, TEXT("Run: grip wall %s at %.0f cm"), bWall ? *GetNameSafe(Wall.GetComponent()) : TEXT("none"), bWall ? Wall.Distance : -1.f);
+		const FVector Chest = Ch->GetActorLocation() + FVector(0.f, 0.f, 35.f) + Ch->GetActorForwardVector() * 35.f;
+		// камера — с той стороны, где до стены дальше
+		FHitResult Side;
+		const FVector Eye = Ch->GetActorLocation() + FVector(0.f, 0.f, 40.f);
+		const bool bRightTight = GetWorld()->LineTraceSingleByChannel(Side, Eye, Eye + Ch->GetActorRightVector() * 230.f, ECC_WorldStatic, Q);
+		const FVector At = Chest + Ch->GetActorRightVector() * (bRightTight ? -190.f : 190.f) - Ch->GetActorForwardVector() * 50.f + FVector(0.f, 0.f, 20.f);
+		GripTestCam->GetCameraComponent()->SetFieldOfView(55.f);
+		GripTestCam->SetActorLocationAndRotation(At, (Chest - At).Rotation());
+		PC->SetViewTarget(GripTestCam);
+		GripTestAt = Now + 0.8f;
+		GripTestStep = 201;
+		return;
+	}
+	case 201: OnAttack(); GripTestAt = Now + 0.09f; GripTestStep = 202; return;
+	case 202: Shot(TEXT("wall_1")); GripTestAt = Now + 0.07f; GripTestStep = 203; return;
+	case 203: Shot(TEXT("wall_2")); GripTestAt = Now + 0.05f; GripTestStep = 204; return;
+	case 204: Shot(TEXT("wall_3")); GripTestAt = Now + 0.12f; GripTestStep = 205; return;
+	case 205: Shot(TEXT("wall_4")); GripTestAt = Now + 1.2f; GripTestStep = 33; return;
+	case 33:
+	{
+		// выбор: активная вещь листается колесом по занятым слотам; удар её не меняет; фонарик светит сам по себе
+		FString Line = FString::Printf(TEXT("active %s, right hand %s, light %d; wheel:"), *Held(),
+			RightItem != TNumericLimits<int32>::Min() ? *ItemName(RightItem) : TEXT("nothing"), bFlashlightLit ? 1 : 0);
+		for (int32 I = 0; I < 3; ++I)
+		{
+			OnWheelDown();
+			Line += TEXT(" ") + Held();
+		}
+		OnAttack();
+		Line += TEXT("; after a hit: ") + Held();
+		OnToggleLight();
+		UE_LOG(LogRun, Display, TEXT("Run: grip %s (pocket %d)"), *Line, Pocket.Num());
+		Wait = 0.3f;
+		break;
+	}
+	case 34: UE_LOG(LogRun, Display, TEXT("Run: grip light after [V]: %d"), bFlashlightLit ? 1 : 0); break;
+	default:
+		UE_LOG(LogRun, Display, TEXT("Run: grip test done"));
+		GripTestStep = -1;
+		FPlatformMisc::RequestExit(false);
+		return;
+	}
+	GripTestAt = Now + Wait;
+}
+
 // Выгорела ли комната набора (DESIGN.md §14, решение автора 14.11): только опасная, чистый случай по зерну и набору,
 // доля — BurnedRoomPercent. От вида угрозы и сложности не зависит.
 bool ARunDirector::IsBurned(int32 Key) const
@@ -492,6 +1400,11 @@ void ARunDirector::OnPause()
 {
 	if (Phase != ERunPhase::Playing)
 	{
+		return;
+	}
+	if (bMenuOpen)
+	{
+		SetMenuOpen(false);   // Esc из меню на Tab закрывает меню, а не открывает паузу поверх
 		return;
 	}
 	bMenuPause = !bMenuPause;
@@ -806,11 +1719,6 @@ FVector ARunDirector::SteerTarget(const FVector& From, const FVector& To) const
 	return RoomActor ? RoomActor->SteerTarget(From, To) : To;
 }
 
-float ARunDirector::GetSwingFlash() const
-{
-	return GetWorld() ? FMath::Clamp(1.f - (GetWorld()->GetTimeSeconds() - SwingAt) / 0.2f, 0.f, 1.f) : 0.f;
-}
-
 // Удар разводным ключом: достаёт всех противников перед игроком на расстоянии вытянутой руки.
 void ARunDirector::OnAttack()
 {
@@ -852,27 +1760,112 @@ void ARunDirector::StartSwing()
 		ComboStep = 0;
 	}
 	bCrouchToggle = false;   // бьют стоя
-	const int32 Slot = Pocket.IndexOfByKey(Weapon);
-	if (Slot != INDEX_NONE && HeldSlot != Slot)
-	{
-		HeldSlot = Slot;      // ключ в руке
-		SetInspecting(false);
-	}
-	const FString Path = FString::Printf(TEXT("/Game/Characters/Mannequins/Anims/Unarmed/Attack/MM_Attack_0%d.MM_Attack_0%d"), ComboStep % 3 + 1, ComboStep % 3 + 1);
-	UAnimSequenceBase* Clip = LoadObject<UAnimSequenceBase>(nullptr, *Path, nullptr, LOAD_NoWarn | LOAD_Quiet);
-	constexpr float Rate = 1.25f;
-	const float Len = Clip ? Clip->GetPlayLength() / Rate : 0.5f;
-	if (UAnimInstance* Anim = Clip && Ch->GetMesh() ? Ch->GetMesh()->GetAnimInstance() : nullptr)
-	{
-		Anim->PlaySlotAnimationAsDynamicMontage(Clip, TEXT("DefaultSlot"), 0.08f, 0.2f, Rate);
-	}
-	AttackHitTime = Now + Len * 0.38f;
-	AttackBusyUntil = Now + Len * 0.72f;
+	SetInspecting(false);    // оружие всегда в правой руке: удар не меняет активную вещь
+	// замах — свой, по ключевым позам (SwingPose): клипы удара шаблона бьют кулаком, а не ключом
+	SwingKind = ComboStep % 3;
+	SwingLen = SwingKind == 2 ? 0.62f : 0.5f;     // третий удар серии — тяжёлый, сверху вниз
+	SwingStart = Now;
+	BounceAt = -100.f;
+	const float Len = SwingLen;
+	AttackHitTime = Now + Len * 0.44f;            // губки доходят до цели чуть раньше половины замаха
+	AttackBusyUntil = Now + Len * 0.8f;
 	ComboResetAt = AttackBusyUntil + 0.7f;
 	NextAttackAt = AttackBusyUntil;
 	++ComboStep;
 	bAttackQueued = false;
 	RunAudio::Play(this, TEXT("WrenchSwing"), 0.8f, FMath::FRandRange(0.92f, 1.08f));
+}
+
+// Есть ли сейчас противник, по которому придётся удар (те же условия, что в ResolveSwing): если есть, ключ не
+// отскакивает от стены рядом — удар доходит до него.
+bool ARunDirector::EnemyInReach() const
+{
+	const APawn* Pawn = UGameplayStatics::GetPlayerPawn(this, 0);
+	if (!Pawn)
+	{
+		return false;
+	}
+	const FVector P = Pawn->GetActorLocation();
+	const FVector Facing = Pawn->GetActorForwardVector().GetSafeNormal2D();
+	const FVector Looking = FRotator(0.f, Pawn->GetControlRotation().Yaw, 0.f).Vector();
+	for (const ARunEnemy* Actor : EnemyActors)
+	{
+		if (!Actor)
+		{
+			continue;
+		}
+		const FVector To(Actor->GetFloorPos().X - P.X, Actor->GetFloorPos().Y - P.Y, 0.f);
+		const float Dist = To.Size2D();
+		const FVector N = To.GetSafeNormal2D();
+		const bool bAhead = Dist < 75.f || FVector::DotProduct(N, Facing) > 0.2f || FVector::DotProduct(N, Looking) > 0.2f;
+		if (Dist <= AttackReach + Actor->GetRadius() && bAhead)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+// Пока идёт сам удар (от замаха до конца проводки), дуга ключа просчитывается на кадр вперёд: где на ней ключ
+// (от запястья до губок) впервые упрётся в стену, створку или мебель. Упрётся до следующего кадра — замах обрывается
+// на этой доле, ключ останавливается у самой поверхности и отлетает назад.
+void ARunDirector::TickSwingContact()
+{
+	const float Now = GetWorld()->GetTimeSeconds();
+	const float Along = (Now - SwingStart) / FMath::Max(SwingLen, 0.1f);
+	const ACharacter* Ch = Cast<ACharacter>(UGameplayStatics::GetPlayerPawn(this, 0));
+	if (!Ch || !Ch->GetMesh() || !GripMesh || !GripMesh->IsVisible() || !IsWeapon(RightItem) || BounceAt > SwingStart || Along > 0.63f
+		|| Phase != ERunPhase::Playing)
+	{
+		return;
+	}
+	const USkeletalMeshComponent* Mesh = Ch->GetMesh();
+	const FVector Shoulder = Mesh->GetSocketLocation(TEXT("upperarm_r")), Elbow = Mesh->GetSocketLocation(TEXT("lowerarm_r")),
+		Wrist = Mesh->GetSocketLocation(TEXT("hand_r"));
+	const float UpperLen = FVector::Dist(Shoulder, Elbow), ForeLen = FVector::Dist(Elbow, Wrist);
+	const FVector F = Ch->GetActorForwardVector(), R = Ch->GetActorRightVector(), U = FVector::UpVector;
+	FCollisionQueryParams World(FName(TEXT("RunSwingContact")), false, Ch);
+	for (const ARunEnemy* Actor : EnemyActors)
+	{
+		World.AddIgnoredActor(Actor);
+	}
+	// до какой доли замах дойдёт к следующему кадру (с запасом в полкадра)
+	const float Ahead = FMath::Min(0.63f, Along + 1.5f * GetWorld()->GetDeltaSeconds() / FMath::Max(SwingLen, 0.1f));
+	for (float At = FMath::Max(Along, 0.31f); At <= Ahead; At += 0.015f)
+	{
+		FVector Upper, Fore, Tool;
+		float Twist = 0.f, Lean = 0.f;
+		SwingPose(At, SwingKind, Upper, Fore, Tool, Twist, Lean);
+		auto Dir = [&F, &R, &U](const FVector& V)
+		{
+			return (F * V.X + R * V.Y + U * V.Z).GetSafeNormal();
+		};
+		// запястье — по длинам плеча и предплечья от нынешнего плечевого сустава; кулак в 8 см дальше, губки в 37 см от кулака
+		const FVector ToolDir = Dir(Tool), ForeDir = Dir(Fore);
+		const FVector Hand = Shoulder + Dir(Upper) * UpperLen + ForeDir * ForeLen;
+		const FVector Grip = Hand + (ForeDir - ToolDir * FVector::DotProduct(ForeDir, ToolDir)).GetSafeNormal() * 8.f;
+		const FVector Jaws = Grip + ToolDir * 37.f;
+		FHitResult Hit;
+		if (!GetWorld()->LineTraceSingleByChannel(Hit, Hand, Jaws, ECC_WorldStatic, World))
+		{
+			continue;
+		}
+		if (EnemyInReach())
+		{
+			return;      // рядом противник: удар доходит до него, а не отскакивает от стены
+		}
+		BounceAt = Now;
+		BouncePhase = FMath::Max(At - 0.015f, 0.28f);
+		AttackHitTime = -1.f;                 // удар оборван: до противника он уже не дойдёт
+		AttackBusyUntil = Now + 0.3f;
+		ComboResetAt = AttackBusyUntil + 0.7f;
+		NextAttackAt = AttackBusyUntil;
+		bAttackQueued = false;
+		RunAudio::Play(this, TEXT("WrenchHit"));
+		UE_LOG(LogRun, Display, TEXT("Run: attack hit object %s part %s, bounce at %.2f of the swing"), *GetNameSafe(Hit.GetActor()),
+			*GetNameSafe(Hit.GetComponent()), BouncePhase);
+		return;
+	}
 }
 
 // Момент удара: кто в этот миг перед героем и в пределах досягаемости — получает.
@@ -884,7 +1877,6 @@ void ARunDirector::ResolveSwing()
 	{
 		return;
 	}
-	SwingAt = Now;
 	int32 Hits = 0;
 	bool bFlesh = false, bMetal = false;   // во что попали: в живое (человек, крыса) или в металл робота
 	const FVector P = Pawn->GetActorLocation();
@@ -932,7 +1924,8 @@ void ARunDirector::ResolveSwing()
 			Actor->Knock(P, AttackStun);
 		}
 	}
-	// У удара три звука (автор, 15.11): по живому, по металлу робота и по предмету обстановки (прежний WrenchHit).
+	// У удара три звука (автор, 15.11): по живому, по металлу робота и по предмету обстановки (прежний WrenchHit;
+	// его играет TickSwingContact, когда ключ упёрся в стену или мебель).
 	if (bFlesh)
 	{
 		RunAudio::Play(this, TEXT("WrenchHitFlesh"));
@@ -941,25 +1934,7 @@ void ARunDirector::ResolveSwing()
 	{
 		RunAudio::Play(this, TEXT("WrenchHitMetal"));
 	}
-	if (Hits == 0)
-	{
-		// мимо противников: ключ мог попасть в стену, створку или мебель перед героем (на высоте пояса)
-		FCollisionQueryParams World(FName(TEXT("RunAttackWorld")), false, Pawn);
-		for (ARunEnemy* Actor : EnemyActors)
-		{
-			World.AddIgnoredActor(Actor);
-		}
-		FHitResult Hit;
-		const FVector From = P - FVector(0.f, 0.f, 10.f);
-		if (GetWorld()->SweepSingleByChannel(Hit, From, From + Facing * AttackWorldReach, FQuat::Identity, ECC_WorldStatic,
-			FCollisionShape::MakeSphere(14.f), World))
-		{
-			RunAudio::Play(this, TEXT("WrenchHit"));
-			UE_LOG(LogRun, Display, TEXT("Run: attack hit object %s part %s at %.0f cm"), *GetNameSafe(Hit.GetActor()),
-				*GetNameSafe(Hit.GetComponent()), Hit.Distance);
-		}
-	}
-	else
+	if (Hits > 0)
 	{
 		UE_LOG(LogRun, Display, TEXT("Run: attack sound flesh=%d metal=%d"), bFlesh ? 1 : 0, bMetal ? 1 : 0);
 	}
@@ -1131,7 +2106,7 @@ void ARunDirector::PutOnSuit()
 
 void ARunDirector::TakeOffSuit()
 {
-	if (!bSuitOn || Phase != ERunPhase::Playing || bBusy || !RoomActor)
+	if (!bSuitOn || Phase != ERunPhase::Playing || bBusy || !RoomActor || bMenuPause)
 	{
 		return;
 	}
@@ -1621,12 +2596,22 @@ void ARunDirector::OnInteract()
 		else if (Item == Medkit && !bTipMedkit)
 		{
 			bTipMedkit = true;
-			ShowTip(TEXT("Medkit: take it in hand with [1]-[4], [LMB] to use"), 7.f);
+			ShowTip(TEXT("Medkit: take it in hand with the mouse wheel or [1]-[4], [LMB] to use"), 7.f);
 		}
 		else if (Pocket.Num() >= PocketSlots && !bTipDrop)
 		{
 			bTipDrop = true;
-			ShowTip(TEXT("Pocket is full. [1]-[4] takes an item in hand, [G] drops it"), 7.f);
+			ShowTip(TEXT("Pocket is full. Mouse wheel or [1]-[4] takes an item in hand, [G] drops it"), 7.f);
+		}
+		else if (IsFlashlight(Item) && !bTipLight)
+		{
+			bTipLight = true;
+			ShowTip(TEXT("The flashlight goes to your left hand. [V] switches it on and off"), 7.f);
+		}
+		else if (Pocket.Num() >= 2 && !bTipWheel)
+		{
+			bTipWheel = true;
+			ShowTip(TEXT("[Mouse wheel] or [1]-[4] switches the active item"), 7.f);
 		}
 	}
 	ItemActors.Remove(A);
@@ -1682,7 +2667,7 @@ void ARunDirector::RemoveFromPocket(int32 Slot)
 // 1–4: взять вещь этого слота в руку; та же клавиша ещё раз — убрать в карман.
 void ARunDirector::SelectSlot(int32 Slot)
 {
-	if (Phase != ERunPhase::Playing || !Pocket.IsValidIndex(Slot))
+	if (Phase != ERunPhase::Playing || !Pocket.IsValidIndex(Slot) || bMenuPause)
 	{
 		return;
 	}
@@ -1708,15 +2693,14 @@ void ARunDirector::SelectSlot(int32 Slot)
 
 void ARunDirector::CycleHeld(int32 Step)
 {
-	if (Phase != ERunPhase::Playing || Pocket.Num() == 0)
+	if (Phase != ERunPhase::Playing || Pocket.Num() == 0 || bMenuPause)
 	{
 		return;
 	}
-	// по кругу через все слоты и «пустые руки»
-	const int32 N = Pocket.Num() + 1;
-	const int32 From = GetHeldSlot() < 0 ? Pocket.Num() : HeldSlot;
-	const int32 To = ((From + Step) % N + N) % N;
-	HeldSlot = To == Pocket.Num() ? -1 : To;
+	// по кругу через занятые слоты: каждый щелчок колеса — следующая вещь. Убрать вещь из руки — её цифра ещё раз
+	const int32 N = Pocket.Num();
+	const int32 From = GetHeldSlot() < 0 ? (Step > 0 ? -1 : N) : HeldSlot;
+	HeldSlot = ((From + Step) % N + N) % N;
 	SetInspecting(false);
 }
 
@@ -1746,11 +2730,15 @@ void ARunDirector::OnWheelDown()
 
 void ARunDirector::OnDropHeld()
 {
+	if (bMenuPause)
+	{
+		return;
+	}
 	if (GetHeldSlot() < 0)
 	{
 		if (Phase == ERunPhase::Playing && Pocket.Num() > 0)
 		{
-			Say(TEXT("Your hands are empty. [1]-[4] takes an item in hand."), 3.f);
+			Say(TEXT("Your hands are empty. Mouse wheel or [1]-[4] takes an item in hand."), 3.f);
 		}
 		return;
 	}
@@ -1792,7 +2780,7 @@ void ARunDirector::UseMedkit(int32 Slot)
 // Правая кнопка: рассмотреть вещь в руке или убрать её от глаз. Блокнот при этом раскрывается для чтения.
 void ARunDirector::OnInspect()
 {
-	if (Phase != ERunPhase::Playing)
+	if (Phase != ERunPhase::Playing || bMenuPause)
 	{
 		return;
 	}
@@ -1805,7 +2793,7 @@ void ARunDirector::OnInspect()
 	{
 		if (Pocket.Num() > 0)
 		{
-			Say(TEXT("Your hands are empty. [1]-[4] takes an item in hand."), 3.f);
+			Say(TEXT("Your hands are empty. Mouse wheel or [1]-[4] takes an item in hand."), 3.f);
 		}
 		return;
 	}
@@ -1847,13 +2835,41 @@ void ARunDirector::TurnPage(int32 Step)
 	}
 }
 
-// Tab — меню (решение автора 15.11): блокнот с закладками записок, карман, скафандр. Игра не встаёт на паузу.
+// Tab — меню (решение автора 15.11): блокнот с закладками записок, карман, скафандр. Время в меню стоит
+// (решение автора 15.11, вечер; раньше шло).
 void ARunDirector::OnToggleJournal()
 {
-	if (Phase == ERunPhase::Playing)
+	if (Phase == ERunPhase::Playing && !bMenuPause)
 	{
 		SetMenuOpen(!bMenuOpen);
 	}
+}
+
+void ARunDirector::SetMenuBlend(float Alpha)
+{
+	Alpha = FMath::Clamp(Alpha, 0.f, 1.f);
+	if (!Post || Alpha == MenuBlend)
+	{
+		return;
+	}
+	MenuBlend = Alpha;
+	// фон под меню: на 1,6 ступени темнее, почти без цвета, с виньеткой и размытием — текст блокнота не спорит с комнатой.
+	// Размытие — глубина резкости: фокус у самой камеры, широкий «сенсор» и открытая диафрагма, всё дальше расплывается
+	const bool bOn = Alpha > 0.f;
+	FPostProcessSettings& P = Post->Settings;
+	P.AutoExposureBias = ExposureBias - 1.6f * Alpha;
+	P.bOverride_ColorSaturation = bOn;
+	P.ColorSaturation = FVector4(1.f, 1.f, 1.f, FMath::Lerp(1.f, 0.2f, Alpha));
+	P.bOverride_VignetteIntensity = bOn;
+	P.VignetteIntensity = FMath::Lerp(0.4f, 1.f, Alpha);
+	P.bOverride_DepthOfFieldFocalDistance = bOn;
+	P.DepthOfFieldFocalDistance = 15.f;
+	P.bOverride_DepthOfFieldSensorWidth = bOn;
+	P.DepthOfFieldSensorWidth = 150.f;
+	P.bOverride_DepthOfFieldFstop = bOn;
+	P.DepthOfFieldFstop = 0.7f / FMath::Max(Alpha, 0.02f);   // размытие растёт с Alpha
+	P.bOverride_DepthOfFieldMinFstop = bOn;
+	P.DepthOfFieldMinFstop = 0.7f;
 }
 
 void ARunDirector::SetMenuOpen(bool bOpen)
@@ -1871,7 +2887,12 @@ void ARunDirector::SetMenuOpen(bool bOpen)
 	}
 	if (bOpen != bMenuOpen)
 	{
-		RunAudio::Play(this, TEXT("NotebookOpen"));
+		RunAudio::Play(this, TEXT("NotebookOpen"));   // звук интерфейса: на паузе слышен
+		// время в меню стоит. Не в самопроверке: её шаги идут по времени мира и встали бы вместе с ним
+		if (!bSelfTest)
+		{
+			UGameplayStatics::SetGamePaused(this, bOpen);
+		}
 	}
 	bMenuOpen = bOpen;
 }
@@ -1927,32 +2948,63 @@ void ARunDirector::TickHeldItem(float DeltaSeconds)
 	}
 	const int32 Held = GetHeldSlot() >= 0 ? Pocket[HeldSlot] : TNumericLimits<int32>::Min();
 	const ACharacter* Ch = Cast<ACharacter>(UGameplayStatics::GetPlayerPawn(this, 0));
-	if (HandMesh && HandPivot)
+	if (HandPivot && Ch)
 	{
-		const bool bShow = Held != TNumericLimits<int32>::Min() && !IsInspecting() && Ch && !Ch->IsHidden() && Phase == ERunPhase::Playing;
-		if (bShow && Held != ShownHandItem)
+		const bool bAlive = !Ch->IsHidden() && Phase == ERunPhase::Playing;
+		// правая рука — оружие: активная вещь, если она оружие, иначе последнее выбранное, иначе любое из кармана
+		if (GetHeldSlot() >= 0 && IsWeapon(Held))
 		{
-			ShowItemMesh(HandMesh, Held, 10.f, true);
-			ShownHandItem = Held;
+			RightItem = Held;
 		}
-		// на замахе ключ не висит под кистью, а зажат в кулаке
-		const bool bGrip = bShow && GripMesh && Held == Weapon && GetWorld()->GetTimeSeconds() < AttackBusyUntil + 0.2f;
-		if (GripMesh)
+		if (!Pocket.Contains(RightItem))
 		{
-			if (bGrip && !GripMesh->GetStaticMesh())
+			const int32 Slot = Pocket.IndexOfByPredicate([](int32 Item) { return IsWeapon(Item); });
+			RightItem = Slot != INDEX_NONE ? Pocket[Slot] : TNumericLimits<int32>::Min();
+		}
+		const int32 LeftItem = FlashlightItem();
+		// вещь на осмотре — перед глазами, в руке её в это время нет
+		const bool bRight = bAlive && RightItem != TNumericLimits<int32>::Min() && !(IsInspecting() && Held == RightItem);
+		const bool bLeft = bAlive && LeftItem != TNumericLimits<int32>::Min() && !(IsInspecting() && Held == LeftItem);
+		auto Show = [this, Ch](UStaticMeshComponent* Grip, bool bOn, int32 Item, bool bLeftHand, int32& Shown)
+		{
+			if (!Grip)
 			{
-				GripMesh->SetStaticMesh(ARunItem::FindModel(ItemName(Weapon)));
+				return;
 			}
-			GripMesh->SetVisibility(bGrip);
-		}
-		HandMesh->SetVisibility(bShow && !bGrip);
-		if (Ch)
+			if (bOn && Item != Shown)
+			{
+				Grip->EmptyOverrideMaterials();
+				Grip->SetStaticMesh(ARunItem::FindModel(ItemName(Item)));
+				// рукоять ключа — 4,1 × 2,5 см, фонарика — круглая, 3,9 см: кулак раскрыт под неё
+				BuildFist(Ch->GetMesh(), bLeftHand, IsFlashlight(Item) ? 1.95f : 1.85f, FistPose[bLeftHand ? 1 : 0]);
+				FTransform At;
+				if (GripInHand(Item, bLeftHand, Ch->GetMesh(), At))
+				{
+					Grip->SetRelativeTransform(At);
+					// куда смотрит рабочий конец в осях кисти: у ключа губки в начале меша, у фонарика линза в конце
+					ToolAxis[bLeftHand ? 1 : 0] = At.GetRotation().GetAxisZ() * (IsFlashlight(Item) ? 1.f : -1.f);
+				}
+				Shown = Item;
+			}
+			Grip->SetVisibility(bOn && Grip->GetStaticMesh() != nullptr);
+		};
+		Show(GripMesh, bRight, RightItem, false, ShownGripItem);
+		Show(GripMeshLeft, bLeft, LeftItem, true, ShownLeftItem);
+		Fist[0] = FMath::FInterpTo(Fist[0], bRight ? 1.f : 0.f, DeltaSeconds, 12.f);
+		Fist[1] = FMath::FInterpTo(Fist[1], bLeft ? 1.f : 0.f, DeltaSeconds, 12.f);
+		// стойки: правая отпускает руку анимации на время рывка, левая поднята, пока фонарик светит
+		const float NowT = GetWorld()->GetTimeSeconds();
+		const bool bFree = NowT < DodgeUntil;        // на рывке руку ведёт клип рывка; удар ведёт сама стойка (SwingPose)
+		Guard[0] = FMath::FInterpTo(Guard[0], bRight && !bFree ? 1.f : 0.f, DeltaSeconds, bFree ? 16.f : 7.f);
+		Guard[1] = FMath::FInterpTo(Guard[1], bLeft && bLightOn && NowT >= DodgeUntil ? 1.f : 0.f, DeltaSeconds, 7.f);
+		if (const APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
 		{
-			HandPivot->SetWorldRotation(FRotator(0.f, Ch->GetActorRotation().Yaw, 0.f));
+			LightAim = PC->GetControlRotation();
 		}
+		HandPivot->SetWorldRotation(FRotator(0.f, Ch->GetActorRotation().Yaw, 0.f));
 		if (Flashlight)
 		{
-			const bool bLit = bShow && IsFlashlight(Held);
+			const bool bLit = bLeft && bLightOn;
 			if (bLit != bFlashlightLit)
 			{
 				bFlashlightLit = bLit;
@@ -1961,7 +3013,7 @@ void ARunDirector::TickHeldItem(float DeltaSeconds)
 			Flashlight->SetVisibility(bLit);
 			if (const APlayerController* PC = bLit ? UGameplayStatics::GetPlayerController(this, 0) : nullptr)
 			{
-				// луч идёт от кисти вдоль взгляда камеры; чуть вынесен вперёд, чтобы герой не затенял его бедром
+				// луч идёт от левой кисти вдоль взгляда камеры; чуть вынесен вперёд, чтобы герой не затенял его бедром
 				const FRotator Aim = PC->GetControlRotation();
 				Flashlight->SetWorldLocationAndRotation(HandPivot->GetComponentLocation() + Aim.Vector() * 18.f + FVector(0.f, 0.f, 8.f), Aim);
 			}
@@ -2206,7 +3258,8 @@ void ARunDirector::Tick(float DeltaSeconds)
 		// у стены камера упирается и въезжает в персонажа: на это время он скрыт, иначе его спина закрывает весь экран
 		if (const APlayerCameraManager* Cam = UGameplayStatics::GetPlayerCameraManager(this, 0))
 		{
-			const float Near = FVector::Dist(Cam->GetCameraLocation(), Ch->GetActorLocation() + FVector(0.f, 0.f, 40.f));
+			// в проверке рук (-RunGripTest) камера нарочно стоит у самой кисти
+			const float Near = GripTestStep >= 0 ? 1000.f : FVector::Dist(Cam->GetCameraLocation(), Ch->GetActorLocation() + FVector(0.f, 0.f, 40.f));
 			if (Near < 105.f && !Ch->IsHidden())
 			{
 				Ch->SetActorHiddenInGame(true);
@@ -2235,6 +3288,7 @@ void ARunDirector::Tick(float DeltaSeconds)
 	}
 	TickFollowers();
 	TickHeldItem(DeltaSeconds);
+	TickSwingContact();
 	if (Now >= TipUntil && TipQueue.Num() > 0)
 	{
 		Tip = TipQueue[0];
@@ -2249,6 +3303,10 @@ void ARunDirector::Tick(float DeltaSeconds)
 	if (bSelfTest)
 	{
 		TickSelfTest();
+	}
+	if (GripTestStep >= 0)
+	{
+		TickGripTest();
 	}
 }
 
@@ -2599,16 +3657,15 @@ void ARunDirector::TickSelfTest()
 	case 118:
 		if (ForceEmergency > 0 && Pocket.Num() < PocketSlots)
 		{
-			Pocket.Add(0);   // фонарик — первая вещь каталога
-			HeldSlot = Pocket.Num() - 1;
-			UE_LOG(LogRun, Display, TEXT("Run: test flashlight in hand=%d"), IsFlashlight(Pocket[HeldSlot]) ? 1 : 0);
+			Pocket.Add(0);   // фонарик — первая вещь каталога: он в левой руке и светит сам
+			UE_LOG(LogRun, Display, TEXT("Run: test flashlight in hand=%d"), HasFlashlight() ? 1 : 0);
 			TestNextAt = Now + 1.2f;
 		}
 		break;
 	case 116:
 		if (ForceThreatKind == ThreatSmoke || ForceEmergency > 0 || (ForceThreatKind > NumThreats - 3 && FParse::Param(FCommandLine::Get(), TEXT("RunShots"))))
 		{
-			const bool bFlash = GetHeldSlot() >= 0 && IsFlashlight(Pocket[HeldSlot]);
+			const bool bFlash = HasFlashlight() && bLightOn;
 			const FString Path = FPaths::ProjectSavedDir() / FString::Printf(TEXT("Screenshots/Burned/seed%u_t%d_key%d_player_%s.png"),
 				static_cast<uint32>(Seed), ForceThreatKind, Rooms[CurrentRoom].Key, bFlash ? TEXT("flashlight") : IsPlayerCrouched() ? TEXT("crouch")
 				: Now < AttackBusyUntil ? TEXT("swing") : TestStepWasDodge() ? TEXT("dodge") : TestStandShots++ == 0 ? TEXT("stand") : TEXT("later"));
